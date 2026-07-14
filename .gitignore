@@ -216,3 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / frontend
+node_modules/
+*.local
+
+# StormLens — raw datasets are fetched via scripts/, never committed
+data/raw/
+
+# StormLens — local artifacts
+*.sqlite3
+eval/results/
