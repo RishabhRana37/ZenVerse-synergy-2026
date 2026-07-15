@@ -198,3 +198,17 @@
   animation: border-glow-breath 2s ease-in-out infinite;
 }
 
+@keyframes flash-critical {
+  0% {
+    background-color: rgba(255, 77, 79, 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-flash-critical {
+  animation: flash-critical 0.6s ease-out forwards;
+}
+
+
