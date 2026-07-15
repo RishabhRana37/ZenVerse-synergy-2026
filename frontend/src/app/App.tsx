@@ -5,12 +5,15 @@
  *   /         → WarRoom      (the demo view)
  *   /eval     → EvalDashboard
  *   /tokens   → TokensPage   (design system style guide)
+ *   /debug    → DebugPage    (live WS state — connection, stats, incidents)
  */
 
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import { WarRoom }        from '@/app/WarRoom'
 import { EvalDashboard }  from '@/features/eval/EvalDashboard'
 import { TokensPage }     from '@/app/TokensPage'
+import { DebugPage }      from '@/app/DebugPage'
+import { useWsConnection } from '@/hooks/useWsConnection'
 import { clsx }           from 'clsx'
 
 function NavBar() {
@@ -20,6 +23,7 @@ function NavBar() {
         { to: '/',       label: 'War Room' },
         { to: '/eval',   label: 'Eval' },
         { to: '/tokens', label: 'Tokens' },
+        { to: '/debug',  label: 'Debug' },
       ].map(({ to, label }) => (
         <NavLink
           key={to}
@@ -41,15 +45,27 @@ function NavBar() {
   )
 }
 
-export function App() {
+/** Root component — mounts WS connection for entire app lifetime */
+function AppInner() {
+  useWsConnection()
+
   return (
-    <BrowserRouter>
+    <>
       <NavBar />
       <Routes>
         <Route path="/"       element={<WarRoom />} />
         <Route path="/eval"   element={<EvalDashboard />} />
         <Route path="/tokens" element={<TokensPage />} />
+        <Route path="/debug"  element={<DebugPage />} />
       </Routes>
+    </>
+  )
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppInner />
     </BrowserRouter>
   )
 }

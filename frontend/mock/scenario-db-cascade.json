@@ -1,0 +1,505 @@
+{
+  "meta": {
+    "name": "db-cascade",
+    "description": "postgres-primary disk-full → order/auth cascade → api-gateway 5xx. Two secondary incidents (redis, cert). 90s total.",
+    "total_alerts_by_volume": 1850,
+    "unique_alerts": 127
+  },
+  "events": [
+    { "t": 200,  "type": "alert.batch", "alerts": [
+      { "id": "a-n01", "ts_offset": 0,   "source": "prometheus", "host": "host-11", "service": "metrics-collector", "severity": "info",    "message": "CPU usage 12% on host-11",            "template": "CPU usage <PCT>% on <HOST>",        "dup_count": 1, "cluster_id": null },
+      { "id": "a-n02", "ts_offset": 120, "source": "prometheus", "host": "host-23", "service": "log-shipper",       "severity": "info",    "message": "log buffer flush on host-23",         "template": "log buffer flush on <HOST>",          "dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 900,  "type": "alert.batch", "alerts": [
+      { "id": "a-n03", "ts_offset": 0,   "source": "prometheus", "host": "host-07", "service": "node-exporter",    "severity": "info",    "message": "disk read latency 4ms on host-07",    "template": "disk read latency <MS>ms on <HOST>",  "dup_count": 1, "cluster_id": null },
+      { "id": "a-n04", "ts_offset": 200, "source": "prometheus", "host": "host-31", "service": "heartbeat",        "severity": "info",    "message": "heartbeat ok host-31",                "template": "heartbeat ok <HOST>",                 "dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 1700, "type": "alert.batch", "alerts": [
+      { "id": "a-n05", "ts_offset": 0,   "source": "prometheus", "host": "host-14", "service": "metrics-collector", "severity": "info",   "message": "memory usage 34% on host-14",         "template": "memory usage <PCT>% on <HOST>",       "dup_count": 1, "cluster_id": null },
+      { "id": "a-n06", "ts_offset": 300, "source": "prometheus", "host": "host-02", "service": "node-exporter",    "severity": "info",    "message": "network rx 2.1 MB/s on host-02",     "template": "network rx <RATE> MB/s on <HOST>",    "dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 2500, "type": "alert.batch", "alerts": [
+      { "id": "a-n07", "ts_offset": 0,   "source": "prometheus", "host": "host-44", "service": "log-shipper",      "severity": "info",    "message": "log buffer flush on host-44",         "template": "log buffer flush on <HOST>",          "dup_count": 1, "cluster_id": null },
+      { "id": "a-n08", "ts_offset": 150, "source": "prometheus", "host": "host-33", "service": "heartbeat",        "severity": "info",    "message": "heartbeat ok host-33",                "template": "heartbeat ok <HOST>",                 "dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 3300, "type": "alert.batch", "alerts": [
+      { "id": "a-n09", "ts_offset": 0,   "source": "prometheus", "host": "host-05", "service": "metrics-collector","severity": "info",    "message": "CPU usage 8% on host-05",             "template": "CPU usage <PCT>% on <HOST>",          "dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 4100, "type": "alert.batch", "alerts": [
+      { "id": "a-n10", "ts_offset": 0,   "source": "prometheus", "host": "host-19", "service": "heartbeat",        "severity": "info",    "message": "heartbeat ok host-19",                "template": "heartbeat ok <HOST>",                 "dup_count": 1, "cluster_id": null }
+    ]},
+
+    { "t": 5000, "type": "alert.batch", "alerts": [
+      { "id": "a-pg-01", "ts_offset": 0, "source": "replay:aiops", "host": "host-01", "service": "postgres-primary", "severity": "critical", "message": "disk full on host-01", "template": "disk full on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-pg-02", "ts_offset": 60,"source": "replay:aiops", "host": "host-01", "service": "postgres-primary", "severity": "critical", "message": "WAL write stalled on host-01", "template": "WAL write stalled on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-pg-03", "ts_offset": 90,"source": "replay:aiops", "host": "host-01", "service": "postgres-primary", "severity": "critical", "message": "checkpoint timeout on host-01", "template": "checkpoint timeout on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 5500, "type": "alert.batch", "alerts": [
+      { "id": "a-ord-01", "ts_offset": 0,  "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-01","ts_offset": 50, "source": "replay:aiops", "host": "host-06", "service": "auth-svc",  "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-02", "ts_offset": 100,"source": "replay:aiops", "host": "host-04", "service": "order-svc", "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 6000, "type": "alert.batch", "alerts": [
+      { "id": "a-ord-03", "ts_offset": 0,  "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical", "message": "DB connection pool exhausted on host-03", "template": "DB connection pool exhausted on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-02","ts_offset": 30, "source": "replay:aiops", "host": "host-07", "service": "auth-svc",  "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-04", "ts_offset": 60, "source": "replay:aiops", "host": "host-05", "service": "order-svc", "severity": "warning",  "message": "request queue depth 450 on host-05", "template": "request queue depth <N> on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 6500, "type": "alert.batch", "alerts": [
+      { "id": "a-gw-01", "ts_offset": 0,  "source": "replay:aiops", "host": "host-09", "service": "api-gateway", "severity": "warning", "message": "5xx error rate 12% on host-09", "template": "5xx error rate <PCT>% on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-05","ts_offset": 40, "source": "replay:aiops", "host": "host-04", "service": "order-svc",  "severity": "critical","message": "connection timeout to host-01",  "template": "connection timeout to <HOST>",  "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-03","ts_offset": 80,"source": "replay:aiops", "host": "host-06", "service": "auth-svc",   "severity": "warning", "message": "auth latency p99 2200ms on host-06","template": "auth latency p99 <MS>ms on <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 7000, "type": "alert.batch", "alerts": [
+      { "id": "a-ord-06", "ts_offset": 0,  "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-gw-02",  "ts_offset": 50, "source": "replay:aiops", "host": "host-10", "service": "api-gateway","severity": "warning", "message": "5xx error rate 18% on host-10", "template": "5xx error rate <PCT>% on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-04","ts_offset": 80, "source": "replay:aiops", "host": "host-07", "service": "auth-svc",  "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 7500, "type": "alert.batch", "alerts": [
+      { "id": "a-pg-04",  "ts_offset": 0,  "source": "replay:aiops", "host": "host-02", "service": "postgres-primary","severity": "critical","message": "disk full on host-02",              "template": "disk full on <HOST>",               "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-07", "ts_offset": 40, "source": "replay:aiops", "host": "host-05", "service": "order-svc",       "severity": "critical","message": "connection timeout to host-01",     "template": "connection timeout to <HOST>",      "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-gw-03",  "ts_offset": 70, "source": "replay:aiops", "host": "host-09", "service": "api-gateway",     "severity": "warning", "message": "5xx error rate 24% on host-09",    "template": "5xx error rate <PCT>% on <HOST>",   "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 8000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 4 },
+    { "t": 8100, "type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 5 },
+    { "t": 8200, "type": "alert.batch", "alerts": [
+      { "id": "a-ord-08", "ts_offset": 0, "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-05","ts_offset": 40,"source": "replay:aiops", "host": "host-08", "service": "auth-svc",  "severity": "critical", "message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 8600, "type": "alert.batch", "alerts": [
+      { "id": "a-gw-04", "ts_offset": 0,  "source": "replay:aiops", "host": "host-10", "service": "api-gateway","severity": "critical","message": "upstream timeout on host-10",   "template": "upstream timeout on <HOST>",   "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-09","ts_offset": 50, "source": "replay:aiops", "host": "host-04", "service": "order-svc", "severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 9000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 9 },
+    { "t": 9100, "type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 7 },
+    { "t": 9200, "type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 5 },
+    { "t": 9300, "type": "alert.batch", "alerts": [
+      { "id": "a-ord-10", "ts_offset": 0, "source": "replay:aiops", "host": "host-05", "service": "order-svc", "severity": "critical", "message": "DB connection pool exhausted on host-05", "template": "DB connection pool exhausted on <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-06","ts_offset": 60,"source": "replay:aiops", "host": "host-06", "service": "auth-svc",  "severity": "warning",  "message": "auth latency p99 4800ms on host-06",    "template": "auth latency p99 <MS>ms on <HOST>",    "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 9800, "type": "alert.batch", "alerts": [
+      { "id": "a-gw-05",  "ts_offset": 0,  "source": "replay:aiops", "host": "host-09", "service": "api-gateway","severity": "critical","message": "circuit breaker open on host-09",  "template": "circuit breaker open on <HOST>",  "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-11", "ts_offset": 50, "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical","message": "connection timeout to host-01",  "template": "connection timeout to <HOST>",  "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 10200,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 14 },
+    { "t": 10300,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 11 },
+    { "t": 10400,"type": "alert.dedup", "alert_id": "a-gw-02",  "dup_count": 8  },
+    { "t": 10500,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-12", "ts_offset": 0, "source": "replay:aiops", "host": "host-04", "service": "order-svc","severity": "critical","message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-07","ts_offset": 40,"source": "replay:aiops", "host": "host-07", "service": "auth-svc", "severity": "critical","message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 11000,"type": "alert.batch", "alerts": [
+      { "id": "a-pg-05",  "ts_offset": 0,  "source": "replay:aiops", "host": "host-01", "service": "postgres-primary","severity": "critical","message": "disk full on host-01",          "template": "disk full on <HOST>",           "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-gw-06",  "ts_offset": 60, "source": "replay:aiops", "host": "host-10", "service": "api-gateway",     "severity": "warning", "message": "5xx error rate 38% on host-10", "template": "5xx error rate <PCT>% on <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 11500,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 20 },
+    { "t": 11600,"type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 16 },
+    { "t": 11700,"type": "alert.dedup", "alert_id": "a-ord-03", "dup_count": 12 },
+
+    { "t": 12000, "type": "incident.created",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+12000__",
+        "status": "active",
+        "title": "postgres-primary failure cascading to order/auth",
+        "alert_count": 320,
+        "unique_count": 42,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01", "service": "postgres-primary", "template": "disk full on <HOST>",          "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",        "template": "connection timeout to <HOST>",  "score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",        "template": "connection timeout to <HOST>",  "score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [0, 0, 12, 85, 200, 320],
+        "summary": null,
+        "first_action": null
+      },
+      "member_alert_ids": ["a-pg-01","a-pg-02","a-pg-03","a-pg-04","a-ord-01","a-ord-02","a-ord-03","a-ord-04","a-ord-05","a-ord-06","a-ord-07","a-ord-08","a-ord-09","a-ord-10","a-ord-11","a-ord-12","a-auth-01","a-auth-02","a-auth-03","a-auth-04","a-auth-05","a-auth-06","a-auth-07","a-gw-01","a-gw-02","a-gw-03","a-gw-04","a-gw-05","a-gw-06"]
+    },
+
+    { "t": 12500,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 26 },
+    { "t": 12600,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 22 },
+    { "t": 12700,"type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 15 },
+    { "t": 12800,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-13", "ts_offset": 0, "source": "replay:aiops", "host": "host-05", "service": "order-svc","severity": "critical","message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-08","ts_offset": 40,"source": "replay:aiops", "host": "host-08", "service": "auth-svc", "severity": "critical","message": "connection timeout to host-01", "template": "connection timeout to <HOST>", "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 13300,"type": "alert.batch", "alerts": [
+      { "id": "a-gw-07",  "ts_offset": 0,  "source": "replay:aiops", "host": "host-09", "service": "api-gateway","severity": "critical","message": "circuit breaker open on host-09",  "template": "circuit breaker open on <HOST>",  "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-14", "ts_offset": 50, "source": "replay:aiops", "host": "host-03", "service": "order-svc", "severity": "critical","message": "DB connection pool exhausted on host-03","template": "DB connection pool exhausted on <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 13800,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 32 },
+    { "t": 13900,"type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 25 },
+    { "t": 14000,"type": "alert.dedup", "alert_id": "a-gw-02",  "dup_count": 18 },
+    { "t": 14100,"type": "alert.dedup", "alert_id": "a-ord-03", "dup_count": 20 },
+    { "t": 14200,"type": "alert.batch", "alerts": [
+      { "id": "a-pg-06",  "ts_offset": 0,  "source": "replay:aiops", "host": "host-02", "service": "postgres-primary","severity": "critical","message": "WAL write stalled on host-02",      "template": "WAL write stalled on <HOST>",     "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-15", "ts_offset": 60, "source": "replay:aiops", "host": "host-04", "service": "order-svc",       "severity": "critical","message": "connection timeout to host-01",    "template": "connection timeout to <HOST>",    "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+
+    { "t": 14000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+14000__",
+        "status": "active",
+        "title": "postgres-primary failure cascading to order/auth",
+        "alert_count": 560,
+        "unique_count": 62,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01", "service": "postgres-primary", "template": "disk full on <HOST>",          "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",        "template": "connection timeout to <HOST>",  "score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",        "template": "connection timeout to <HOST>",  "score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [0, 12, 85, 200, 320, 560],
+        "summary": null,
+        "first_action": null
+      },
+      "added_alert_ids": ["a-ord-13","a-ord-14","a-auth-08","a-gw-07","a-pg-06","a-ord-15"],
+      "removed_alert_ids": []
+    },
+
+    { "t": 15000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 38 },
+    { "t": 15100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 30 },
+    { "t": 15200,"type": "alert.dedup", "alert_id": "a-gw-04",  "dup_count": 10 },
+    { "t": 15300,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-16", "ts_offset": 0, "source": "replay:aiops", "host": "host-05", "service": "order-svc","severity": "critical","message": "connection timeout to host-01",           "template": "connection timeout to <HOST>",           "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-09","ts_offset": 40,"source": "replay:aiops", "host": "host-06", "service": "auth-svc", "severity": "critical","message": "connection timeout to host-01",           "template": "connection timeout to <HOST>",           "dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-gw-08",  "ts_offset": 80,"source": "replay:aiops", "host": "host-10", "service": "api-gateway","severity": "critical","message": "upstream timeout on host-10",          "template": "upstream timeout on <HOST>",             "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 15800,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-17", "ts_offset": 0, "source": "replay:aiops", "host": "host-03", "service": "order-svc",   "severity": "critical","message": "DB connection pool exhausted on host-03","template": "DB connection pool exhausted on <HOST>","dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-pg-07",  "ts_offset": 50,"source": "replay:aiops", "host": "host-01", "service": "postgres-primary","severity": "critical","message": "disk full on host-01",              "template": "disk full on <HOST>",                   "dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 16300,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 44 },
+    { "t": 16400,"type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 34 },
+    { "t": 16500,"type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 28 },
+    { "t": 16600,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-18", "ts_offset": 0, "source": "replay:aiops", "host": "host-04", "service": "order-svc","severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-auth-10","ts_offset": 60,"source": "replay:aiops", "host": "host-07", "service": "auth-svc", "severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+
+    { "t": 16000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+16000__",
+        "status": "active",
+        "title": "postgres-primary failure cascading to order/auth",
+        "alert_count": 820,
+        "unique_count": 79,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01", "service": "postgres-primary", "template": "disk full on <HOST>",         "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",        "template": "connection timeout to <HOST>", "score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",        "template": "connection timeout to <HOST>", "score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [12, 85, 200, 320, 560, 820],
+        "summary": null,
+        "first_action": null
+      },
+      "added_alert_ids": ["a-ord-16","a-ord-17","a-ord-18","a-auth-09","a-auth-10","a-gw-08","a-pg-07"],
+      "removed_alert_ids": []
+    },
+
+    { "t": 17000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 52 },
+    { "t": 17100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 40 },
+    { "t": 17200,"type": "alert.dedup", "alert_id": "a-gw-02",  "dup_count": 32 },
+    { "t": 17300,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-19", "ts_offset": 0, "source": "replay:aiops", "host": "host-05","service": "order-svc","severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-gw-09",  "ts_offset": 50,"source": "replay:aiops", "host": "host-09","service": "api-gateway","severity": "critical","message": "circuit breaker open on host-09","template": "circuit breaker open on <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+    { "t": 17800,"type": "alert.dedup", "alert_id": "a-ord-03", "dup_count": 30 },
+    { "t": 17900,"type": "alert.dedup", "alert_id": "a-auth-03","dup_count": 18 },
+    { "t": 18000,"type": "alert.batch", "alerts": [
+      { "id": "a-auth-11","ts_offset": 0, "source": "replay:aiops","host": "host-08","service": "auth-svc","severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-ord-20", "ts_offset": 60,"source": "replay:aiops","host": "host-03","service": "order-svc","severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" }
+    ]},
+
+    { "t": 16500, "type": "incident.summary",
+      "incident_id": "inc-db-01",
+      "title": "postgres-primary disk full cascading through order path",
+      "summary": "postgres-primary (host-01, host-02) hit disk capacity at 10:15:05 UTC, stalling WAL writes and checkpoints. order-svc (4 nodes) and auth-svc (3 nodes) exhausted their connection pools within 500 ms. api-gateway began shedding 5xx errors at 38% rate. Total blast radius: 4 services, ~820 alerts (79 unique). First action: failover postgres-primary or free disk space immediately.",
+      "first_action": "Check postgres-primary disk usage and initiate failover or emergency disk cleanup on host-01 and host-02.",
+      "generated_by": "template"
+    },
+
+    { "t": 19000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 60 },
+    { "t": 19100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 48 },
+    { "t": 19200,"type": "alert.dedup", "alert_id": "a-gw-04",  "dup_count": 22 },
+    { "t": 19300,"type": "alert.batch", "alerts": [
+      { "id": "a-ord-21", "ts_offset": 0,  "source": "replay:aiops","host": "host-04","service": "order-svc","severity": "critical","message": "connection timeout to host-01","template": "connection timeout to <HOST>","dup_count": 1, "cluster_id": "inc-db-01" },
+      { "id": "a-n11",    "ts_offset": 80, "source": "prometheus",  "host": "host-22","service": "node-exporter","severity": "info","message": "disk read latency 5ms on host-22","template": "disk read latency <MS>ms on <HOST>","dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 20000,"type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 40 },
+    { "t": 20100,"type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 38 },
+
+    { "t": 18000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+18000__",
+        "status": "active",
+        "title": "postgres-primary disk full cascading through order path",
+        "alert_count": 1100,
+        "unique_count": 96,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01", "service": "postgres-primary", "template": "disk full on <HOST>",         "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",        "template": "connection timeout to <HOST>", "score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",        "template": "connection timeout to <HOST>", "score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [85, 200, 320, 560, 820, 1100],
+        "summary": "postgres-primary (host-01, host-02) hit disk capacity at 10:15:05 UTC, stalling WAL writes and checkpoints. order-svc and auth-svc exhausted connection pools within 500ms. api-gateway shedding 5xx at 38%. Blast radius: 4 services.",
+        "first_action": "Check postgres-primary disk usage and initiate failover or emergency disk cleanup on host-01 and host-02."
+      },
+      "added_alert_ids": ["a-ord-19","a-ord-20","a-ord-21","a-auth-11","a-gw-09"],
+      "removed_alert_ids": []
+    },
+
+    { "t": 21000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 66 },
+    { "t": 21100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 54 },
+    { "t": 21200,"type": "alert.batch", "alerts": [
+      { "id": "a-n12", "ts_offset": 0,  "source": "prometheus","host": "host-37","service": "heartbeat","severity": "info","message": "heartbeat ok host-37","template": "heartbeat ok <HOST>","dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 22000,"type": "alert.dedup", "alert_id": "a-gw-02",  "dup_count": 45 },
+    { "t": 22100,"type": "alert.dedup", "alert_id": "a-ord-03", "dup_count": 42 },
+    { "t": 22200,"type": "alert.dedup", "alert_id": "a-auth-03","dup_count": 28 },
+    { "t": 23000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 72 },
+    { "t": 23100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 58 },
+    { "t": 23200,"type": "alert.dedup", "alert_id": "a-gw-04",  "dup_count": 30 },
+    { "t": 24000,"type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 48 },
+    { "t": 24100,"type": "alert.dedup", "alert_id": "a-auth-02","dup_count": 50 },
+    { "t": 24200,"type": "alert.batch", "alerts": [
+      { "id": "a-n13", "ts_offset": 0, "source": "prometheus","host": "host-28","service": "log-shipper","severity": "info","message": "log buffer flush on host-28","template": "log buffer flush on <HOST>","dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 25000,"type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 78 },
+    { "t": 25100,"type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 62 },
+
+    { "t": 20000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+20000__",
+        "status": "active",
+        "title": "postgres-primary disk full cascading through order path",
+        "alert_count": 1300,
+        "unique_count": 105,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01","service": "postgres-primary","template": "disk full on <HOST>",         "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",      "template": "connection timeout to <HOST>","score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",      "template": "connection timeout to <HOST>","score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [200, 320, 560, 820, 1100, 1300],
+        "summary": "postgres-primary (host-01, host-02) hit disk capacity at 10:15:05 UTC, stalling WAL writes and checkpoints. order-svc and auth-svc exhausted connection pools within 500ms. api-gateway shedding 5xx at 38%. Blast radius: 4 services.",
+        "first_action": "Check postgres-primary disk usage and initiate failover or emergency disk cleanup on host-01 and host-02."
+      },
+      "added_alert_ids": ["a-n11","a-n12","a-n13"],
+      "removed_alert_ids": []
+    },
+
+    { "t": 30000, "type": "alert.batch", "alerts": [
+      { "id": "a-redis-01","ts_offset": 0,  "source": "replay:aiops","host": "host-12","service": "redis-cache","severity": "critical","message": "memory usage 98% on host-12",        "template": "memory usage <PCT>% on <HOST>",      "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-redis-02","ts_offset": 50, "source": "replay:aiops","host": "host-13","service": "redis-cache","severity": "critical","message": "eviction rate 12k/s on host-13",     "template": "eviction rate <N>/s on <HOST>",     "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-redis-03","ts_offset": 100,"source": "replay:aiops","host": "host-12","service": "redis-cache","severity": "warning", "message": "OOM kill imminent on host-12",       "template": "OOM kill imminent on <HOST>",        "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-sess-01", "ts_offset": 150,"source": "replay:aiops","host": "host-15","service": "session-svc","severity": "warning", "message": "cache miss rate 94% on host-15",     "template": "cache miss rate <PCT>% on <HOST>",  "dup_count": 1, "cluster_id": "inc-redis-02" }
+    ]},
+    { "t": 30600, "type": "alert.batch", "alerts": [
+      { "id": "a-redis-04","ts_offset": 0,  "source": "replay:aiops","host": "host-13","service": "redis-cache","severity": "critical","message": "memory usage 99% on host-13",        "template": "memory usage <PCT>% on <HOST>",     "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-sess-02", "ts_offset": 60, "source": "replay:aiops","host": "host-16","service": "session-svc","severity": "warning", "message": "cache miss rate 91% on host-16",    "template": "cache miss rate <PCT>% on <HOST>",  "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-redis-05","ts_offset": 100,"source": "replay:aiops","host": "host-12","service": "redis-cache","severity": "critical","message": "eviction rate 18k/s on host-12",     "template": "eviction rate <N>/s on <HOST>",     "dup_count": 1, "cluster_id": "inc-redis-02" }
+    ]},
+
+    { "t": 31500, "type": "incident.created",
+      "incident": {
+        "id": "inc-redis-02",
+        "created_at": "__BASE_TS+31500__",
+        "updated_at": "__BASE_TS+31500__",
+        "status": "active",
+        "title": "redis-cache memory pressure — session degradation",
+        "alert_count": 48,
+        "unique_count": 6,
+        "services": ["redis-cache","session-svc"],
+        "root_candidates": [
+          { "alert_id": "a-redis-01","service": "redis-cache","template": "memory usage <PCT>% on <HOST>","score": 0.76, "confidence": 0.68 },
+          { "alert_id": "a-redis-02","service": "redis-cache","template": "eviction rate <N>/s on <HOST>","score": 0.38, "confidence": 0.22 },
+          { "alert_id": "a-sess-01", "service": "session-svc","template": "cache miss rate <PCT>% on <HOST>","score": 0.19, "confidence": 0.10 }
+        ],
+        "sparkline": [0, 0, 0, 0, 20, 48],
+        "summary": null,
+        "first_action": null
+      },
+      "member_alert_ids": ["a-redis-01","a-redis-02","a-redis-03","a-redis-04","a-redis-05","a-sess-01","a-sess-02"]
+    },
+
+    { "t": 31800, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 8 },
+    { "t": 31900, "type": "alert.dedup", "alert_id": "a-redis-02","dup_count": 6 },
+    { "t": 32000, "type": "alert.batch", "alerts": [
+      { "id": "a-redis-06","ts_offset": 0,  "source": "replay:aiops","host": "host-13","service": "redis-cache","severity": "critical","message": "OOM kill imminent on host-13",    "template": "OOM kill imminent on <HOST>",    "dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-sess-03", "ts_offset": 60, "source": "replay:aiops","host": "host-17","service": "session-svc","severity": "warning", "message": "session store unavailable on host-17","template": "session store unavailable on <HOST>","dup_count": 1, "cluster_id": "inc-redis-02" }
+    ]},
+    { "t": 33000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 14 },
+    { "t": 33100, "type": "alert.dedup", "alert_id": "a-redis-04","dup_count": 10 },
+    { "t": 33200, "type": "alert.batch", "alerts": [
+      { "id": "a-redis-07","ts_offset": 0, "source": "replay:aiops","host": "host-12","service": "redis-cache","severity": "critical","message": "memory usage 99% on host-12",   "template": "memory usage <PCT>% on <HOST>","dup_count": 1, "cluster_id": "inc-redis-02" },
+      { "id": "a-sess-04", "ts_offset": 50,"source": "replay:aiops","host": "host-15","service": "session-svc","severity": "critical","message": "session store unavailable on host-15","template": "session store unavailable on <HOST>","dup_count": 1, "cluster_id": "inc-redis-02" }
+    ]},
+
+    { "t": 34000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-redis-02",
+        "created_at": "__BASE_TS+31500__",
+        "updated_at": "__BASE_TS+34000__",
+        "status": "active",
+        "title": "redis-cache memory pressure — session degradation",
+        "alert_count": 82,
+        "unique_count": 11,
+        "services": ["redis-cache","session-svc"],
+        "root_candidates": [
+          { "alert_id": "a-redis-01","service": "redis-cache","template": "memory usage <PCT>% on <HOST>","score": 0.76, "confidence": 0.68 },
+          { "alert_id": "a-redis-02","service": "redis-cache","template": "eviction rate <N>/s on <HOST>","score": 0.38, "confidence": 0.22 },
+          { "alert_id": "a-sess-01", "service": "session-svc","template": "cache miss rate <PCT>% on <HOST>","score": 0.19, "confidence": 0.10 }
+        ],
+        "sparkline": [0, 0, 0, 20, 48, 82],
+        "summary": null,
+        "first_action": null
+      },
+      "added_alert_ids": ["a-redis-06","a-redis-07","a-sess-03","a-sess-04"],
+      "removed_alert_ids": []
+    },
+
+    { "t": 35500, "type": "incident.summary",
+      "incident_id": "inc-redis-02",
+      "title": "redis-cache memory exhaustion degrading session layer",
+      "summary": "redis-cache nodes (host-12, host-13) reached 98–99% memory utilization at 10:15:30 UTC, triggering aggressive eviction at 12–18k keys/s. session-svc began serving cache misses above 91%, causing session store unavailability on host-15 and host-17. Blast radius: 2 services, ~82 alerts (11 unique). First action: scale redis cluster or flush cold keys.",
+      "first_action": "Scale redis-cache cluster horizontally or run MEMORY PURGE / key eviction policy adjustment on host-12 and host-13.",
+      "generated_by": "template"
+    },
+
+    { "t": 36000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 20 },
+    { "t": 36100, "type": "alert.dedup", "alert_id": "a-redis-04","dup_count": 16 },
+    { "t": 38000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 26 },
+    { "t": 40000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 32 },
+
+    { "t": 38000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+38000__",
+        "status": "active",
+        "title": "postgres-primary disk full cascading through order path",
+        "alert_count": 1550,
+        "unique_count": 113,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01","service": "postgres-primary","template": "disk full on <HOST>",         "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",      "template": "connection timeout to <HOST>","score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",      "template": "connection timeout to <HOST>","score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [320, 560, 820, 1100, 1300, 1550],
+        "summary": "postgres-primary (host-01, host-02) hit disk capacity at 10:15:05 UTC, stalling WAL writes and checkpoints. order-svc and auth-svc exhausted connection pools within 500ms. api-gateway shedding 5xx at 38%. Blast radius: 4 services.",
+        "first_action": "Check postgres-primary disk usage and initiate failover or emergency disk cleanup on host-01 and host-02."
+      },
+      "added_alert_ids": [],
+      "removed_alert_ids": []
+    },
+
+    { "t": 42000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 38 },
+    { "t": 44000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 44 },
+    { "t": 46000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 50 },
+    { "t": 48000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 55 },
+    { "t": 50000, "type": "alert.batch", "alerts": [
+      { "id": "a-n14", "ts_offset": 0,  "source": "prometheus","host": "host-39","service": "node-exporter","severity": "info","message": "CPU usage 9% on host-39","template": "CPU usage <PCT>% on <HOST>","dup_count": 1, "cluster_id": null },
+      { "id": "a-n15", "ts_offset": 200,"source": "prometheus","host": "host-41","service": "heartbeat",   "severity": "info","message": "heartbeat ok host-41",      "template": "heartbeat ok <HOST>",         "dup_count": 1, "cluster_id": null }
+    ]},
+
+    { "t": 55000, "type": "alert.batch", "alerts": [
+      { "id": "a-cdn-01","ts_offset": 0,  "source": "replay:aiops","host": "host-48","service": "cdn-edge","severity": "warning","message": "TLS cert expiring in 3 days on host-48",    "template": "TLS cert expiring in <N> days on <HOST>",  "dup_count": 1, "cluster_id": "inc-cert-03" },
+      { "id": "a-cdn-02","ts_offset": 60, "source": "replay:aiops","host": "host-46","service": "cdn-edge","severity": "warning","message": "TLS cert expiring in 3 days on host-46",    "template": "TLS cert expiring in <N> days on <HOST>",  "dup_count": 1, "cluster_id": "inc-cert-03" },
+      { "id": "a-cdn-03","ts_offset": 120,"source": "replay:aiops","host": "host-47","service": "cdn-edge","severity": "warning","message": "TLS cert expiring in 3 days on host-47",    "template": "TLS cert expiring in <N> days on <HOST>",  "dup_count": 1, "cluster_id": "inc-cert-03" },
+      { "id": "a-cdn-04","ts_offset": 180,"source": "replay:aiops","host": "host-45","service": "cdn-edge","severity": "warning","message": "OCSP stapling failed on host-45",           "template": "OCSP stapling failed on <HOST>",            "dup_count": 1, "cluster_id": "inc-cert-03" }
+    ]},
+
+    { "t": 55500, "type": "alert.batch", "alerts": [
+      { "id": "a-cdn-05","ts_offset": 0,  "source": "replay:aiops","host": "host-48","service": "cdn-edge","severity": "warning","message": "TLS cert expiring in 3 days on host-48",    "template": "TLS cert expiring in <N> days on <HOST>",  "dup_count": 1, "cluster_id": "inc-cert-03" },
+      { "id": "a-cdn-06","ts_offset": 80, "source": "replay:aiops","host": "host-46","service": "cdn-edge","severity": "warning","message": "HSTS header missing on host-46",            "template": "HSTS header missing on <HOST>",             "dup_count": 1, "cluster_id": "inc-cert-03" }
+    ]},
+
+    { "t": 56200, "type": "incident.created",
+      "incident": {
+        "id": "inc-cert-03",
+        "created_at": "__BASE_TS+56200__",
+        "updated_at": "__BASE_TS+56200__",
+        "status": "active",
+        "title": "cdn-edge TLS certificate expiry — 4 nodes affected",
+        "alert_count": 12,
+        "unique_count": 6,
+        "services": ["cdn-edge"],
+        "root_candidates": [
+          { "alert_id": "a-cdn-01","service": "cdn-edge","template": "TLS cert expiring in <N> days on <HOST>","score": 0.71, "confidence": 0.65 },
+          { "alert_id": "a-cdn-04","service": "cdn-edge","template": "OCSP stapling failed on <HOST>",          "score": 0.29, "confidence": 0.25 },
+          { "alert_id": "a-cdn-06","service": "cdn-edge","template": "HSTS header missing on <HOST>",           "score": 0.12, "confidence": 0.10 }
+        ],
+        "sparkline": [0, 0, 0, 0, 6, 12],
+        "summary": null,
+        "first_action": null
+      },
+      "member_alert_ids": ["a-cdn-01","a-cdn-02","a-cdn-03","a-cdn-04","a-cdn-05","a-cdn-06"]
+    },
+
+    { "t": 60000, "type": "incident.summary",
+      "incident_id": "inc-cert-03",
+      "title": "cdn-edge TLS certificate expiry in 3 days",
+      "summary": "Four cdn-edge nodes (host-45 through host-48) will have their TLS certificates expire in 3 days. OCSP stapling has already failed on host-45 and HSTS headers are missing on host-46, indicating the certificate renewal pipeline is stalled. Blast radius: 1 service, 12 alerts (6 unique). First action: renew certificates and restart nginx/envoy on all cdn-edge nodes.",
+      "first_action": "Renew TLS certificates for cdn-edge nodes host-45 through host-48 and reload the TLS termination layer.",
+      "generated_by": "template"
+    },
+
+    { "t": 62000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 82 },
+    { "t": 64000, "type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 70 },
+    { "t": 66000, "type": "alert.dedup", "alert_id": "a-gw-02",  "dup_count": 58 },
+    { "t": 68000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 60 },
+    { "t": 70000, "type": "alert.batch", "alerts": [
+      { "id": "a-n16","ts_offset": 0, "source": "prometheus","host": "host-20","service": "node-exporter","severity": "info","message": "memory usage 28% on host-20","template": "memory usage <PCT>% on <HOST>","dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 72000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 88 },
+    { "t": 74000, "type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 76 },
+    { "t": 76000, "type": "alert.dedup", "alert_id": "a-gw-01",  "dup_count": 65 },
+    { "t": 78000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 66 },
+    { "t": 80000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 92 },
+    { "t": 82000, "type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 80 },
+    { "t": 84000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 70 },
+
+    { "t": 80000, "type": "incident.updated",
+      "incident": {
+        "id": "inc-db-01",
+        "created_at": "__BASE_TS+12000__",
+        "updated_at": "__BASE_TS+80000__",
+        "status": "active",
+        "title": "postgres-primary disk full cascading through order path",
+        "alert_count": 1720,
+        "unique_count": 118,
+        "services": ["postgres-primary","order-svc","auth-svc","api-gateway"],
+        "root_candidates": [
+          { "alert_id": "a-pg-01","service": "postgres-primary","template": "disk full on <HOST>",         "score": 0.83, "confidence": 0.74 },
+          { "alert_id": "a-ord-01","service": "order-svc",      "template": "connection timeout to <HOST>","score": 0.41, "confidence": 0.18 },
+          { "alert_id": "a-auth-01","service": "auth-svc",      "template": "connection timeout to <HOST>","score": 0.38, "confidence": 0.08 }
+        ],
+        "sparkline": [560, 820, 1100, 1300, 1550, 1720],
+        "summary": "postgres-primary (host-01, host-02) hit disk capacity at 10:15:05 UTC, stalling WAL writes and checkpoints. order-svc and auth-svc exhausted connection pools within 500ms. api-gateway shedding 5xx at 38%. Blast radius: 4 services.",
+        "first_action": "Check postgres-primary disk usage and initiate failover or emergency disk cleanup on host-01 and host-02."
+      },
+      "added_alert_ids": [],
+      "removed_alert_ids": []
+    },
+
+    { "t": 86000, "type": "alert.dedup", "alert_id": "a-ord-01", "dup_count": 96 },
+    { "t": 88000, "type": "alert.dedup", "alert_id": "a-auth-01","dup_count": 84 },
+    { "t": 88500, "type": "alert.batch", "alerts": [
+      { "id": "a-n17","ts_offset": 0, "source": "prometheus","host": "host-33","service": "heartbeat","severity": "info","message": "heartbeat ok host-33","template": "heartbeat ok <HOST>","dup_count": 1, "cluster_id": null }
+    ]},
+    { "t": 90000, "type": "alert.dedup", "alert_id": "a-redis-01","dup_count": 74 }
+  ]
+}
