@@ -1,0 +1,351 @@
+/* ── Font imports ─────────────────────────────────────────────────────── */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+/* ── Tailwind layers ──────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS custom properties (mirrors tailwind config for runtime access) ── */
+:root {
+  /* Backgrounds */
+  --bg-base:      #0A0E14;
+  --bg-surface:   #11161F;
+  --bg-elevated:  #161D29;
+  --bg-hover:     #1C2535;
+
+  /* Borders — raised from 0.06→0.10 for projector legibility */
+  --border:       rgba(255,255,255,0.10);
+  --border-subtle:rgba(255,255,255,0.05);
+  --border-strong:rgba(255,255,255,0.18);
+
+  /* Text — muted bumped from #4D5866 → #5D6B7D (projector legible) */
+  --text-primary:   #E6EDF3;
+  --text-secondary: #8B98A9;
+  --text-muted:     #5D6B7D;
+
+  /* Severity */
+  --severity-critical: #FF4D4F;
+  --severity-warning:  #F5A623;
+  --severity-info:     #4D9FFF;
+
+  /* Accent */
+  --accent:     #2DD4A7;
+  --accent-dim: rgba(45,212,167,0.15);
+
+  /* Confidence gradient */
+  --conf-high: #2DD4A7;
+  --conf-mid:  #F5A623;
+  --conf-low:  #FF4D4F;
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Timeline stroke width (bumped in presentation mode) */
+  --timeline-stroke: 1.5;
+}
+
+/* ── Presentation Mode overrides ─────────────────────────────────────── */
+/* Applied via JS by toggling .presentation-mode on <html>               */
+html.presentation-mode {
+  font-size: 110%;
+
+  --border:        rgba(255,255,255,0.18);
+  --border-subtle: rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.28);
+
+  /* More saturated severity colors for projector wash */
+  --severity-critical: #FF2B2E;
+  --severity-warning:  #E8940D;
+  --severity-info:     #2E87FF;
+
+  /* Even lighter muted for high-ambient conditions */
+  --text-muted: #6B7D90;
+
+  /* Thicker timeline stroke */
+  --timeline-stroke: 2.5;
+}
+
+/* ── Base resets & global styles ──────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    border-color: var(--border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100%;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Focus rings — visible for keyboard navigation ─────────────────── */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Remove default outline for mouse users, keep for keyboard */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-base);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.22);
+  }
+}
+
+/* ── Utility classes ──────────────────────────────────────────────────── */
+@layer utilities {
+  /* Tabular numerals — REQUIRED on all numeric displays to prevent jitter */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Monospace + tabular combined */
+  .mono-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Surface step utilities */
+  .surface-base     { background-color: var(--bg-base); }
+  .surface-panel    { background-color: var(--bg-surface); }
+  .surface-elevated { background-color: var(--bg-elevated); }
+
+  /* Hairline border utilities */
+  .border-hairline { border: 1px solid var(--border); }
+  .border-hairline-strong { border: 1px solid var(--border-strong); }
+
+  /* Live indicator dot */
+  .live-dot::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    animation: pulse-dot 2s ease-in-out infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* Confidence gradient for inline use */
+  .confidence-gradient {
+    background: linear-gradient(90deg, var(--conf-low) 0%, var(--conf-mid) 50%, var(--conf-high) 100%);
+  }
+
+  /* Text truncation */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Glass effect for modals/overlays */
+  .glass {
+    background: rgba(17, 22, 31, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* ── Component classes ────────────────────────────────────────────────── */
+@layer components {
+  /* Panel dividers */
+  .panel-divider {
+    border-right: 1px solid var(--border);
+  }
+
+  /* Severity color helpers */
+  .sev-critical { color: var(--severity-critical); }
+  .sev-warning  { color: var(--severity-warning); }
+  .sev-info     { color: var(--severity-info); }
+
+  .sev-bg-critical { background-color: rgba(255, 77, 79, 0.12); }
+  .sev-bg-warning  { background-color: rgba(245, 166, 35, 0.12); }
+  .sev-bg-info     { background-color: rgba(77, 159, 255, 0.12); }
+
+  /* Stream row */
+  .stream-row {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background-color 0.15s ease;
+  }
+  .stream-row:hover {
+    background-color: var(--bg-hover);
+  }
+}
+
+/* ── Breathing Glow Animation ────────────────────────────────────────── */
+@keyframes border-glow-breath {
+  0%, 100% {
+    box-shadow: 0 -4px 6px -2px rgba(255, 77, 79, 0.4);
+    border-top-color: rgba(255, 77, 79, 0.6);
+  }
+  50% {
+    box-shadow: 0 -6px 14px -1px rgba(255, 77, 79, 0.9);
+    border-top-color: rgba(255, 77, 79, 1);
+  }
+}
+
+.border-glow-critical {
+  animation: border-glow-breath 2s ease-in-out infinite;
+}
+
+@keyframes flash-critical {
+  0% {
+    background-color: rgba(255, 77, 79, 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-flash-critical {
+  animation: flash-critical 0.6s ease-out forwards;
+}
+
+@keyframes border-pulse-entrance {
+  0% {
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+  40% {
+    border-color: rgba(45, 212, 167, 0.6);
+    box-shadow: 0 0 6px rgba(45, 212, 167, 0.25);
+  }
+  100% {
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+}
+
+.animate-border-pulse-entrance {
+  animation: border-pulse-entrance 1.2s ease-out forwards;
+}
+
+/* ── Shimmer skeleton animation ──────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── Confidence bar animated shimmer ────────────────────────────────── */
+@keyframes conf-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+.animate-conf-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200px 100%;
+  animation: conf-shimmer 2s infinite linear;
+}
+
+/* ── Concentric circle empty state breath ────────────────────────────── */
+@keyframes concentric-breath {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.65;
+  }
+}
+.animate-concentric {
+  animation: concentric-breath 4s ease-in-out infinite;
+}
+
+/* ── Radar pulse animation for root cause nodes ──────────────────────── */
+@keyframes radar-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
+.animate-radar-pulse {
+  animation: radar-pulse 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+/* ── prefers-reduced-motion: disable all non-essential animations ─────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .border-glow-critical,
+  .animate-flash-critical,
+  .animate-border-pulse-entrance,
+  .live-dot::before,
+  .animate-shimmer,
+  .animate-conf-shimmer,
+  .animate-concentric,
+  .animate-radar-pulse {
+    animation: none !important;
+    background-image: none !important;
+  }
+
+  /* Keep opacity/visibility transitions for focus states */
+  :focus-visible {
+    transition: none;
+  }
+}
