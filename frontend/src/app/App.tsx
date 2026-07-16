@@ -19,6 +19,7 @@ import { HealthPage } from '@/app/HealthPage'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useStreamStore } from '@/store/stream'
+import { CommandPalette } from '@/components/ui/CommandPalette'
 
 /** Root component — mounts WS connection for entire app lifetime */
 function AppInner() {
@@ -31,12 +32,20 @@ function AppInner() {
   const [lastConnection, setLastConnection] = useState(connection)
   const [showRecoveryFlash, setShowRecoveryFlash] = useState(false)
 
-  // Title and Favicon configuration
+  // Title and Dynamic SVG Favicon configuration
   useEffect(() => {
     document.title = 'StormLens — War Room'
+  }, [])
 
-    // Inline dark favicon SVG (simple lens/storm glyph)
-    const svgFavicon = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%232DD4A7%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z%22/></svg>`
+  useEffect(() => {
+    const dotColor =
+      connection === 'open'
+        ? '%232DD4A7'
+        : connection === 'connecting'
+        ? '%23F5A623'
+        : '%23FF4D4F'
+
+    const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32"><circle cx="10" cy="10" r="7" fill="none" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="0" x2="10" y2="2" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="18" x2="10" y2="20" stroke="%23E6EDF3" stroke-width="1"/><line x1="0" y1="10" x2="2" y2="10" stroke="%23E6EDF3" stroke-width="1"/><line x1="18" y1="10" x2="20" y2="10" stroke="%23E6EDF3" stroke-width="1"/><circle cx="16.5" cy="4.5" r="2" fill="${dotColor}"/></svg>`
 
     let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']")
     if (!link) {
@@ -45,7 +54,7 @@ function AppInner() {
       document.getElementsByTagName('head')[0].appendChild(link)
     }
     link.href = svgFavicon
-  }, [])
+  }, [connection])
 
   // Reconnection recovery flash banner logic
   useEffect(() => {
@@ -80,6 +89,8 @@ function AppInner() {
         <Route path="/debug"  element={<DebugPage />} />
         <Route path="/health" element={<HealthPage />} />
       </Routes>
+
+      <CommandPalette />
 
       {/* Keyboard Shortcuts Overlay Modal */}
       {showOverlay && (

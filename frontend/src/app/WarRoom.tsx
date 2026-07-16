@@ -16,19 +16,27 @@ import { Toast } from '@/components/ui/Toast'
 import { usePresentationMode } from '@/lib/presentationMode'
 import { ColdOpen } from '@/features/intro/ColdOpen'
 import { LensPanel } from '@/features/lens/LensPanel'
+import { ReticleLogo } from '@/components/ui/ReticleLogo'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 
 export function WarRoom() {
-  const [view, setView] = useState<'stream' | 'lens'>('stream')
+  const view = useStreamStore((s) => s.view)
+  const setView = useStreamStore((s) => s.setView)
+  const showIntro = useStreamStore((s) => s.showIntro)
+  const setShowIntro = useStreamStore((s) => s.setShowIntro)
+
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
-  const [showIntro, setShowIntro] = useState(() => {
-    try {
-      return sessionStorage.getItem('intro_seen') !== 'true'
-    } catch {
-      return true
+
+  // Sync sessionStorage when intro is completed
+  useEffect(() => {
+    if (!showIntro) {
+      try {
+        sessionStorage.setItem('intro_seen', 'true')
+      } catch {}
     }
-  })
+  }, [showIntro])
   const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
@@ -88,11 +96,20 @@ export function WarRoom() {
         return
       }
       if (e.key.toLowerCase() === 'v') {
-        setView((prev) => (prev === 'stream' ? 'lens' : 'stream'))
+        setView(view === 'stream' ? 'lens' : 'stream')
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [view, setView])
+
+  // Listen for open incident events from palette
+  useEffect(() => {
+    const handleOpenIncident = (e: Event) => {
+      setSelectedIncidentId((e as CustomEvent<string>).detail)
+    }
+    window.addEventListener('stormlens-open-incident', handleOpenIncident)
+    return () => window.removeEventListener('stormlens-open-incident', handleOpenIncident)
   }, [])
 
   // Listen to keyboard shortcut events for card selection
@@ -162,26 +179,17 @@ export function WarRoom() {
   }, [compressionRatio])
 
   // ── Glow state for the Left Panel (Alert rate > 40/s) ────────────────────
-  const showCriticalGlow = (alertsPerSec ?? 0) > 40
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-bg-base overflow-hidden font-sans select-none">
-      {/* ── Top Bar (64px CSS Grid) ────────────────────────────────────────── */}
-      <header className="h-16 border-b border-border bg-bg-surface grid grid-cols-[240px_1fr_280px] items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
+    <div className="flex flex-col h-screen w-screen bg-bg-base overflow-hidden font-sans select-none relative">
+      {/* ── Top Bar (Asymmetric layout) ─────────────────────────────────────── */}
+      <header className="h-16 border-b border-border bg-bg-surface flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
         
-        {/* Left: Wordmark + Connection Dot */}
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-text-primary text-[15px] tracking-tight">StormLens</span>
-          <div className="flex items-center gap-1.5 pl-1.5 border-l border-border">
-            <span
-              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                connection === 'open'
-                  ? 'bg-accent animate-pulse-dot'
-                  : connection === 'connecting'
-                  ? 'bg-severity-warning animate-pulse-dot'
-                  : 'bg-severity-critical'
-              }`}
-            />
+        {/* Left: Reticle Logomark + Wordmark (30% width) */}
+        <div className="flex items-center gap-3 w-[30%]">
+          <ReticleLogo connection={connection} />
+          <span className="font-semibold text-text-primary text-[15px] tracking-tight font-sans">StormLens</span>
+          <div className="flex items-center gap-1.5 pl-2.5 border-l border-border">
             <span className="text-[11px] text-text-secondary font-mono capitalize">
               {connection === 'open' ? 'connected' : connection}
             </span>
@@ -193,8 +201,8 @@ export function WarRoom() {
           )}
         </div>
 
-        {/* Center: Segmented Control [Stream | Lens] + Hero Equation */}
-        <div className="justify-self-center flex items-center gap-6 z-20">
+        {/* Center: Segmented Control [Stream | Lens] + Hero Equation (Left-anchored at 38% total offset) */}
+        <div className="flex-1 flex items-center justify-start pl-[8%] gap-6 z-20">
           <div className="flex bg-bg-base p-0.5 rounded border border-border">
             <button
               onClick={() => setView('stream')}
@@ -376,6 +384,17 @@ export function WarRoom() {
                       {item.label}
                     </Link>
                   ))}
+                  {/* Command Palette Trigger */}
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('stormlens-open-palette'))
+                      setMenuOpen(false)
+                    }}
+                    className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans"
+                  >
+                    <span>Command Palette</span>
+                    <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+                  </button>
                   {/* Presentation Mode toggle */}
                   <div className="border-t border-border/40 mt-1 pt-1">
                     <button
@@ -420,23 +439,23 @@ export function WarRoom() {
 
       {/* ── Main Layout: Stream Split View vs Lens view ────────────────── */}
       {view === 'stream' ? (
-        <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base animate-fade-in">
-          {/* Left Panel: Raw Stream (40%) */}
+        <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base animate-fade-in relative z-10">
+          {/* Left Panel: Raw Stream (40%) with Corner Brackets */}
           <section
-            className={`w-[40%] flex flex-col h-full rounded-card border-t-2 border-t-severity-critical ${
-              showCriticalGlow ? 'border-glow-critical' : ''
-            } transition-all duration-300`}
+            className="w-[40%] flex flex-col h-full rounded-card border border-border relative group/bracket bg-bg-surface transition-all duration-240 ease-lens"
           >
             <PanelErrorBoundary label="Storm Stream">
               <RawStreamPanel />
             </PanelErrorBoundary>
+            <CornerBrackets />
           </section>
 
-          {/* Right Panel: Incidents (60%) */}
-          <section className="w-[60%] flex flex-col h-full rounded-card border-t-2 border-t-accent">
+          {/* Right Panel: Incidents (60%) with Corner Brackets */}
+          <section className="w-[60%] flex flex-col h-full rounded-card border border-border relative group/bracket bg-bg-surface transition-all duration-240 ease-lens">
             <PanelErrorBoundary label="Incidents">
               <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
             </PanelErrorBoundary>
+            <CornerBrackets />
           </section>
         </main>
       ) : (

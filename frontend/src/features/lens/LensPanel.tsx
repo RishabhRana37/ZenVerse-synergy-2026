@@ -103,6 +103,7 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
   // Mouse tracking
   const mouseX = useRef(-9999)
   const mouseY = useRef(-9999)
+  const mouseInCanvasRef = useRef(false)
   const hoveredParticleIdx = useRef(-1)
   const hoveredWellIdx = useRef(-1)
 
@@ -958,6 +959,44 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         wellTooltipRef.current.style.display = 'none'
       }
 
+      // ── Draw Custom Reticle Cursor ─────────────────────────────────────────
+      if (
+        mouseInCanvasRef.current &&
+        mouseX.current !== undefined &&
+        mouseY.current !== undefined &&
+        mouseX.current >= 0 &&
+        mouseY.current >= 0
+      ) {
+        ctx.save()
+        const cx = mouseX.current
+        const cy = mouseY.current
+
+        // Target acquired if hovering a particle or a well
+        const isTargetAcquired = closestIdx !== -1 || hoveredWellIdx.current !== -1
+
+        ctx.strokeStyle = '#2DD4A7'
+        ctx.lineWidth = 1.2
+        ctx.shadowColor = '#2DD4A7'
+        ctx.shadowBlur = isTargetAcquired ? 3 : 0
+
+        const angle = isTargetAcquired ? Math.PI / 4 : 0
+        const innerGap = isTargetAcquired ? 3.5 : 6.0
+        const tickLength = 5.0
+
+        // Draw 4 ticks
+        for (let j = 0; j < 4; j++) {
+          const tickAngle = angle + (j * Math.PI) / 2
+          const cos = Math.cos(tickAngle)
+          const sin = Math.sin(tickAngle)
+
+          ctx.beginPath()
+          ctx.moveTo(cx + innerGap * cos, cy + innerGap * sin)
+          ctx.lineTo(cx + (innerGap + tickLength) * cos, cy + (innerGap + tickLength) * sin)
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
+
       // Loop
       animationFrameId.current = requestAnimationFrame(loop)
     }
@@ -978,11 +1017,13 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
+    mouseInCanvasRef.current = true
     mouseX.current = e.clientX - rect.left
     mouseY.current = e.clientY - rect.top
   }
 
   const handleMouseLeave = () => {
+    mouseInCanvasRef.current = false
     mouseX.current = -9999
     mouseY.current = -9999
   }
@@ -1002,7 +1043,7 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       {/* 2D Canvas */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full cursor-pointer select-none"
+        className="w-full h-full cursor-none select-none"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleCanvasClick}

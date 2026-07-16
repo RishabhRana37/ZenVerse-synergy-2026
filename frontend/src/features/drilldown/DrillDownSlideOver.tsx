@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Odometer } from '@/components/ui/Odometer'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
@@ -438,8 +439,9 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-hidden"
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
       >
+        <CornerBrackets />
         {/* Header (Instantly populated from store data) */}
         <div className="flex items-start justify-between px-6 py-4 border-b border-border flex-shrink-0 bg-bg-surface">
           <div className="flex flex-col gap-1 pr-6">

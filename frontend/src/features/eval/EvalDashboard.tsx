@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { Odometer } from '@/components/ui/Odometer'
 import { clsx } from 'clsx'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -296,8 +297,9 @@ export function EvalDashboard() {
             return (
               <div
                 key={metric.name}
-                className="bg-bg-surface border border-border rounded-card p-4 flex flex-col justify-between"
+                className="bg-bg-surface border border-border rounded-card p-4 flex flex-col justify-between relative group/bracket transition-all duration-120 ease-lens"
               >
+                <CornerBrackets />
                 <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider select-none">
                   {metric.name}
                 </span>

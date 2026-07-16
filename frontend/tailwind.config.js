@@ -117,6 +117,14 @@ export default {
         'stream-row':     'stream-row 0.35s ease-out forwards',
         shimmer:          'shimmer 2s linear infinite',
       },
+      transitionTimingFunction: {
+        'lens': 'var(--ease-lens)',
+      },
+      transitionDuration: {
+        '120': '120ms',
+        '240': '240ms',
+        '400': '400ms',
+      },
 
       // ── Grid / layout ────────────────────────────────────────────────
       gridTemplateColumns: {

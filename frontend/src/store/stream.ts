@@ -96,6 +96,12 @@ export interface StreamState {
   startScrubbing:      (t: number)              => void
   updateScrubbing:     (t: number)              => void
   stopScrubbing:       () => void
+
+  // ── Global UI Settings ───────────────────────────────────────────────────
+  view: 'stream' | 'lens'
+  setView: (v: 'stream' | 'lens') => void
+  showIntro: boolean
+  setShowIntro: (show: boolean) => void
 }
 
 // ── Helper: Record event in journal ───────────────────────────────────────
@@ -298,6 +304,16 @@ export const useStreamStore = create<StreamState>((set) => ({
   scrubTime: 0,
   scrubState: null,
   newIncidentsCount: 0,
+
+  // Global UI settings initial state
+  view: 'stream',
+  showIntro: (() => {
+    try {
+      return typeof window !== 'undefined' && sessionStorage.getItem('intro_seen') !== 'true'
+    } catch {
+      return true
+    }
+  })(),
 
   // ── snapshot: replace all incidents + stats, refill alerts naturally ──
   applySnapshot: (msg) => {
@@ -603,6 +619,9 @@ export const useStreamStore = create<StreamState>((set) => ({
       newIncidentsCount: 0,
     })
   },
+
+  setView: (v) => set({ view: v }),
+  setShowIntro: (show) => set({ showIntro: show }),
 }))
 
 // ── Derived selectors ─────────────────────────────────────────────────────

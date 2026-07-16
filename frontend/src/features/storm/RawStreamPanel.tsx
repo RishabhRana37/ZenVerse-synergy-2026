@@ -287,7 +287,9 @@ export function RawStreamPanel() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-ui font-semibold text-text-primary font-sans">Raw Stream</span>
+          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+            <span className="text-accent mr-1">▎01</span> RAW STREAM
+          </span>
           {alerts.length > 0 && (
             <span className="text-[11px] text-text-muted font-mono inline-flex items-baseline gap-1 select-none">
               (<Odometer value={alerts.length} easing="spring" className="text-text-muted" /> buffered)

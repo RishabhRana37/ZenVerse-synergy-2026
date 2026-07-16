@@ -8,6 +8,7 @@ import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 
 // ── RelativeTime component ───────────────────────────────────────────────
 
@@ -277,13 +278,13 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
       animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
       exit={{ opacity: 0, scale: 0.96 }}
       variants={cardVariants}
-      className="w-full text-left cursor-pointer group"
+      className="w-full text-left cursor-pointer group/bracket relative"
     >
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
         className={clsx(
-          "rounded-card p-4 transition-colors duration-200 hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
+          "rounded-card p-4 transition-colors duration-120 ease-lens hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
           borderClass
         )}
       >
@@ -491,6 +492,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           </motion.div>
         </div>
       </div>
+      <CornerBrackets />
     </motion.div>
   )
 })
@@ -519,7 +521,9 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
     <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-        <span className="text-ui font-semibold text-text-primary font-sans">Incidents</span>
+        <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+          <span className="text-accent mr-1">▎02</span> INCIDENTS
+        </span>
         <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
           <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
         </div>

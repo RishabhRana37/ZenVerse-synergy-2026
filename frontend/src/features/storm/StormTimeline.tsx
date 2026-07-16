@@ -556,8 +556,8 @@ export function StormTimeline() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="text-[10px] font-mono font-bold text-text-muted tracking-wider uppercase">
-            Storm Timeline {scrubMode && "— Reviewing"}
+          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+            <span className="text-accent mr-1">▎03</span> TIMELINE {scrubMode && "— Reviewing"}
           </span>
         </div>
         <span className="text-[10px] font-mono text-accent tabular-nums">
