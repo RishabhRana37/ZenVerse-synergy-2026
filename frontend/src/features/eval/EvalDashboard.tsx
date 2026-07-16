@@ -1,23 +1,526 @@
-/**
- * EvalDashboard — metrics table from GET /eval/results.
- * Shows per-scenario: compression ratio, cluster purity, ARI,
- * Hit@1/Hit@3, p50/p95 latency.
- *
- * Status: placeholder — full implementation in next sprint.
- */
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
+import { Odometer } from '@/components/ui/Odometer'
+import { clsx } from 'clsx'
+
+// ── Types ─────────────────────────────────────────────────────────────────
+
+interface BackendResult {
+  backend: string
+  compression_ratio: number
+  purity: number
+  ari: number
+  hit_at_1: number
+  hit_at_3: number
+  latency_p50_ms: number
+  latency_p95_ms: number
+  total_alerts: number
+  incidents_out: number
+  [key: string]: any
+}
+
+interface ScenarioResult {
+  name: string
+  backends: BackendResult[]
+}
+
+interface EvalData {
+  generated_at: string
+  dataset: string
+  scenarios: ScenarioResult[]
+  targets: {
+    compression_ratio: number
+    purity: number
+    hit_at_1: number
+    hit_at_3: number
+    latency_p95_ms: number
+    [key: string]: number
+  }
+}
 
 export function EvalDashboard() {
+  const [data, setData] = useState<EvalData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Odometer value states (staggered counter load)
+  const [odoValues, setOdoValues] = useState({
+    compression: 0,
+    purity: 0,
+    ari: 0,
+    hit1: 0,
+    hit3: 0,
+  })
+
+  // Fetch eval results
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const res = await fetch(`${apiBase}/eval/results`)
+        if (!res.ok) {
+          throw new Error(`HTTP Error ${res.status}`)
+        }
+        const json = await res.json()
+        setData(json)
+        setError(null)
+      } catch (err: any) {
+        console.error('[eval] Failed to load results:', err)
+        setError(err.message || 'Failed to resolve eval harness metrics.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchResults()
+  }, [])
+
+  // Identify best backend on primary scenario (db-cascade)
+  const primaryScenario = data?.scenarios.find((s) => s.name === 'db-cascade')
+  const bestBackend = primaryScenario?.backends.find(
+    (b) => b.backend === 'DenStream (streaming)',
+  )
+
+  useEffect(() => {
+    if (bestBackend) {
+      // Trigger counting animation after a brief delay
+      const t = setTimeout(() => {
+        setOdoValues({
+          compression: bestBackend.compression_ratio,
+          purity: bestBackend.purity,
+          ari: bestBackend.ari,
+          hit1: bestBackend.hit_at_1,
+          hit3: bestBackend.hit_at_3,
+        })
+      }, 100)
+      return () => clearTimeout(t)
+    }
+  }, [bestBackend])
+
+  // Custom cell highlight utility
+  const isBestInScenario = (
+    scenarioName: string,
+    backendName: string,
+    field: string,
+  ) => {
+    if (!data) return false
+    const sc = data.scenarios.find((s) => s.name === scenarioName)
+    if (!sc) return false
+
+    const values = sc.backends.map((b) => b[field])
+    const current = sc.backends.find((b) => b.backend === backendName)?.[field]
+
+    if (field.startsWith('latency')) {
+      const min = Math.min(...values)
+      return current === min
+    } else {
+      const max = Math.max(...values)
+      return current === max
+    }
+  }
+
+  // Grouped bar chart data formatting
+  const chartData = primaryScenario?.backends.map((b) => ({
+    name: b.backend.split(' ')[0], // 'DenStream' or 'DBSCAN'
+    'Hit@1': parseFloat((b.hit_at_1 * 100).toFixed(1)),
+    'Hit@3': parseFloat((b.hit_at_3 * 100).toFixed(1)),
+  })) || []
+
+  // Check target pass/fail status
+  const evaluateTarget = (field: string, val: number) => {
+    if (!data?.targets) return { pass: true, label: '' }
+    const target = data.targets[field]
+    if (target === undefined) return { pass: true, label: '' }
+
+    if (field.startsWith('latency')) {
+      return {
+        pass: val <= target,
+        label: `target ≤ ${target}ms`,
+      }
+    } else {
+      const pct = Math.round(target * 100)
+      return {
+        pass: val >= target,
+        label: `target ≥ ${pct}%`,
+      }
+    }
+  }
+
+  // Loader Skeleton
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary select-none font-sans">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-start mb-6 animate-pulse">
+          <div className="flex flex-col gap-2">
+            <div className="h-5 w-48 rounded bg-bg-surface" />
+            <div className="h-4 w-96 rounded bg-bg-surface" />
+          </div>
+          <div className="h-8 w-24 rounded bg-bg-surface" />
+        </div>
+
+        {/* Hero Row Skeleton */}
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-28 rounded bg-bg-surface border border-border animate-pulse" />
+          ))}
+        </div>
+
+        {/* Table & Chart Skeletons */}
+        <div className="flex flex-col gap-6 animate-pulse">
+          <div className="h-48 rounded bg-bg-surface border border-border" />
+          <div className="h-48 rounded bg-bg-surface border border-border" />
+        </div>
+      </div>
+    )
+  }
+
+  // Graceful Error State
+  if (error || !data) {
+    return (
+      <div className="flex flex-col min-h-screen bg-bg-base p-8 text-text-primary font-sans items-center justify-center select-none">
+        <div className="w-full max-w-md p-6 bg-bg-surface rounded border border-severity-critical/20 flex flex-col gap-4 text-center">
+          <span className="text-severity-critical text-2xl font-bold">✗ Evaluation Link Failed</span>
+          <p className="text-ui-sm text-text-secondary">
+            Could not fetch ablation metrics. Ensure the mock API server is running on port 8788.
+          </p>
+          <code className="text-[11px] bg-bg-base p-2.5 rounded font-mono text-severity-warning text-left">
+            {error || 'ENDPOINT_NOT_RESOLVED'}
+          </code>
+          <div className="flex justify-center gap-3 mt-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-3.5 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold transition-colors"
+            >
+              Retry Connection
+            </button>
+            <Link
+              to="/"
+              className="px-3.5 py-1.5 rounded bg-accent text-text-inverse font-semibold hover:opacity-90 text-ui-sm transition-opacity"
+            >
+              Back to War Room
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base p-6">
-      <div className="mb-6">
-        <h1 className="text-hero-sm font-semibold text-text-primary">Evaluation Dashboard</h1>
-        <p className="text-ui-sm text-text-secondary mt-1">
-          Measured against labeled ground truth — compression, cluster purity, root-cause hit rate.
-        </p>
+    <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary select-none font-sans select-text">
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <header className="flex justify-between items-start mb-6 flex-shrink-0">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-hero-sm font-semibold text-text-primary leading-tight">
+            Evaluation — measured on labeled ground truth
+          </h1>
+          <div className="flex items-center gap-2 text-ui-sm text-text-secondary select-none">
+            <span className="font-mono text-accent">{data.dataset}</span>
+            <span>·</span>
+            <span className="text-text-muted font-mono">
+              generated {new Date(data.generated_at).toLocaleDateString()}
+            </span>
+          </div>
+          <p className="text-[11px] text-text-muted mt-1 select-none">
+            All numbers reproducible via eval harness.
+          </p>
+        </div>
+
+        {/* Back Link */}
+        <Link
+          to="/"
+          className="px-3 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
+        >
+          ← War Room
+        </Link>
+      </header>
+
+      {/* ── HERO ROW (Best backend on primary scenario) ──────────────────── */}
+      {bestBackend && (
+        <section className="grid grid-cols-5 gap-4 mb-6 flex-shrink-0">
+          {[
+            {
+              name: 'Compression',
+              val: odoValues.compression,
+              field: 'compression_ratio',
+              format: 'percent1' as const,
+            },
+            {
+              name: 'Purity',
+              val: odoValues.purity,
+              field: 'purity',
+              format: 'percent1' as const,
+            },
+            {
+              name: 'ARI',
+              val: odoValues.ari,
+              field: 'ari',
+              format: 'percent1' as const,
+            },
+            {
+              name: 'Hit@1',
+              val: odoValues.hit1,
+              field: 'hit_at_1',
+              format: 'percent1' as const,
+            },
+            {
+              name: 'Hit@3',
+              val: odoValues.hit3,
+              field: 'hit_at_3',
+              format: 'percent1' as const,
+            },
+          ].map((metric) => {
+            const { pass, label } = evaluateTarget(metric.field, metric.val)
+            return (
+              <div
+                key={metric.name}
+                className="bg-bg-surface border border-border rounded-card p-4 flex flex-col justify-between"
+              >
+                <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider select-none">
+                  {metric.name}
+                </span>
+                
+                <div className="my-2.5">
+                  <Odometer
+                    value={metric.val}
+                    format={metric.format}
+                    className="text-hero-sm font-bold text-text-primary tracking-tight font-mono"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between mt-1 text-[10px] select-none">
+                  <span className="text-text-muted font-mono">{label || '—'}</span>
+                  {label && (
+                    <span
+                      className={clsx(
+                        "px-1.5 py-0.5 rounded-badge text-[9px] font-bold border font-mono tracking-wider",
+                        pass
+                          ? "bg-accent-dim border-accent/20 text-accent"
+                          : "bg-severity-warning/10 border-severity-warning/20 text-severity-warning"
+                      )}
+                    >
+                      {pass ? '✓ PASS' : '✗ FAIL'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </section>
+      )}
+
+      {/* ── Main Layout: Table vs Chart ───────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-6 items-start flex-1">
+        
+        {/* Left 2/3: Ablation Results Table */}
+        <section className="col-span-2 bg-bg-surface border border-border rounded-card p-5 flex flex-col h-full min-h-0">
+          <h3 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-3 select-none">
+            Ablation Metrics Table
+          </h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] text-left border-collapse font-mono select-text">
+              <thead>
+                <tr className="border-b border-border/80 text-text-muted font-sans font-semibold uppercase text-[9px] tracking-wider select-none">
+                  <th className="py-2.5 pr-4">Scenario</th>
+                  <th className="py-2.5 pr-4">Backend</th>
+                  <th className="py-2.5 text-right">Comp. Ratio</th>
+                  <th className="py-2.5 text-right">Purity</th>
+                  <th className="py-2.5 text-right">ARI</th>
+                  <th className="py-2.5 text-right">Hit@1</th>
+                  <th className="py-2.5 text-right">Hit@3</th>
+                  <th className="py-2.5 text-right">p50 Latency</th>
+                  <th className="py-2.5 text-right">p95 Latency</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {data.scenarios.flatMap((sc) =>
+                  sc.backends.map((b, bIdx) => {
+                    const showScenarioLabel = bIdx === 0
+                    return (
+                      <tr key={`${sc.name}-${b.backend}`} className="hover:bg-bg-hover/30 transition-colors">
+                        <td className="py-3 pr-4 font-sans text-text-secondary select-all font-medium">
+                          {showScenarioLabel ? sc.name : ''}
+                        </td>
+                        <td className="py-3 pr-4 font-sans text-text-secondary select-all">
+                          {b.backend}
+                        </td>
+                        
+                        {/* Compression */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'compression_ratio')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {(b.compression_ratio * 100).toFixed(1)}%
+                        </td>
+
+                        {/* Purity */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'purity')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {(b.purity * 100).toFixed(1)}%
+                        </td>
+
+                        {/* ARI */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'ari')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {(b.ari * 100).toFixed(1)}%
+                        </td>
+
+                        {/* Hit@1 */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'hit_at_1')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {(b.hit_at_1 * 100).toFixed(1)}%
+                        </td>
+
+                        {/* Hit@3 */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'hit_at_3')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {(b.hit_at_3 * 100).toFixed(1)}%
+                        </td>
+
+                        {/* p50 Latency */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'latency_p50_ms')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {b.latency_p50_ms}ms
+                        </td>
+
+                        {/* p95 Latency */}
+                        <td className={clsx(
+                          "py-3 text-right tabular-nums select-all",
+                          isBestInScenario(sc.name, b.backend, 'latency_p95_ms')
+                            ? "text-accent font-semibold"
+                            : "text-text-primary"
+                        )}>
+                          {b.latency_p95_ms}ms
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Right 1/3: Recharts Hit Rate Bar Chart */}
+        <section className="bg-bg-surface border border-border rounded-card p-5 flex flex-col h-full">
+          <h3 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-3 select-none">
+            Primary Scenario Hit Rate
+          </h3>
+          
+          <div className="w-full h-[220px]">
+            {chartData.length > 0 && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: -25, bottom: 5 }}
+                >
+                  <XAxis
+                    dataKey="name"
+                    stroke="#4D5866"
+                    fontSize={10}
+                    fontFamily="JetBrains Mono"
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="#4D5866"
+                    fontSize={10}
+                    fontFamily="JetBrains Mono"
+                    tickLine={false}
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#161D29',
+                      borderColor: 'rgba(255,255,255,0.08)',
+                      borderRadius: '4px',
+                    }}
+                    labelStyle={{ color: '#8B98A9', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                    itemStyle={{ color: '#E6EDF3', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                    formatter={(v) => [`${v}%`]}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#8B98A9' }}
+                    iconType="rect"
+                    iconSize={8}
+                  />
+                  {/* Hit@1 Bar */}
+                  <Bar
+                    dataKey="Hit@1"
+                    fill="#2DD4A7"
+                    name="Hit@1"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  {/* Hit@3 Bar */}
+                  <Bar
+                    dataKey="Hit@3"
+                    fill="rgba(45, 212, 167, 0.45)"
+                    name="Hit@3"
+                    radius={[2, 2, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+
       </div>
-      <div className="bg-bg-surface border border-border rounded-card p-8 flex items-center justify-center text-text-muted text-ui-sm">
-        Eval metrics table coming soon…
-      </div>
+
+      {/* ── Footnote Row ────────────────────────────────────────────────── */}
+      <footer className="mt-8 pt-4 border-t border-border/30 text-[10px] text-text-muted font-mono leading-relaxed select-none">
+        <div>
+          * Metric Definitions:
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-1">
+          <div>
+            <span className="text-text-secondary font-bold mr-1">Compression:</span>
+            1 − (active_incidents / total_alerts)
+          </div>
+          <div>
+            <span className="text-text-secondary font-bold mr-1">Purity & ARI:</span>
+            Clustering accuracy measured against labeled ground truth
+          </div>
+          <div>
+            <span className="text-text-secondary font-bold mr-1">Hit@k:</span>
+            True root cause present in the top-k suggested candidates list
+          </div>
+          <div>
+            <span className="text-text-secondary font-bold mr-1">Latency:</span>
+            Elapsed time from initial raw alert entry to incident creation, end-to-end
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

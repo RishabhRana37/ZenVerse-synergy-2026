@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { clsx } from 'clsx'
 
-type OdometerFormat = 'integer' | 'percent2' | 'float1'
+type OdometerFormat = 'integer' | 'percent2' | 'percent1' | 'float1'
 
 interface OdometerProps {
   value: number | null
@@ -30,6 +30,8 @@ function formatValue(value: number, format: OdometerFormat): string {
       return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
     case 'percent2':
       return (value * 100).toFixed(2) + '%'
+    case 'percent1':
+      return (value * 100).toFixed(1) + '%'
     case 'float1':
       return value.toFixed(1)
   }
