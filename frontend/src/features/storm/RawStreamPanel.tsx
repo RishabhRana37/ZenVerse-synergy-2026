@@ -198,6 +198,9 @@ export function RawStreamPanel() {
     }
   }
 
+  const totalAlerts = useStreamStore((s) => s.stats?.total_alerts ?? 0)
+  const incidentCount = useStreamStore((s) => s.incidents.size)
+
   return (
     <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
       {/* Header */}
@@ -217,9 +220,23 @@ export function RawStreamPanel() {
 
       {/* Body */}
       {alerts.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-text-muted text-ui-sm font-sans select-none">
-          awaiting alerts
-        </div>
+        totalAlerts > 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-text-secondary text-ui-sm font-sans gap-2 select-none px-6 text-center">
+            <div className="flex items-center gap-1.5 text-accent font-semibold">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Storm subsided
+            </div>
+            <div className="text-text-muted text-[11px] font-mono">
+              {totalAlerts} alerts processed → {incidentCount} incident{incidentCount === 1 ? '' : 's'}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-text-muted text-ui-sm font-sans select-none">
+            awaiting alerts
+          </div>
+        )
       ) : (
         <div className="flex-1 min-h-0 relative">
           <div

@@ -13,6 +13,7 @@ import { audioManager } from '@/lib/audio'
 
 export function WarRoom() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   
   const connection = useStreamStore((s) => s.connection)
   const stats = useStreamStore((s) => s.stats)
@@ -105,8 +106,8 @@ export function WarRoom() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-bg-base overflow-hidden font-sans select-none">
-      {/* ── Top Bar (64px) ────────────────────────────────────────────────── */}
-      <header className="h-16 px-6 border-b border-border bg-bg-surface flex items-center justify-between flex-shrink-0 z-10">
+      {/* ── Top Bar (64px CSS Grid) ────────────────────────────────────────── */}
+      <header className="h-16 border-b border-border bg-bg-surface grid grid-cols-[240px_1fr_280px] items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
         
         {/* Left: Wordmark + Connection Dot */}
         <div className="flex items-center gap-3">
@@ -125,19 +126,24 @@ export function WarRoom() {
               {connection === 'open' ? 'connected' : connection}
             </span>
           </div>
+          {replayRunning && (
+            <div className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[8px] font-semibold tracking-wider uppercase animate-pulse">
+              Replay
+            </div>
+          )}
         </div>
 
         {/* Center: Hero Equation [total_alerts] alerts → [active_incidents] incidents */}
-        <div className="flex items-center gap-2 text-ui-sm font-mono text-text-secondary select-none">
+        <div className="justify-self-center flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none">
           <Odometer value={totalAlerts} format="integer" className="text-text-primary font-semibold" />
           <span className="text-text-muted">alerts</span>
           
-          <span className="mx-1 text-text-muted">→</span>
+          <span className="text-text-muted">→</span>
           
           <Odometer value={activeIncidents} format="integer" className="text-accent font-semibold" />
           <span className="text-text-muted">incidents</span>
           
-          <span className="mx-2 text-border-strong font-sans">·</span>
+          <span className="text-border-strong font-sans">·</span>
           
           <motion.span
             animate={shouldPulse ? { scale: [1, 1.03, 1] } : {}}
@@ -153,22 +159,20 @@ export function WarRoom() {
           <span className="text-text-muted">noise suppressed</span>
         </div>
 
-        {/* Right: Rate stat + Sparkline + Replay status */}
-        <div className="flex items-center gap-4">
-          {/* Rate Stat & Sparkline */}
-          <div className="flex items-center gap-2 bg-bg-base/40 px-2.5 py-1 rounded border border-border/50">
-            <div className="flex flex-col text-right">
-              <span className="text-[9px] text-text-muted uppercase font-mono tracking-wider">rate</span>
-              <span className="text-stream font-mono text-text-primary tabular-nums">
-                {alertsPerSec !== undefined ? `${alertsPerSec.toFixed(1)}/s` : '—/s'}
-              </span>
-            </div>
+        {/* Right Cluster, in order: alerts/sec component, sound toggle, single overflow menu */}
+        <div className="justify-self-end flex items-center gap-4">
+          
+          {/* Rate Stat & Sparkline (Compact 90px component) */}
+          <div className="flex items-center justify-between bg-bg-base/40 px-2 py-1 rounded border border-border/50 w-[90px] h-[28px] flex-shrink-0 select-none">
+            <span className="text-[10px] font-mono text-text-primary tabular-nums tracking-tighter">
+              {alertsPerSec !== undefined ? `${Math.round(alertsPerSec)}/s` : '0/s'}
+            </span>
             
             {/* Sparkline chart */}
-            <div className="w-[60px] h-[20px] opacity-80">
+            <div className="w-[42px] h-[14px] opacity-80">
               {rateHistory.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rateHistory} margin={{ top: 1, right: 1, bottom: 1, left: 1 }}>
+                  <AreaChart data={rateHistory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="rateSparkline" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#2DD4A7" stopOpacity={0.2} />
@@ -179,7 +183,7 @@ export function WarRoom() {
                       type="monotone"
                       dataKey="value"
                       stroke="#2DD4A7"
-                      strokeWidth={1.2}
+                      strokeWidth={1}
                       fill="url(#rateSparkline)"
                       dot={false}
                       isAnimationActive={false}
@@ -190,14 +194,7 @@ export function WarRoom() {
             </div>
           </div>
 
-          {/* Replay Indicator */}
-          {replayRunning && (
-            <div className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[9px] font-semibold tracking-wider uppercase animate-pulse">
-              Replay
-            </div>
-          )}
-
-          {/* Mute speaker button */}
+          {/* Sound speaker toggle button */}
           <button
             onClick={() => audioManager.toggleMute()}
             className="p-1.5 rounded hover:bg-bg-elevated text-text-secondary hover:text-accent transition-colors flex items-center justify-center flex-shrink-0"
@@ -214,13 +211,40 @@ export function WarRoom() {
             )}
           </button>
 
-          {/* Tiny Eval link */}
-          <Link
-            to="/eval"
-            className="px-2.5 py-1 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-[11px] font-mono font-semibold text-text-secondary hover:text-text-primary transition-all duration-200"
-          >
-            Eval
-          </Link>
+          {/* SINGLE Navigation Overflow Menu */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-8 h-8 rounded hover:bg-bg-elevated text-text-secondary hover:text-text-primary flex items-center justify-center font-bold text-base transition-colors"
+              title="Navigation Menu"
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <>
+                {/* Backdrop to close menu */}
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-40 rounded-md bg-bg-elevated border border-border shadow-elevated py-1 z-50 flex flex-col font-sans">
+                  {[
+                    { label: 'Evaluation', path: '/eval' },
+                    { label: 'Style Guide', path: '/tokens' },
+                    { label: 'WS Debugger', path: '/debug' },
+                    { label: 'Diagnostics', path: '/health' },
+                  ].map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMenuOpen(false)}
+                      className="px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
         </div>
       </header>
 

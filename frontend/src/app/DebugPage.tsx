@@ -6,6 +6,7 @@
  */
 
 import { useStreamStore, selectIncidentList } from '@/store/stream'
+import { Link } from 'react-router-dom'
 
 export function DebugPage() {
   const connection = useStreamStore((s) => s.connection)
@@ -20,7 +21,12 @@ export function DebugPage() {
 
   return (
     <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, padding: 16, backgroundColor: '#0A0E14', color: '#E6EDF3', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: 16, marginBottom: 12, color: '#2DD4A7' }}>⚡ StormLens /debug</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 16, margin: 0, color: '#2DD4A7' }}>⚡ StormLens /debug</h1>
+        <Link to="/" style={{ color: '#8B98A9', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: 4 }}>
+          ← War Room
+        </Link>
+      </div>
 
       {/* Connection */}
       <section style={{ marginBottom: 16 }}>

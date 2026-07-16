@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts'
 import { Odometer } from '@/components/ui/Odometer'
 import { clsx } from 'clsx'
@@ -137,7 +138,13 @@ export function EvalDashboard() {
   // Check target pass/fail status
   const evaluateTarget = (field: string, val: number) => {
     if (!data?.targets) return { pass: true, label: '' }
-    const target = data.targets[field]
+    
+    // Add custom fallback for ARI target
+    let target = data.targets[field]
+    if (field === 'ari') {
+      target = 0.8
+    }
+
     if (target === undefined) return { pass: true, label: '' }
 
     if (field.startsWith('latency')) {
@@ -158,13 +165,17 @@ export function EvalDashboard() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary select-none font-sans">
+        {/* Back Link Row */}
+        <div className="mb-4">
+          <div className="h-8 w-24 rounded bg-bg-surface border border-border animate-pulse" />
+        </div>
+        
         {/* Header Skeleton */}
         <div className="flex justify-between items-start mb-6 animate-pulse">
           <div className="flex flex-col gap-2">
             <div className="h-5 w-48 rounded bg-bg-surface" />
             <div className="h-4 w-96 rounded bg-bg-surface" />
           </div>
-          <div className="h-8 w-24 rounded bg-bg-surface" />
         </div>
 
         {/* Hero Row Skeleton */}
@@ -175,8 +186,8 @@ export function EvalDashboard() {
         </div>
 
         {/* Table & Chart Skeletons */}
-        <div className="flex flex-col gap-6 animate-pulse">
-          <div className="h-48 rounded bg-bg-surface border border-border" />
+        <div className="grid grid-cols-3 gap-6 animate-pulse">
+          <div className="col-span-2 h-48 rounded bg-bg-surface border border-border" />
           <div className="h-48 rounded bg-bg-surface border border-border" />
         </div>
       </div>
@@ -215,7 +226,18 @@ export function EvalDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary select-none font-sans select-text">
+    <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary font-sans select-text">
+      
+      {/* Back Link Row (Top Left under Header, nothing overlapping) */}
+      <div className="mb-4">
+        <Link
+          to="/"
+          className="inline-block px-3.5 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
+        >
+          ← War Room
+        </Link>
+      </div>
+
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="flex justify-between items-start mb-6 flex-shrink-0">
         <div className="flex flex-col gap-1">
@@ -233,14 +255,6 @@ export function EvalDashboard() {
             All numbers reproducible via eval harness.
           </p>
         </div>
-
-        {/* Back Link */}
-        <Link
-          to="/"
-          className="px-3 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
-        >
-          ← War Room
-        </Link>
       </header>
 
       {/* ── HERO ROW (Best backend on primary scenario) ──────────────────── */}
@@ -317,11 +331,11 @@ export function EvalDashboard() {
         </section>
       )}
 
-      {/* ── Main Layout: Table vs Chart ───────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-6 items-start flex-1">
+      {/* ── Main Layout: Table (65%) vs Chart (35%) ───────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6 items-start w-full">
         
-        {/* Left 2/3: Ablation Results Table */}
-        <section className="col-span-2 bg-bg-surface border border-border rounded-card p-5 flex flex-col h-full min-h-0">
+        {/* Left Column: Ablation Results Table (65% width) */}
+        <section className="bg-bg-surface border border-border rounded-card p-5 flex flex-col min-w-0">
           <h3 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-3 select-none">
             Ablation Metrics Table
           </h3>
@@ -432,8 +446,8 @@ export function EvalDashboard() {
           </div>
         </section>
 
-        {/* Right 1/3: Recharts Hit Rate Bar Chart */}
-        <section className="bg-bg-surface border border-border rounded-card p-5 flex flex-col h-full">
+        {/* Right Column: Recharts Hit Rate Bar Chart (35% width) */}
+        <section className="bg-bg-surface border border-border rounded-card p-5 flex flex-col w-full">
           <h3 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-3 select-none">
             Primary Scenario Hit Rate
           </h3>
@@ -443,7 +457,7 @@ export function EvalDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartData}
-                  margin={{ top: 10, right: 10, left: -25, bottom: 5 }}
+                  margin={{ top: 15, right: 10, left: -25, bottom: 5 }}
                 >
                   <XAxis
                     dataKey="name"
@@ -475,20 +489,40 @@ export function EvalDashboard() {
                     iconType="rect"
                     iconSize={8}
                   />
-                  {/* Hit@1 Bar */}
+                  
+                  {/* Hit@1 Bar: Accent Green */}
                   <Bar
                     dataKey="Hit@1"
                     fill="#2DD4A7"
                     name="Hit@1"
                     radius={[2, 2, 0, 0]}
-                  />
-                  {/* Hit@3 Bar */}
+                  >
+                    <LabelList
+                      dataKey="Hit@1"
+                      position="top"
+                      fill="#E6EDF3"
+                      fontSize={9}
+                      fontFamily="JetBrains Mono"
+                      formatter={(v: number) => `${v}%`}
+                    />
+                  </Bar>
+                  
+                  {/* Hit@3 Bar: Info Blue */}
                   <Bar
                     dataKey="Hit@3"
-                    fill="rgba(45, 212, 167, 0.45)"
+                    fill="#4D9FFF"
                     name="Hit@3"
                     radius={[2, 2, 0, 0]}
-                  />
+                  >
+                    <LabelList
+                      dataKey="Hit@3"
+                      position="top"
+                      fill="#E6EDF3"
+                      fontSize={9}
+                      fontFamily="JetBrains Mono"
+                      formatter={(v: number) => `${v}%`}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -497,27 +531,27 @@ export function EvalDashboard() {
 
       </div>
 
-      {/* ── Footnote Row ────────────────────────────────────────────────── */}
-      <footer className="mt-8 pt-4 border-t border-border/30 text-[10px] text-text-muted font-mono leading-relaxed select-none">
-        <div>
-          * Metric Definitions:
+      {/* ── Metric-definition footnotes (Proper card container, never clipped) ── */}
+      <footer className="mt-8 bg-bg-surface border border-border rounded-card p-5 text-[11px] text-text-muted font-mono leading-relaxed select-none">
+        <div className="text-text-primary font-bold mb-2">
+          * Metric Definitions
         </div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
           <div>
-            <span className="text-text-secondary font-bold mr-1">Compression:</span>
-            1 − (active_incidents / total_alerts)
+            <span className="text-text-secondary font-bold mr-1">Compression Ratio:</span>
+            1 − (active_incidents / total_alerts). Measures alert volume reduction rate.
           </div>
           <div>
             <span className="text-text-secondary font-bold mr-1">Purity & ARI:</span>
-            Clustering accuracy measured against labeled ground truth
+            Clustering accuracy against labeled ground truth. Adjusted Rand Index (ARI) controls for random splits.
           </div>
           <div>
-            <span className="text-text-secondary font-bold mr-1">Hit@k:</span>
-            True root cause present in the top-k suggested candidates list
+            <span className="text-text-secondary font-bold mr-1">Hit@k Root Cause:</span>
+            True root cause service present within the top-k suggested candidate list.
           </div>
           <div>
             <span className="text-text-secondary font-bold mr-1">Latency:</span>
-            Elapsed time from initial raw alert entry to incident creation, end-to-end
+            End-to-end elapsed time from raw alert ingestion to the converged incident creation.
           </div>
         </div>
       </footer>

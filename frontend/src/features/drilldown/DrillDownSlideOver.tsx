@@ -388,7 +388,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
       {/* Dimmed backdrop (War room remains visible and streaming behind) */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-bg-base/60 backdrop-blur-[3px] z-40"
+        className="fixed inset-0 bg-bg-base/60 backdrop-blur-[3px] z-[60]"
       />
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
@@ -397,7 +397,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-50 flex flex-col h-full overflow-hidden"
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-hidden"
       >
         {/* Header (Instantly populated from store data) */}
         <div className="flex items-start justify-between px-6 py-4 border-b border-border flex-shrink-0 bg-bg-surface">

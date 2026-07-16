@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { WarRoom } from '@/app/WarRoom'
 import { EvalDashboard } from '@/features/eval/EvalDashboard'
 import { TokensPage } from '@/app/TokensPage'
@@ -19,37 +19,6 @@ import { HealthPage } from '@/app/HealthPage'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useStreamStore } from '@/store/stream'
-import { clsx } from 'clsx'
-
-function NavBar() {
-  return (
-    <nav className="fixed top-0 right-0 z-[60] flex gap-1 p-2 select-none">
-      {[
-        { to: '/',       label: 'War Room' },
-        { to: '/eval',   label: 'Eval' },
-        { to: '/tokens', label: 'Tokens' },
-        { to: '/debug',  label: 'Debug' },
-        { to: '/health', label: 'Health' },
-      ].map(({ to, label }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end
-          className={({ isActive }) =>
-            clsx(
-              'px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
-              isActive
-                ? 'bg-accent text-text-inverse'
-                : 'text-text-muted hover:text-text-primary hover:bg-bg-elevated',
-            )
-          }
-        >
-          {label}
-        </NavLink>
-      ))}
-    </nav>
-  )
-}
 
 /** Root component — mounts WS connection for entire app lifetime */
 function AppInner() {
@@ -90,17 +59,15 @@ function AppInner() {
 
   return (
     <>
-      <NavBar />
-
       {/* Connection Banners (thin strips under navbar/header) */}
-      <div className="w-full flex-shrink-0 select-none">
+      <div className="w-full flex-shrink-0 select-none z-[50] relative">
         {connection !== 'open' && !showRecoveryFlash && (
-          <div className="h-6 w-full bg-severity-critical text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center animate-pulse z-40 relative">
+          <div className="h-6 w-full bg-severity-critical text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center animate-pulse z-[50] relative">
             ⚠️ CONNECTION LOST — RECONNECTING…
           </div>
         )}
         {showRecoveryFlash && (
-          <div className="h-6 w-full bg-accent text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center z-40 relative">
+          <div className="h-6 w-full bg-accent text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center z-[50] relative">
             ✓ CONNECTION RECOVERED — LIVE
           </div>
         )}
@@ -118,7 +85,7 @@ function AppInner() {
       {showOverlay && (
         <div
           onClick={() => setShowOverlay(false)}
-          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[100] flex items-center justify-center select-none font-sans"
+          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[80] flex items-center justify-center select-none font-sans"
         >
           <div
             onClick={(e) => e.stopPropagation()}

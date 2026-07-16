@@ -71,11 +71,13 @@ export function ConfidenceBar({
         {/* Fill */}
         <div
           className={clsx(
-            'h-full rounded-full',
+            'h-full rounded-l-full',
+            pct === 100 && 'rounded-r-full',
             animated && 'transition-[width] duration-700 ease-out',
           )}
           style={{
             width: `${pct}%`,
+            minWidth: 0,
             backgroundColor: color,
             boxShadow: glow,
           }}

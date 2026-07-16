@@ -6,6 +6,7 @@
  * Stat, ConfidenceBar. Used to verify the design system before building features.
  */
 
+import { Link } from 'react-router-dom'
 import { Card }           from '@/components/ui/Card'
 import { Badge }          from '@/components/ui/Badge'
 import { Stat }           from '@/components/ui/Stat'
@@ -50,6 +51,16 @@ function TypeRow({ label, className, sample }: { label: string; className: strin
 export function TokensPage() {
   return (
     <div className="min-h-screen bg-bg-base p-8 max-w-4xl mx-auto">
+
+      {/* Back button row */}
+      <div className="mb-4 text-left">
+        <Link
+          to="/"
+          className="inline-block px-3 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
+        >
+          ← War Room
+        </Link>
+      </div>
 
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="mb-10">
