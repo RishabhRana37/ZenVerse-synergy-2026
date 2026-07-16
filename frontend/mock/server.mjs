@@ -1,33 +1,26 @@
 #!/usr/bin/env node
 /**
- * StormLens Mock WebSocket Server
- * Serves ws://localhost:8787/ws/stream
+ * StormLens Mock WebSocket + HTTP Server
+ * WS serves ws://localhost:8787/ws/stream
+ * HTTP serves http://localhost:8788/
  *
  * Contract: docs/WS_CONTRACT.md
  *
  * Usage:
  *   node mock/server.mjs          — start and replay scenario
  *   Press "r" + Enter in terminal — restart scenario from t=0
- *
- * Message types emitted (per contract):
- *   snapshot          — on every client connect
- *   alert.batch       — every 100ms flush of accumulated alerts
- *   alert.dedup       — dup_count update for existing alert
- *   incident.created  — new incident with member_alert_ids
- *   incident.updated  — diff with added_alert_ids / removed_alert_ids
- *   incident.summary  — async LLM/template summary arriving later
- *   stats             — every 2s, computed from live state
  */
 
 import { WebSocketServer } from 'ws'
-import { createReadStream } from 'fs'
+import { createServer } from 'http'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { createInterface } from 'readline'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const PORT = 8787
+const WS_PORT = 8787
+const HTTP_PORT = 8788
 const SCENARIO_PATH = join(__dirname, 'scenario-db-cascade.json')
 
 // ── Colours for terminal output ────────────────────────────────────────────
@@ -50,6 +43,7 @@ function log(tag, msg, color = C.dim) {
 const state = {
   alerts: new Map(),          // id → alert object (with current dup_count)
   incidents: new Map(),       // id → incident object
+  incidentMembers: new Map(), // incidentId → Set of alertIds
   totalAlertsByVolume: 0,     // incl dup_count expansions
   uniqueAlerts: 0,            // unique alert count
   unclustered: 0,
@@ -70,7 +64,7 @@ async function loadScenario() {
 }
 
 // ── Broadcast helpers ──────────────────────────────────────────────────────
-const wss = new WebSocketServer({ port: PORT })
+const wss = new WebSocketServer({ port: WS_PORT })
 
 function broadcast(msg) {
   const frame = JSON.stringify(msg)
@@ -154,6 +148,7 @@ function clearTimers() {
 function resetState() {
   state.alerts.clear()
   state.incidents.clear()
+  state.incidentMembers.clear()
   state.totalAlertsByVolume = 0
   state.uniqueAlerts = 0
   state.unclustered = 0
@@ -223,6 +218,7 @@ function handleScenarioEvent(event) {
 
     case 'incident.created': {
       state.incidents.set(resolved.incident.id, { ...resolved.incident })
+      state.incidentMembers.set(resolved.incident.id, new Set(resolved.member_alert_ids))
       broadcast({
         type: 'incident.created',
         incident: resolved.incident,
@@ -234,6 +230,14 @@ function handleScenarioEvent(event) {
 
     case 'incident.updated': {
       state.incidents.set(resolved.incident.id, { ...resolved.incident })
+      const members = state.incidentMembers.get(resolved.incident.id) || new Set()
+      if (resolved.added_alert_ids) {
+        resolved.added_alert_ids.forEach((id) => members.add(id))
+      }
+      if (resolved.removed_alert_ids) {
+        resolved.removed_alert_ids.forEach((id) => members.delete(id))
+      }
+      state.incidentMembers.set(resolved.incident.id, members)
       broadcast({
         type: 'incident.updated',
         incident: resolved.incident,
@@ -307,17 +311,112 @@ wss.on('connection', (ws, req) => {
 
 wss.on('listening', () => {
   console.log(`\n${C.bold}${C.green}⚡ StormLens Mock WS Server${C.reset}`)
-  console.log(`   Listening: ${C.cyan}ws://localhost:${PORT}/ws/stream${C.reset}`)
+  console.log(`   Listening: ${C.cyan}ws://localhost:${WS_PORT}/ws/stream${C.reset}`)
   console.log(`   Scenario:  ${C.dim}${SCENARIO_PATH}${C.reset}`)
   console.log(`   Press ${C.bold}r${C.reset} + Enter to restart scenario\n`)
 })
 
 wss.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`${C.red}Port ${PORT} already in use. Kill the existing server first.${C.reset}`)
+    console.error(`${C.red}Port ${WS_PORT} already in use. Kill the existing server first.${C.reset}`)
     process.exit(1)
   }
   console.error(err)
+})
+
+// ── HTTP API Server on port 8788 ───────────────────────────────────────────
+const httpServer = createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Content-Type', 'application/json')
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200)
+    res.end()
+    return
+  }
+
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
+
+  if (req.method === 'GET' && url.pathname === '/topology') {
+    const topology = {
+      nodes: [
+        { id: 'postgres-primary' },
+        { id: 'redis-cache' },
+        { id: 'auth-svc' },
+        { id: 'order-svc' },
+        { id: 'api-gateway' },
+        { id: 'cdn-edge' },
+        { id: 'notification-svc' },
+        { id: 'search-svc' },
+        { id: 'session-svc' }
+      ],
+      edges: [
+        { source: 'postgres-primary', target: 'auth-svc' },
+        { source: 'postgres-primary', target: 'order-svc' },
+        { source: 'redis-cache', target: 'order-svc' },
+        { source: 'auth-svc', target: 'api-gateway' },
+        { source: 'order-svc', target: 'api-gateway' },
+        { source: 'search-svc', target: 'api-gateway' },
+        { source: 'order-svc', target: 'notification-svc' },
+        { source: 'redis-cache', target: 'session-svc' }
+      ]
+    }
+    res.writeHead(200)
+    res.end(JSON.stringify(topology))
+    return
+  }
+
+  const incidentMatch = url.pathname.match(/^\/incidents\/([^/]+)$/)
+  if (req.method === 'GET' && incidentMatch) {
+    const incidentId = incidentMatch[1]
+    const incident = state.incidents.get(incidentId)
+    if (!incident) {
+      res.writeHead(404)
+      res.end(JSON.stringify({ error: 'Incident not found' }))
+      return
+    }
+
+    const memberIds = state.incidentMembers.get(incidentId) || new Set()
+    const members = []
+    for (const id of memberIds) {
+      const alert = state.alerts.get(id)
+      if (alert) {
+        members.push(alert)
+      }
+    }
+
+    let topology_path = []
+    if (incidentId === 'inc-db-01') {
+      topology_path = [
+        ['postgres-primary', 'auth-svc'],
+        ['postgres-primary', 'order-svc'],
+        ['order-svc', 'api-gateway'],
+        ['auth-svc', 'api-gateway'],
+        ['order-svc', 'notification-svc']
+      ]
+    } else if (incidentId === 'inc-redis-02') {
+      topology_path = [
+        ['redis-cache', 'session-svc']
+      ]
+    }
+
+    res.writeHead(200)
+    res.end(JSON.stringify({
+      ...incident,
+      members,
+      topology_path
+    }))
+    return
+  }
+
+  res.writeHead(404)
+  res.end(JSON.stringify({ error: 'Not found' }))
+})
+
+httpServer.listen(HTTP_PORT, () => {
+  log('HTTP', `HTTP API Server listening on http://localhost:${HTTP_PORT}`, C.green)
 })
 
 // ── Keyboard input for restart ─────────────────────────────────────────────

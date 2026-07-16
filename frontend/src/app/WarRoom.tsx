@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { useStreamStore } from '@/store/stream'
 import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
@@ -7,8 +7,11 @@ import { IncidentPanel } from '@/features/incidents/IncidentPanel'
 import { DemoDriver } from '@/features/demo-driver/DemoDriver'
 import { Odometer } from '@/components/ui/Odometer'
 import { ConvergenceOverlay } from '@/components/ui/ConvergenceOverlay'
+import { DrillDownSlideOver } from '@/features/drilldown/DrillDownSlideOver'
 
 export function WarRoom() {
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
+  
   const connection = useStreamStore((s) => s.connection)
   const stats = useStreamStore((s) => s.stats)
 
@@ -162,7 +165,7 @@ export function WarRoom() {
 
         {/* Right Panel: Incidents (60%) */}
         <section className="w-[60%] flex flex-col h-full rounded-card border-t-2 border-t-accent">
-          <IncidentPanel />
+          <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
         </section>
       </main>
 
@@ -173,6 +176,16 @@ export function WarRoom() {
 
       {/* ── Convergence Particle Overlay ────────────────────────────────────── */}
       <ConvergenceOverlay />
+
+      {/* ── Drill-down Slide-over ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedIncidentId && (
+          <DrillDownSlideOver
+            incidentId={selectedIncidentId}
+            onClose={() => setSelectedIncidentId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

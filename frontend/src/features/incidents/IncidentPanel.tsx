@@ -85,7 +85,7 @@ function TypewriterSummary({
 
 // ── IncidentCard component ───────────────────────────────────────────────
 
-const IncidentCard = React.memo(({ incident }: { incident: Incident }) => {
+const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; onSelect?: (id: string) => void }) => {
   const [isPulsing, setIsPulsing] = useState(false)
   const [showFirstAction, setShowFirstAction] = useState(false)
 
@@ -103,6 +103,7 @@ const IncidentCard = React.memo(({ incident }: { incident: Incident }) => {
 
   const handleClick = () => {
     console.log('Incident Clicked ID:', incident.id)
+    if (onSelect) onSelect(incident.id)
   }
 
   const topCandidate = incident.root_candidates?.[0]
@@ -266,7 +267,11 @@ const IncidentCard = React.memo(({ incident }: { incident: Incident }) => {
 
 // ── IncidentPanel component ─────────────────────────────────────────────
 
-export function IncidentPanel() {
+interface IncidentPanelProps {
+  onIncidentSelect?: (id: string) => void
+}
+
+export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
   const incidents = useStreamStore(selectIncidentList)
   const activeCount = useStreamStore((s) => {
     if (s.stats) return s.stats.active_incidents
@@ -293,7 +298,7 @@ export function IncidentPanel() {
           <div className="flex flex-col gap-3 p-4">
             <AnimatePresence mode="popLayout">
               {incidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} />
+                <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} />
               ))}
             </AnimatePresence>
           </div>
