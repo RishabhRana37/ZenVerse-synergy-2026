@@ -97,6 +97,16 @@ const COMPACT_STYLES = [
       'target-arrow-color': 'rgba(245, 166, 35, 0.3)',
     }
   },
+  {
+    selector: 'edge.edge-pulse',
+    style: {
+      'width': 2.5,
+      'line-color': '#2DD4A7',
+      'target-arrow-color': '#2DD4A7',
+      'transition-property': 'width, line-color, target-arrow-color',
+      'transition-duration': '0.15s',
+    }
+  },
 ]
 
 // ── Topology types ─────────────────────────────────────────────────────────
@@ -115,6 +125,40 @@ interface ServiceHealthInfo {
   incidentId?: string
 }
 
+// Helper: BFS calculation for propagation delays
+const getCascadeDelays = (rootSvc: string, services: string[], edges: { source: string; target: string }[]) => {
+  const delays = new Map<string, number>()
+  delays.set(rootSvc, 0)
+  
+  const queue = [rootSvc]
+  const visited = new Set([rootSvc])
+  
+  while (queue.length > 0) {
+    const curr = queue.shift()!
+    const currDelay = delays.get(curr) || 0
+    
+    const children = edges
+      .filter(e => e.source === curr && services.includes(e.target))
+      .map(e => e.target)
+      
+    for (const child of children) {
+      if (!visited.has(child)) {
+        visited.add(child)
+        delays.set(child, currDelay + 120) // 120ms cascade step
+        queue.push(child)
+      }
+    }
+  }
+  
+  services.forEach(svc => {
+    if (!delays.has(svc)) {
+      delays.set(svc, 120)
+    }
+  })
+  
+  return delays
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 interface TopologyHealthMapProps {
@@ -125,7 +169,9 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
   const [topology, setTopology] = useState<TopologyData | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const [hoveredNode, setHoveredNode] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [rootNodePos, setRootNodePos] = useState<{ x: number; y: number } | null>(null)
   const cyRef = useRef<any>(null)
+  const timeoutsRef = useRef<number[]>([])
 
   // Read incidents from store (reactive)
   const incidents = useStreamStore(s => s.incidents)
@@ -164,38 +210,138 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
     return map
   }, [incidents])
 
-  // ── Apply Cytoscape class changes when health map changes ────────────────
+  // ── Apply Cytoscape class changes with Cascade Ignites ────────────────────
   useEffect(() => {
     const cy = cyRef.current
     if (!cy || !topology) return
 
+    // Clean up ongoing timers
+    timeoutsRef.current.forEach(clearTimeout)
+    timeoutsRef.current = []
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const activeIncidents = [...incidents.values()].filter(i => i.status === 'active')
+
+    if (activeIncidents.length === 0 || prefersReduced) {
+      // ── Instant State Apply (Calm or Reduced Motion) ───────────────────────
+      cy.batch(() => {
+        cy.nodes().forEach((node: any) => {
+          const id = node.id()
+          const health = serviceHealthMap.get(id)
+          node.removeClass('healthy degraded root-cause')
+          if (health?.health === 'root-cause') {
+            node.addClass('root-cause')
+          } else if (health?.health === 'degraded') {
+            node.addClass('degraded')
+          } else {
+            node.addClass('healthy')
+          }
+        })
+
+        cy.edges().forEach((edge: any) => {
+          const src = edge.source().id()
+          const tgt = edge.target().id()
+          edge.removeClass('affected edge-pulse')
+          if (serviceHealthMap.has(src) || serviceHealthMap.has(tgt)) {
+            edge.addClass('affected')
+          }
+        })
+      })
+      return
+    }
+
+    // ── Cascade failure spreading outward ────────────────────────────────────
+    const activeIncident = activeIncidents[0]
+    const rootSvc = activeIncident.root_candidates?.[0]?.service
+    const services = activeIncident.services || []
+    const delays = getCascadeDelays(rootSvc, services, topology.edges)
+
+    // Reset affected nodes to healthy state first
     cy.batch(() => {
       cy.nodes().forEach((node: any) => {
         const id = node.id()
-        const health = serviceHealthMap.get(id)
-
-        node.removeClass('healthy degraded root-cause')
-
-        if (health?.health === 'root-cause') {
-          node.addClass('root-cause')
-        } else if (health?.health === 'degraded') {
-          node.addClass('degraded')
+        if (!services.includes(id) && id !== rootSvc) {
+          const health = serviceHealthMap.get(id)
+          node.removeClass('healthy degraded root-cause').addClass(health?.health || 'healthy')
         } else {
-          node.addClass('healthy')
+          node.removeClass('healthy degraded root-cause').addClass('healthy')
         }
       })
-
-      // Highlight edges that connect affected services
       cy.edges().forEach((edge: any) => {
         const src = edge.source().id()
         const tgt = edge.target().id()
-        edge.removeClass('affected')
-        if (serviceHealthMap.has(src) || serviceHealthMap.has(tgt)) {
-          edge.addClass('affected')
+        if (!services.includes(src) && !services.includes(tgt) && src !== rootSvc && tgt !== rootSvc) {
+          const hasEdge = serviceHealthMap.has(src) || serviceHealthMap.has(tgt)
+          edge.removeClass('affected edge-pulse')
+          if (hasEdge) edge.addClass('affected')
+        } else {
+          edge.removeClass('affected edge-pulse')
         }
       })
     })
-  }, [serviceHealthMap, topology])
+
+    // Cascade delays node-by-node
+    delays.forEach((delay, svc) => {
+      const t = window.setTimeout(() => {
+        cy.batch(() => {
+          const node = cy.getElementById(svc)
+          if (node) {
+            node.removeClass('healthy degraded root-cause')
+            const health = serviceHealthMap.get(svc)
+            node.addClass(health?.health || 'healthy')
+          }
+
+          // traveling edge highlights
+          cy.edges().forEach((edge: any) => {
+            if (edge.target().id() === svc && (edge.source().id() === rootSvc || delays.has(edge.source().id()))) {
+              edge.addClass('affected edge-pulse')
+              // remove traveling highlight pulse after 180ms
+              const edgeTimer = window.setTimeout(() => {
+                edge.removeClass('edge-pulse')
+              }, 180)
+              timeoutsRef.current.push(edgeTimer)
+            }
+          })
+        })
+      }, delay)
+      timeoutsRef.current.push(t)
+    })
+
+    return () => {
+      timeoutsRef.current.forEach(clearTimeout)
+    }
+  }, [serviceHealthMap, topology, incidents])
+
+  // ── Track Root Cause position for absolute pulse ring overlay ──────────
+  useEffect(() => {
+    const cy = cyRef.current
+    if (!cy || !topology) {
+      setRootNodePos(null)
+      return
+    }
+
+    const updatePos = () => {
+      const activeIncidents = [...incidents.values()].filter(i => i.status === 'active')
+      if (activeIncidents.length === 0) {
+        setRootNodePos(null)
+        return
+      }
+      const rootSvc = activeIncidents[0].root_candidates?.[0]?.service
+      const rootNode = cy.getElementById(rootSvc)
+      if (rootNode) {
+        const pos = rootNode.renderedPosition()
+        setRootNodePos({ x: pos.x, y: pos.y })
+      } else {
+        setRootNodePos(null)
+      }
+    }
+
+    updatePos()
+    cy.on('pan zoom resize position', updatePos)
+    return () => {
+      cy.off('pan zoom resize position', updatePos)
+    }
+  }, [topology, incidents, serviceHealthMap])
 
   // ── Build Cytoscape elements ─────────────────────────────────────────────
   const cyElements = useMemo(() => {
@@ -228,9 +374,9 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
     cy.on('tap', 'node', (evt: any) => {
       const nodeId = evt.target.id()
       // Find the incident that has this service
-      const incidents = useStreamStore.getState().incidents
+      const incidentsMap = useStreamStore.getState().incidents
       let targetIncidentId: string | null = null
-      incidents.forEach((incident) => {
+      incidentsMap.forEach((incident) => {
         if (incident.status === 'active') {
           const rootSvc = incident.root_candidates?.[0]?.service
           if (rootSvc === nodeId || incident.services.includes(nodeId)) {
@@ -245,6 +391,8 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
   // ── Counts for legend labels ─────────────────────────────────────────────
   const rootCauseCount = [...serviceHealthMap.values()].filter(h => h.health === 'root-cause').length
   const degradedCount  = [...serviceHealthMap.values()].filter(h => h.health === 'degraded').length
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   return (
     <div className="flex-shrink-0 bg-bg-surface border-b border-border select-none">
@@ -307,6 +455,21 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
                   } as any}
                   style={{ width: '100%', height: '100%' }}
                 />
+
+                {/* Radar Pulse Overlay for active root cause node */}
+                {rootNodePos && !prefersReduced && (
+                  <div
+                    className="absolute pointer-events-none rounded-[5px] border border-severity-critical animate-radar-pulse z-20"
+                    style={{
+                      left: `${rootNodePos.x}px`,
+                      top: `${rootNodePos.y}px`,
+                      width: '72px',
+                      height: '22px',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                )}
+
                 {/* Node tooltip */}
                 {hoveredNode && (
                   <div

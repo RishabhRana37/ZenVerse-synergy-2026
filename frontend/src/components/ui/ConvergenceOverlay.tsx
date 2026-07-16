@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStreamStore } from '@/store/stream'
 import { fpsGuard } from '@/lib/fpsGuard'
+import { audioManager } from '@/lib/audio'
 
 interface Particle {
   id: string
@@ -51,21 +52,12 @@ export function ConvergenceOverlay() {
 
         const cardRect = cardEl.getBoundingClientRect()
         // Target card's header position
-        const targetX = cardRect.left + 24
-        const targetY = cardRect.top + 24
+        const targetX = cardRect.left + (cardRect.width * 0.15)
+        const targetY = cardRect.top + 28
 
-        // 3. Find visible rows in the storm panel
-        const visibleAlertIds: string[] = []
-        for (const id of alertIds) {
-          const rowEl = document.querySelector(`[data-alert-id="${id}"]`)
-          if (rowEl) {
-            visibleAlertIds.push(id)
-          }
-        }
-
-        // Sample up to 8 visible rows (or 4 if FPS throttled)
-        const maxSample = fpsGuard.getParticleCap() > 4 ? 8 : 4
-        const sampledIds = visibleAlertIds.slice(0, maxSample)
+        // 3. Sub-sample alerts to cap density (staggered launch)
+        const cap = fpsGuard.getParticleCap()
+        const sampledIds = alertIds.slice(-cap)
         if (sampledIds.length === 0) return
 
         // 4. Spawn particles
@@ -92,16 +84,16 @@ export function ConvergenceOverlay() {
             endX: targetX,
             endY: targetY,
             color,
-            delay: index * 30, // 30ms stagger
+            delay: index * 25, // 25ms stagger
           })
         })
 
         // Limit concurrent particles per FPS guard
         setParticles((prev) => {
           const combined = [...prev, ...newParticles]
-          const cap = fpsGuard.getParticleCap()
-          if (combined.length > cap) {
-            return combined.slice(combined.length - cap)
+          const capVal = fpsGuard.getParticleCap()
+          if (combined.length > capVal) {
+            return combined.slice(combined.length - capVal)
           }
           return combined
         })
@@ -124,6 +116,8 @@ export function ConvergenceOverlay() {
           const midX = (p.startX + p.endX) / 2
           const midY = Math.min(p.startY, p.endY) - 100 // arc upward
 
+          const isThrottled = fpsGuard.isThrottled()
+
           return (
             <motion.div
               key={p.id}
@@ -136,25 +130,40 @@ export function ConvergenceOverlay() {
               animate={{
                 x: [p.startX, midX, p.endX],
                 y: [p.startY, midY, p.endY],
-                scale: [1, 0.7, 0.3],
+                scale: isThrottled ? [1, 0.8, 0.5] : [1, 0.7, 0.3],
                 opacity: [0.8, 0.6, 0],
               }}
               transition={{
                 duration: 0.45,
                 delay: p.delay / 1000,
-                ease: 'easeIn',
+                ease: [0.5, 0, 0.75, 0], // ease-in cubic-bezier
               }}
               onAnimationComplete={() => {
                 removeParticle(p.id)
                 // Pulse target card on arrival
                 window.dispatchEvent(new CustomEvent(`stormlens-card-pulse-${p.incidentId}`))
+                // Play whoosh on arrival
+                audioManager.playWhoosh()
               }}
-              className="absolute w-[60px] h-[16px] rounded-full border pointer-events-none"
-              style={{
-                borderColor: p.color,
-                backgroundColor: `${p.color}15`,
-                boxShadow: `0 0 6px ${p.color}40`,
-              }}
+              className="absolute rounded-full border pointer-events-none"
+              style={
+                isThrottled
+                  ? {
+                      backgroundColor: p.color,
+                      borderColor: p.color,
+                      boxShadow: `0 0 4px ${p.color}`,
+                      width: '6px',
+                      height: '6px',
+                    }
+                  : {
+                      background: `linear-gradient(90deg, transparent 0%, ${p.color}15 50%, ${p.color}90 100%)`,
+                      borderColor: `${p.color}aa`,
+                      borderLeftColor: 'transparent',
+                      boxShadow: `0 0 8px ${p.color}30`,
+                      width: '45px',
+                      height: '8px',
+                    }
+              }
             />
           )
         })}

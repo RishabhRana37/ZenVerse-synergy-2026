@@ -306,6 +306,21 @@ html.presentation-mode {
   animation: concentric-breath 4s ease-in-out infinite;
 }
 
+/* ── Radar pulse animation for root cause nodes ──────────────────────── */
+@keyframes radar-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
+.animate-radar-pulse {
+  animation: radar-pulse 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
 /* ── prefers-reduced-motion: disable all non-essential animations ─────── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -323,7 +338,8 @@ html.presentation-mode {
   .live-dot::before,
   .animate-shimmer,
   .animate-conf-shimmer,
-  .animate-concentric {
+  .animate-concentric,
+  .animate-radar-pulse {
     animation: none !important;
     background-image: none !important;
   }

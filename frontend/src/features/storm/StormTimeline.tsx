@@ -221,6 +221,8 @@ export function StormTimeline() {
 
     // ── Incident birth markers ─────────────────────────────────────────
     const incidents = useStreamStore.getState().incidents
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    
     incidents.forEach(incident => {
       const x = toX(new Date(incident.created_at).getTime())
       if (x < -10 || x > W + 10) return
@@ -234,6 +236,11 @@ export function StormTimeline() {
           ? 'rgba(45,212,167,0.4)'
           : COLOR_CRIT_SOLID)
         : COLOR_ACCENT_SOLID
+
+      const ageMs = Date.now() - new Date(incident.created_at).getTime()
+      const dropOffset = (ageMs < 400 && !prefersReduced)
+        ? (1 - ageMs / 400) * -20 // drop from 20px above
+        : 0
 
       // Vertical guideline
       ctx.save()
@@ -251,7 +258,7 @@ export function StormTimeline() {
       ctx.globalAlpha = fadePct
       ctx.fillStyle = sev
       ctx.beginPath()
-      ctx.arc(x, 10, 3, 0, Math.PI * 2)
+      ctx.arc(x, 10 + dropOffset, 3, 0, Math.PI * 2)
       ctx.fill()
 
       if (rootSvc) {
@@ -259,7 +266,7 @@ export function StormTimeline() {
         ctx.fillStyle = sev
         ctx.textAlign = 'left'
         const label = rootSvc.length > 14 ? rootSvc.slice(0, 13) + '…' : rootSvc
-        ctx.fillText(`● ${label}`, x + 6, 14)
+        ctx.fillText(`● ${label}`, x + 6, 14 + dropOffset)
       }
       ctx.restore()
     })

@@ -180,6 +180,14 @@ export const useStreamStore = create<StreamState>((set) => ({
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
+        new CustomEvent('stormlens-incident-born', {
+          detail: {
+            incident: msg.incident,
+            memberAlertIds: msg.member_alert_ids,
+          },
+        })
+      )
+      window.dispatchEvent(
         new CustomEvent('stormlens-convergence', {
           detail: {
             incidentId: msg.incident.id,

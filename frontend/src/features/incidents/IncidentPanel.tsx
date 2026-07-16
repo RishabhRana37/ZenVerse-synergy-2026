@@ -99,17 +99,32 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   const [isExpanded, setIsExpanded] = useState(false)
   const [confirmResolve, setConfirmResolve] = useState(false)
 
+  // Local state for deferred/arrival-synced counts
+  const [displayedAlertCount, setDisplayedAlertCount] = useState(incident.alert_count)
+  const [displayedUniqueCount, setDisplayedUniqueCount] = useState(incident.unique_count)
+
   // Listen to the custom event triggered on particle arrival
   useEffect(() => {
     const handlePulse = () => {
       setIsPulsing(true)
+      setDisplayedAlertCount(incident.alert_count)
+      setDisplayedUniqueCount(incident.unique_count)
       const timer = setTimeout(() => setIsPulsing(false), 200)
       return () => clearTimeout(timer)
     }
 
     window.addEventListener(`stormlens-card-pulse-${incident.id}`, handlePulse)
     return () => window.removeEventListener(`stormlens-card-pulse-${incident.id}`, handlePulse)
-  }, [incident.id])
+  }, [incident.id, incident.alert_count, incident.unique_count])
+
+  // Fallback sync (1200ms) to ensure count is never out of sync indefinitely
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDisplayedAlertCount(incident.alert_count)
+      setDisplayedUniqueCount(incident.unique_count)
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [incident.alert_count, incident.unique_count])
 
   const handleClick = () => {
     if (onSelect) onSelect(incident.id)
@@ -174,17 +189,94 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
     ? 'border border-accent/25 bg-bg-elevated' // acknowledged = accent-dim
     : 'border border-border bg-bg-elevated' // active = hairline
 
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  const cardVariants = {
+    hidden: { opacity: 0 },
+    visible: prefersReduced 
+      ? { opacity: 1, transition: { duration: 0.1 } }
+      : {
+          opacity: 1,
+          transition: {
+            duration: 0.18,
+            delay: 0.05, // surface fades up after 50ms (giving time for the line draw)
+            ease: 'easeOut'
+          }
+        }
+  }
+
+  const lineVariants = {
+    hidden: { scaleX: 0 },
+    visible: {
+      scaleX: 1,
+      transition: {
+        duration: 0.12,
+        ease: 'easeOut'
+      }
+    }
+  }
+
+  const titleVariants = {
+    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: prefersReduced 
+      ? { opacity: 1, y: 0 }
+      : {
+          opacity: 1,
+          y: 0,
+          transition: { delay: 0.12, duration: 0.15, ease: 'easeOut' }
+        }
+  }
+
+  const rootLineVariants = {
+    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: prefersReduced
+      ? { opacity: 1, y: 0 }
+      : {
+          opacity: 1,
+          y: 0,
+          transition: { delay: 0.16, duration: 0.15, ease: 'easeOut' }
+        }
+  }
+
+  const chipsVariants = {
+    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: prefersReduced
+      ? { opacity: 1, y: 0 }
+      : {
+          opacity: 1,
+          y: 0,
+          transition: { delay: 0.20, duration: 0.15, ease: 'easeOut' }
+        }
+  }
+
+  const summaryVariants = {
+    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: prefersReduced
+      ? { opacity: 1, y: 0 }
+      : {
+          opacity: 1,
+          y: 0,
+          transition: { delay: 0.24, duration: 0.15, ease: 'easeOut' }
+        }
+  }
+
+  const footerVariants = {
+    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0 },
+    visible: prefersReduced
+      ? { opacity: 1 }
+      : {
+          opacity: 1,
+          transition: { delay: 0.28, duration: 0.15, ease: 'easeOut' }
+        }
+  }
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : { opacity: 1, scale: 1 }}
+      initial="hidden"
+      animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{
-        scale: isPulsing ? { duration: 0.2 } : { duration: 0.35, ease: 'easeOut' },
-        opacity: { duration: 0.35, ease: 'easeOut' },
-        layout: { type: 'spring', stiffness: 200, damping: 25 },
-      }}
+      variants={cardVariants}
       className="w-full text-left cursor-pointer group"
     >
       <div
@@ -195,18 +287,20 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           borderClass
         )}
       >
-        {/* Top Accent Line whose opacity = top root-cause confidence */}
+        {/* Draw Accent Line across where the card will be */}
         {topCandidate && (
-          <div
-            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none"
-            style={{ opacity: topCandidate.confidence }}
+          <motion.div
+            variants={lineVariants}
+            style={{ originX: 0 }}
+            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200"
+            animate={{ opacity: isPulsing ? 1.0 : topCandidate.confidence }}
           />
         )}
 
         {/* Cap inner content at max-width 720px, left-aligned */}
         <div className="w-full max-w-[720px] text-left flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
+          <motion.div variants={titleVariants} className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
             <h3 className="text-[13px] font-semibold text-text-primary leading-tight font-sans select-text line-clamp-2">
               {incident.title}
             </h3>
@@ -220,11 +314,11 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
               )}
               <RelativeTime timestamp={incident.created_at} />
             </div>
-          </div>
+          </motion.div>
 
           {/* Root Cause Line & ConfidenceBar */}
           {topCandidate && (
-            <div className="flex flex-col gap-1.5 my-1.5 pb-2.5 border-b border-border/40 flex-shrink-0">
+            <motion.div variants={rootLineVariants} className="flex flex-col gap-1.5 my-1.5 pb-2.5 border-b border-border/40 flex-shrink-0">
               <div className="flex items-baseline gap-1 text-[11px] font-mono text-text-secondary truncate select-text">
                 <span className="text-text-muted font-semibold uppercase text-[9px] tracking-wider">Root cause:</span>
                 <span className={clsx("font-bold", topCandidate.is_confirmed ? "text-accent" : "text-severity-critical")}>
@@ -245,11 +339,11 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 greenThreshold={0.6}
                 amberThreshold={0.3}
               />
-            </div>
+            </motion.div>
           )}
 
           {/* Services blast-radius chips */}
-          <div className="flex flex-wrap gap-1.5 mb-2.5 flex-shrink-0">
+          <motion.div variants={chipsVariants} className="flex flex-wrap gap-1.5 mb-2.5 flex-shrink-0">
             {visibleServices.map((svc) => {
               const isRoot = svc === rootService
               return (
@@ -271,10 +365,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 +{extraServices} more
               </span>
             )}
-          </div>
+          </motion.div>
 
           {/* Summary Zone */}
-          <div className="mb-3.5 flex-1 min-h-0">
+          <motion.div variants={summaryVariants} className="mb-3.5 flex-1 min-h-0">
             {incident.summary ? (
               <div className="text-[12px] text-text-primary leading-[1.5] font-sans select-text">
                 <div className={clsx("transition-all duration-200", !isExpanded && "line-clamp-4 overflow-hidden")}>
@@ -322,10 +416,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </span>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Footer / Actions */}
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px]">
+          <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px]">
             {confirmResolve ? (
               <div className="flex items-center gap-2 text-[11px] font-mono" onClick={(e) => e.stopPropagation()}>
                 <span className="text-severity-warning font-bold uppercase text-[9px] tracking-wider">Resolve incident?</span>
@@ -352,9 +446,9 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
             ) : (
               <>
                 <div className="flex items-baseline gap-1 font-mono text-[11px] text-text-muted">
-                  <Odometer value={incident.alert_count} className="text-text-secondary font-semibold" easing="spring" />
+                  <Odometer value={displayedAlertCount} className="text-text-secondary font-semibold" easing="spring" />
                   <span>alerts</span>
-                  <span className="text-text-muted mx-0.5">(×{incident.unique_count} unique)</span>
+                  <span className="text-text-muted mx-0.5">(×<Odometer value={displayedUniqueCount} easing="spring" /> unique)</span>
                 </div>
 
                 {/* Operator Actions - Hover visible */}
@@ -394,7 +488,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </div>
               </>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </motion.div>

@@ -86,7 +86,7 @@ class FpsGuard {
 
   /** Max particles when throttled */
   getParticleCap(): number {
-    return this.throttled ? 4 : 24
+    return this.throttled ? 4 : 8
   }
 
   /** Timeline redraw interval in ms (0 = every frame, 500 = 2fps) */
