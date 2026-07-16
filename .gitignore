@@ -229,4 +229,9 @@ data/raw/
 
 # StormLens — local artifacts
 *.sqlite3
+*.db
+*.db-journal
 eval/results/
+
+# Vite build cache
+frontend/.vite/
