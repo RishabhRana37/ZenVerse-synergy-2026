@@ -6,6 +6,7 @@ import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
 import { IncidentPanel } from '@/features/incidents/IncidentPanel'
 import { DemoDriver } from '@/features/demo-driver/DemoDriver'
 import { Odometer } from '@/components/ui/Odometer'
+import { ConvergenceOverlay } from '@/components/ui/ConvergenceOverlay'
 
 export function WarRoom() {
   const connection = useStreamStore((s) => s.connection)
@@ -165,10 +166,13 @@ export function WarRoom() {
         </section>
       </main>
 
-      {/* ── Floating Demo Replay Controller ────────────────────────────────── */}
+      {/* ── Demo Replay Controller ─────────────────────────────────────────── */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg overflow-hidden glass border border-border shadow-elevated">
         <DemoDriver />
       </div>
+
+      {/* ── Convergence Particle Overlay ────────────────────────────────────── */}
+      <ConvergenceOverlay />
     </div>
   )
 }

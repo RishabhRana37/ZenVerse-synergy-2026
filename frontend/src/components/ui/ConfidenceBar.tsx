@@ -18,17 +18,19 @@ interface ConfidenceBarProps {
   height?: 'xs' | 'sm' | 'md'
   className?: string
   animated?: boolean
+  greenThreshold?: number
+  amberThreshold?: number
 }
 
-function confidenceColor(c: number): string {
-  if (c >= 0.8) return '#2DD4A7'
-  if (c >= 0.5) return '#F5A623'
+function confidenceColor(c: number, green: number = 0.6, amber: number = 0.3): string {
+  if (c >= green) return '#2DD4A7'
+  if (c >= amber) return '#F5A623'
   return '#FF4D4F'
 }
 
-function confidenceGlow(c: number): string {
-  if (c >= 0.8) return '0 0 6px rgba(45,212,167,0.4)'
-  if (c >= 0.5) return '0 0 6px rgba(245,166,35,0.4)'
+function confidenceGlow(c: number, green: number = 0.6, amber: number = 0.3): string {
+  if (c >= green) return '0 0 6px rgba(45,212,167,0.4)'
+  if (c >= amber) return '0 0 6px rgba(245,166,35,0.4)'
   return '0 0 6px rgba(255,77,79,0.4)'
 }
 
@@ -44,10 +46,13 @@ export function ConfidenceBar({
   height = 'sm',
   className,
   animated = true,
+  greenThreshold = 0.6,
+  amberThreshold = 0.3,
 }: ConfidenceBarProps) {
   const pct = Math.round(Math.min(Math.max(confidence, 0), 1) * 100)
-  const color = confidenceColor(confidence)
-  const glow = confidenceGlow(confidence)
+  const color = confidenceColor(confidence, greenThreshold, amberThreshold)
+  const glow = confidenceGlow(confidence, greenThreshold, amberThreshold)
+
 
   return (
     <div className={clsx('flex items-center gap-2', className)}>

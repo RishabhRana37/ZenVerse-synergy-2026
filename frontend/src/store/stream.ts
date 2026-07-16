@@ -132,6 +132,18 @@ export const useStreamStore = create<StreamState>((set) => ({
       })
       return { incidents: newIncidents, lastDiff: newDiff }
     })
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('stormlens-convergence', {
+          detail: {
+            incidentId: msg.incident.id,
+            alertIds: msg.member_alert_ids,
+            isNew: true,
+          },
+        })
+      )
+    }
   },
 
   // ── incident.updated: in-place update + record diff ──────────────────
@@ -148,6 +160,18 @@ export const useStreamStore = create<StreamState>((set) => ({
       })
       return { incidents: newIncidents, lastDiff: newDiff }
     })
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('stormlens-convergence', {
+          detail: {
+            incidentId: msg.incident.id,
+            alertIds: msg.added_alert_ids,
+            isNew: false,
+          },
+        })
+      )
+    }
   },
 
   // ── incident.summary: patch summary + first_action + title onto incident
