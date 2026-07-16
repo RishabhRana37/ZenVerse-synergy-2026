@@ -15,15 +15,15 @@ export default {
         },
         // Borders
         border: {
-          DEFAULT: 'rgba(255,255,255,0.06)',
-          subtle:  'rgba(255,255,255,0.04)',
-          strong:  'rgba(255,255,255,0.12)',
+          DEFAULT: 'rgba(255,255,255,0.10)',
+          subtle:  'rgba(255,255,255,0.05)',
+          strong:  'rgba(255,255,255,0.18)',
         },
         // Text
         text: {
           primary:   '#E6EDF3',
           secondary: '#8B98A9',
-          muted:     '#4D5866',
+          muted:     '#5D6B7D',
           inverse:   '#0A0E14',
         },
         // Severity

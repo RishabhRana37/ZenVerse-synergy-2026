@@ -422,8 +422,18 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
 
       {/* Body */}
       {incidents.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-accent text-ui-sm font-sans font-medium select-none">
-          No active incidents
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center select-none">
+          <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-accent/60" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[13px] font-semibold text-text-secondary font-sans">No incidents detected</span>
+            <span className="text-[11px] text-text-muted font-mono leading-relaxed max-w-[220px]">
+              System nominal — start a replay to begin monitoring
+            </span>
+          </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto min-h-0">

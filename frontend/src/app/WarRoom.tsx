@@ -10,13 +10,16 @@ import { DemoDriver } from '@/features/demo-driver/DemoDriver'
 import { Odometer } from '@/components/ui/Odometer'
 import { ConvergenceOverlay } from '@/components/ui/ConvergenceOverlay'
 import { DrillDownSlideOver } from '@/features/drilldown/DrillDownSlideOver'
+import { PanelErrorBoundary } from '@/components/ui/PanelErrorBoundary'
 import { audioManager } from '@/lib/audio'
 import { Toast } from '@/components/ui/Toast'
+import { usePresentationMode } from '@/lib/presentationMode'
 
 export function WarRoom() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
+  const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
   const stats = useStreamStore((s) => s.stats)
@@ -307,6 +310,22 @@ export function WarRoom() {
                       {item.label}
                     </Link>
                   ))}
+                  {/* Presentation Mode toggle */}
+                  <div className="border-t border-border/40 mt-1 pt-1">
+                    <button
+                      onClick={() => { togglePresentation(); setMenuOpen(false) }}
+                      className="w-full flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+                    >
+                      <span>Presentation Mode</span>
+                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                        presentationMode
+                          ? 'bg-accent/20 border-accent/40 text-accent'
+                          : 'bg-bg-base border-border text-text-muted'
+                      }`}>
+                        {presentationMode ? 'ON' : 'OFF'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </>
             )}
@@ -315,10 +334,12 @@ export function WarRoom() {
         </div>
       </header>
 
-      {/* ── Storm Timeline Strip (canvas, 72px + 28px collapse bar) ──────────── */}
-      <StormTimeline />
+      {/* ── Storm Timeline Strip ────────────────────────────────────────────────── */}
+      <PanelErrorBoundary label="Timeline">
+        <StormTimeline />
+      </PanelErrorBoundary>
 
-      {/* ── Main Split View (Two Panels) ──────────────────────────────────── */}
+      {/* ── Main Split View (Two Panels) ──────────────────────────────── */}
       <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base">
         {/* Left Panel: Raw Stream (40%) */}
         <section
@@ -326,12 +347,16 @@ export function WarRoom() {
             showCriticalGlow ? 'border-glow-critical' : ''
           } transition-all duration-300`}
         >
-          <RawStreamPanel />
+          <PanelErrorBoundary label="Storm Stream">
+            <RawStreamPanel />
+          </PanelErrorBoundary>
         </section>
 
         {/* Right Panel: Incidents (60%) */}
         <section className="w-[60%] flex flex-col h-full rounded-card border-t-2 border-t-accent">
-          <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
+          <PanelErrorBoundary label="Incidents">
+            <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
+          </PanelErrorBoundary>
         </section>
       </main>
 

@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import cytoscape from 'cytoscape'
-// @ts-ignore
-import dagre from 'cytoscape-dagre'
 import CytoscapeComponent from 'react-cytoscapejs'
 import { useStreamStore } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
@@ -11,9 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
-
-// Register dagre layout extension in cytoscape
-cytoscape.use(dagre)
+import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
 interface DrillDownSlideOverProps {
   incidentId: string | null

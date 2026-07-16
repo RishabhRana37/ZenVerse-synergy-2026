@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStreamStore } from '@/store/stream'
+import { fpsGuard } from '@/lib/fpsGuard'
 
 interface Particle {
   id: string
@@ -62,8 +63,9 @@ export function ConvergenceOverlay() {
           }
         }
 
-        // Sample up to 8 visible rows
-        const sampledIds = visibleAlertIds.slice(0, 8)
+        // Sample up to 8 visible rows (or 4 if FPS throttled)
+        const maxSample = fpsGuard.getParticleCap() > 4 ? 8 : 4
+        const sampledIds = visibleAlertIds.slice(0, maxSample)
         if (sampledIds.length === 0) return
 
         // 4. Spawn particles
@@ -94,12 +96,12 @@ export function ConvergenceOverlay() {
           })
         })
 
-        // Limit concurrent particles to 24 max
+        // Limit concurrent particles per FPS guard
         setParticles((prev) => {
           const combined = [...prev, ...newParticles]
-          if (combined.length > 24) {
-            // Drop excess oldest ones
-            return combined.slice(combined.length - 24)
+          const cap = fpsGuard.getParticleCap()
+          if (combined.length > cap) {
+            return combined.slice(combined.length - cap)
           }
           return combined
         })

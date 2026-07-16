@@ -14,14 +14,9 @@
  * Cytoscape's built-in CSS transition support.
  */
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react'
-import cytoscape from 'cytoscape'
-// @ts-ignore
-import dagre from 'cytoscape-dagre'
 import CytoscapeComponent from 'react-cytoscapejs'
 import { useStreamStore } from '@/store/stream'
-
-// Register dagre once (safe to call multiple times)
-try { cytoscape.use(dagre) } catch {}
+import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
 // ── API base ───────────────────────────────────────────────────────────────
 const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8788'

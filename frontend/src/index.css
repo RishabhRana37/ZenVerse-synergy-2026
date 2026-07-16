@@ -19,15 +19,15 @@
   --bg-elevated:  #161D29;
   --bg-hover:     #1C2535;
 
-  /* Borders */
-  --border:       rgba(255,255,255,0.06);
-  --border-subtle:rgba(255,255,255,0.04);
-  --border-strong:rgba(255,255,255,0.12);
+  /* Borders — raised from 0.06→0.10 for projector legibility */
+  --border:       rgba(255,255,255,0.10);
+  --border-subtle:rgba(255,255,255,0.05);
+  --border-strong:rgba(255,255,255,0.18);
 
-  /* Text */
+  /* Text — muted bumped from #4D5866 → #5D6B7D (projector legible) */
   --text-primary:   #E6EDF3;
   --text-secondary: #8B98A9;
-  --text-muted:     #4D5866;
+  --text-muted:     #5D6B7D;
 
   /* Severity */
   --severity-critical: #FF4D4F;
@@ -46,6 +46,30 @@
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Timeline stroke width (bumped in presentation mode) */
+  --timeline-stroke: 1.5;
+}
+
+/* ── Presentation Mode overrides ─────────────────────────────────────── */
+/* Applied via JS by toggling .presentation-mode on <html>               */
+html.presentation-mode {
+  font-size: 110%;
+
+  --border:        rgba(255,255,255,0.18);
+  --border-subtle: rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.28);
+
+  /* More saturated severity colors for projector wash */
+  --severity-critical: #FF2B2E;
+  --severity-warning:  #E8940D;
+  --severity-info:     #2E87FF;
+
+  /* Even lighter muted for high-ambient conditions */
+  --text-muted: #6B7D90;
+
+  /* Thicker timeline stroke */
+  --timeline-stroke: 2.5;
 }
 
 /* ── Base resets & global styles ──────────────────────────────────────── */
@@ -78,6 +102,18 @@
     flex-direction: column;
   }
 
+  /* ── Focus rings — visible for keyboard navigation ─────────────────── */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Remove default outline for mouse users, keep for keyboard */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
   /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 4px;
@@ -87,11 +123,11 @@
     background: var(--bg-base);
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     border-radius: 2px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.22);
   }
 }
 
@@ -213,14 +249,14 @@
 
 @keyframes border-pulse-entrance {
   0% {
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.10);
   }
   40% {
     border-color: rgba(45, 212, 167, 0.6);
     box-shadow: 0 0 6px rgba(45, 212, 167, 0.25);
   }
   100% {
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.10);
   }
 }
 
@@ -228,5 +264,38 @@
   animation: border-pulse-entrance 1.2s ease-out forwards;
 }
 
+/* ── Shimmer skeleton animation ──────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
 
+.animate-shimmer {
+  animation: shimmer 1.8s ease-in-out infinite;
+}
 
+/* ── prefers-reduced-motion: disable all non-essential animations ─────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .border-glow-critical,
+  .animate-flash-critical,
+  .animate-border-pulse-entrance,
+  .live-dot::before,
+  .animate-shimmer {
+    animation: none !important;
+  }
+
+  /* Keep opacity/visibility transitions for focus states */
+  :focus-visible {
+    transition: none;
+  }
+}

@@ -6,8 +6,9 @@
  * during animation. Data is pushed in from stats + alerts ring buffer once
  * per 2s stats tick.
  */
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useStreamStore } from '@/store/stream'
+import { fpsGuard } from '@/lib/fpsGuard'
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -206,12 +207,15 @@ export function StormTimeline() {
         _ => H
       )
 
-      // ── Accent top stroke ──────────────────────────────────────────────
+      // ── Accent top stroke (width from CSS var for presentation mode) ──────
+      const strokeW = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--timeline-stroke').trim()
+      ) || 1.5
       ctx.beginPath()
       ctx.moveTo(points[0].x, points[0].yTotal)
       for (const p of points) ctx.lineTo(p.x, p.yTotal)
       ctx.strokeStyle = COLOR_EDGE
-      ctx.lineWidth = 1.5
+      ctx.lineWidth = strokeW
       ctx.stroke()
     }
 
@@ -284,9 +288,17 @@ export function StormTimeline() {
 
   // ── RAF loop ─────────────────────────────────────────────────────────────
 
+  const lastDrawTimeRef = useRef(0)
+
   useEffect(() => {
-    const loop = () => {
-      if (dirtyRef.current) draw()
+    const loop = (ts: number) => {
+      fpsGuard.measure()
+      const interval = fpsGuard.getTimelineInterval()
+      const shouldDraw = dirtyRef.current && (interval === 0 || ts - lastDrawTimeRef.current >= interval)
+      if (shouldDraw) {
+        draw()
+        lastDrawTimeRef.current = ts
+      }
       rafRef.current = requestAnimationFrame(loop)
     }
     rafRef.current = requestAnimationFrame(loop)

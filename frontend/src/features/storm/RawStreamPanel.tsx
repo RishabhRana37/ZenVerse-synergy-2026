@@ -417,8 +417,28 @@ export function RawStreamPanel() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-text-muted text-ui-sm font-sans select-none">
-            awaiting alerts
+          // ── Idle / Ready state ─────────────────────────────────────────
+          <div className="flex-1 flex flex-col">
+            <div className="flex flex-col gap-px p-2">
+              {/* Ghost shimmer rows — signals "ready, waiting for data" */}
+              {[80, 55, 70, 45, 60, 50, 75].map((w, i) => (
+                <div key={i} className="flex items-center gap-2 px-2 py-1.5 border-b border-border-subtle">
+                  <div className={`w-1 h-3 rounded-full bg-text-muted/20 flex-shrink-0 animate-shimmer`} style={{ animationDelay: `${i * 150}ms` }} />
+                  <div className={`h-2 rounded bg-text-muted/15 animate-shimmer flex-shrink-0`} style={{ width: `${w}px`, animationDelay: `${i * 120}ms` }} />
+                  <div className={`h-2 rounded bg-text-muted/10 animate-shimmer flex-1`} style={{ animationDelay: `${i * 100}ms` }} />
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <svg className="w-5 h-5 text-text-muted/50" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+                <span className="text-[11px] text-text-muted font-mono">
+                  Ready — start the Demo Driver to begin
+                </span>
+              </div>
+            </div>
           </div>
         )
       ) : (

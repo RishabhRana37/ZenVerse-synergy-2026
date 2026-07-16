@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
+import { getPresentationMode } from '@/lib/presentationMode'
 
 export function HealthPage() {
   const connection = useStreamStore((s) => s.connection)
+  const totalAlerts = useStreamStore((s) => s.stats?.total_alerts ?? 0)
+  const incidents = useStreamStore((s) => s.incidents)
   const [apiReachable, setApiReachable] = useState<'loading' | 'ok' | 'fail'>('loading')
   const [fps, setFps] = useState(60)
+  const [presentationMode, setPresentationMode] = useState(getPresentationMode())
 
   // API reachability check
   useEffect(() => {
@@ -46,6 +50,50 @@ export function HealthPage() {
     return () => cancelAnimationFrame(frameId)
   }, [])
 
+  // Sync presentation mode state from localStorage on mount
+  useEffect(() => {
+    const handler = () => setPresentationMode(getPresentationMode())
+    // Listen for storage changes (in case another tab changes it)
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }, [])
+
+  // Last storm summary
+  const incidentCount = incidents.size
+  const stormRun = totalAlerts > 0
+  const lastStormSummary = stormRun
+    ? `${totalAlerts.toLocaleString()} alerts → ${incidentCount} incident${incidentCount !== 1 ? 's' : ''}`
+    : 'No storm run yet'
+
+  const DiagRow = ({
+    label,
+    value,
+    color,
+  }: {
+    label: string
+    value: string
+    color: 'accent' | 'warning' | 'critical' | 'muted'
+  }) => (
+    <div className="flex items-center justify-between p-2.5 rounded bg-bg-base border border-border/40">
+      <span className="text-text-secondary">{label}</span>
+      <span
+        className={
+          color === 'accent'
+            ? 'text-accent font-bold'
+            : color === 'warning'
+            ? 'text-severity-warning font-bold'
+            : color === 'critical'
+            ? 'text-severity-critical font-bold'
+            : 'text-text-muted font-bold'
+        }
+      >
+        {value}
+      </span>
+    </div>
+  )
+
+  const allReady = connection === 'open' && apiReachable === 'ok' && fps >= 55
+
   return (
     <div className="flex flex-col min-h-screen bg-bg-base text-text-primary font-sans items-center justify-center p-6 select-none">
       <div className="w-full max-w-md p-6 bg-bg-surface border border-border rounded-lg shadow-elevated flex flex-col gap-5">
@@ -68,58 +116,45 @@ export function HealthPage() {
         <div className="flex flex-col gap-3 font-mono text-[11px]">
           
           {/* WS Connection */}
-          <div className="flex items-center justify-between p-2.5 rounded bg-bg-base border border-border/40">
-            <span className="text-text-secondary">WebSocket stream connection:</span>
-            <span
-              className={
-                connection === 'open'
-                  ? 'text-accent font-bold'
-                  : connection === 'connecting'
-                  ? 'text-severity-warning font-bold'
-                  : 'text-severity-critical font-bold'
-              }
-            >
-              {connection.toUpperCase()}
-            </span>
-          </div>
+          <DiagRow
+            label="WebSocket stream connection:"
+            value={connection.toUpperCase()}
+            color={connection === 'open' ? 'accent' : connection === 'connecting' ? 'warning' : 'critical'}
+          />
 
           {/* API Reachability */}
-          <div className="flex items-center justify-between p-2.5 rounded bg-bg-base border border-border/40">
-            <span className="text-text-secondary">REST API reachability (port 8788):</span>
-            <span
-              className={
-                apiReachable === 'ok'
-                  ? 'text-accent font-bold'
-                  : apiReachable === 'fail'
-                  ? 'text-severity-critical font-bold'
-                  : 'text-text-muted font-bold'
-              }
-            >
-              {apiReachable.toUpperCase()}
-            </span>
-          </div>
+          <DiagRow
+            label="REST API reachability (port 8788):"
+            value={apiReachable.toUpperCase()}
+            color={apiReachable === 'ok' ? 'accent' : apiReachable === 'fail' ? 'critical' : 'muted'}
+          />
 
           {/* FPS Estimate */}
-          <div className="flex items-center justify-between p-2.5 rounded bg-bg-base border border-border/40">
-            <span className="text-text-secondary">Render frame rate estimate (FPS):</span>
-            <span
-              className={
-                fps >= 55
-                  ? 'text-accent font-bold'
-                  : fps >= 30
-                  ? 'text-severity-warning font-bold'
-                  : 'text-severity-critical font-bold'
-              }
-            >
-              {fps} FPS
-            </span>
-          </div>
+          <DiagRow
+            label="Render frame rate estimate (FPS):"
+            value={`${fps} FPS`}
+            color={fps >= 55 ? 'accent' : fps >= 30 ? 'warning' : 'critical'}
+          />
+
+          {/* Presentation Mode */}
+          <DiagRow
+            label="Presentation mode:"
+            value={presentationMode ? 'ON' : 'OFF'}
+            color={presentationMode ? 'accent' : 'muted'}
+          />
+
+          {/* Last storm summary */}
+          <DiagRow
+            label="Last storm:"
+            value={lastStormSummary}
+            color={stormRun ? 'accent' : 'muted'}
+          />
 
         </div>
 
         {/* Status Verdict */}
         <div className="text-center pt-2">
-          {connection === 'open' && apiReachable === 'ok' && fps >= 55 ? (
+          {allReady ? (
             <span className="text-[11px] font-bold text-accent px-3 py-1.5 rounded-full bg-accent-dim border border-accent/20 tracking-wider uppercase select-none">
               ✓ SYSTEM READY FOR DEMO
             </span>
@@ -129,6 +164,21 @@ export function HealthPage() {
             </span>
           )}
         </div>
+
+        {/* Tips */}
+        {!allReady && (
+          <div className="flex flex-col gap-1.5 text-[10px] font-mono text-text-muted border-t border-border/30 pt-3">
+            {connection !== 'open' && (
+              <span>• WebSocket: run <code className="text-text-secondary">node mock/server.mjs</code> then reload</span>
+            )}
+            {apiReachable === 'fail' && (
+              <span>• API: mock server must be running on port 8788</span>
+            )}
+            {fps < 55 && (
+              <span>• FPS: close other browser tabs and GPU-heavy apps</span>
+            )}
+          </div>
+        )}
 
       </div>
     </div>
