@@ -14,11 +14,19 @@ import { PanelErrorBoundary } from '@/components/ui/PanelErrorBoundary'
 import { audioManager } from '@/lib/audio'
 import { Toast } from '@/components/ui/Toast'
 import { usePresentationMode } from '@/lib/presentationMode'
+import { ColdOpen } from '@/features/intro/ColdOpen'
 
 export function WarRoom() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
+  const [showIntro, setShowIntro] = useState(() => {
+    try {
+      return sessionStorage.getItem('intro_seen') !== 'true'
+    } catch {
+      return true
+    }
+  })
   const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
@@ -325,6 +333,19 @@ export function WarRoom() {
                         {presentationMode ? 'ON' : 'OFF'}
                       </span>
                     </button>
+                    {/* Replay Intro */}
+                    <button
+                      onClick={() => {
+                        try {
+                          sessionStorage.removeItem('intro_seen')
+                        } catch {}
+                        setShowIntro(true)
+                        setMenuOpen(false)
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+                    >
+                      Replay Intro
+                    </button>
                   </div>
                 </div>
               </>
@@ -378,6 +399,13 @@ export function WarRoom() {
             incidentId={selectedIncidentId}
             onClose={() => setSelectedIncidentId(null)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Cinematic Intro Cold Open ────────────────────────────────────── */}
+      <AnimatePresence>
+        {showIntro && (
+          <ColdOpen onComplete={() => setShowIntro(false)} />
         )}
       </AnimatePresence>
     </div>
