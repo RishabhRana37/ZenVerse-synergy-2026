@@ -76,12 +76,7 @@ export function EvalDashboard() {
         setError(null)
       } catch (err: any) {
         console.error('Eval fetch err:', err)
-        setError(
-          <div className="flex flex-col gap-2 text-text-secondary text-sm bg-surface rounded p-4 border border-border">
-            <span className="text-status-error font-medium">Network Error</span>
-            Could not fetch ablation metrics. Ensure the backend API server is running.
-          </div>
-        )
+        setError('Network error — could not fetch ablation metrics. Ensure the backend API server is running.')
       } finally {
         setLoading(false)
       }
