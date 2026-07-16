@@ -151,13 +151,39 @@ const CYTOSCAPE_STYLES = [
 // ── Main SlideOver Component ──────────────────────────────────────────────
 
 export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverProps) {
-  const storeIncident = useStreamStore((s) => s.incidents.get(incidentId || ''))
+  const storeIncident = useStreamStore((s) => {
+    const activeIncidents = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
+    return activeIncidents.get(incidentId || '')
+  })
+  const scrubMode = useStreamStore((s) => s.scrubMode)
+  const scrubState = useStreamStore((s) => s.scrubState)
+  const scrubTime = useStreamStore((s) => s.scrubTime)
 
   const [loading, setLoading] = useState(true)
-  const [detail, setDetail] = useState<{
+  const [liveDetail, setLiveDetail] = useState<{
     members: Alert[]
     topology_path: string[][]
   } | null>(null)
+
+  const detail = React.useMemo(() => {
+    if (!liveDetail) return null
+    if (scrubMode && scrubState) {
+      const scrubbedMembers = Array.from(scrubState.alertIndex.values())
+        .filter((a) => a.cluster_id === incidentId)
+        .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+
+      const activeServices = new Set(storeIncident?.services || [])
+      const scrubbedTopoPath = (liveDetail.topology_path || []).filter(
+        ([src, dest]) => activeServices.has(src) && activeServices.has(dest)
+      )
+
+      return {
+        members: scrubbedMembers,
+        topology_path: scrubbedTopoPath,
+      }
+    }
+    return liveDetail
+  }, [liveDetail, scrubMode, scrubState, incidentId, storeIncident])
   
   const [topology, setTopology] = useState<{
     nodes: { id: string }[]
@@ -206,7 +232,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     if (!incidentId) return
 
     setLoading(true)
-    setDetail(null)
+    setLiveDetail(null)
 
     const fetchAll = async () => {
       try {
@@ -226,7 +252,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         const iRes = await fetch(`${apiBase}/incidents/${incidentId}`)
         if (iRes.ok) {
           const detailData = await iRes.json()
-          setDetail(detailData)
+          setLiveDetail(detailData)
         }
       } catch (err) {
         console.error('[drilldown] API Fetch Error:', err)
@@ -426,6 +452,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                 )}
               />
               <span className="text-[10px] font-mono uppercase font-semibold text-text-muted">{storeIncident.status}</span>
+              {scrubMode && (
+                <span className="text-[10px] font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/15 border border-accent/30 animate-pulse select-none">
+                  as of t+{scrubTime.toFixed(1)}s
+                </span>
+              )}
             </div>
             <h2 className="text-[15px] font-semibold text-text-primary leading-snug select-text font-sans line-clamp-2">
               {storeIncident.title}

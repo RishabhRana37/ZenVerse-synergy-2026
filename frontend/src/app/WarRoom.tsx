@@ -15,8 +15,10 @@ import { audioManager } from '@/lib/audio'
 import { Toast } from '@/components/ui/Toast'
 import { usePresentationMode } from '@/lib/presentationMode'
 import { ColdOpen } from '@/features/intro/ColdOpen'
+import { LensPanel } from '@/features/lens/LensPanel'
 
 export function WarRoom() {
+  const [view, setView] = useState<'stream' | 'lens'>('stream')
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
@@ -30,10 +32,33 @@ export function WarRoom() {
   const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
-  const stats = useStreamStore((s) => s.stats)
+  const stats = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.stats : s.stats)
   const auditLog = useStreamStore((s) => s.auditLog)
   const unreadAuditCount = useStreamStore((s) => s.unreadAuditCount)
   const clearUnreadAuditCount = useStreamStore((s) => s.clearUnreadAuditCount)
+  const scrubMode = useStreamStore((s) => s.scrubMode)
+  const scrubTime = useStreamStore((s) => s.scrubTime)
+
+  const handleCaptureSnapshot = () => {
+    const state = useStreamStore.getState()
+    if (!state.scrubState) return
+
+    const scrubState = state.scrubState
+    const total_alerts = scrubState.stats?.total_alerts ?? 0
+    
+    const activeIncs = [...scrubState.incidents.values()].filter(i => i.status === 'active')
+    const firstInc = activeIncs[0]
+    const rootCand = firstInc?.root_candidates?.[0]
+    const rootCause = rootCand ? `${rootCand.service} ${Math.round(rootCand.confidence * 100)}%` : 'none'
+
+    const snapshotText = `StormLens @ t+${state.scrubTime.toFixed(1)}s — ${total_alerts} alerts, ${activeIncs.length} incidents, root: ${rootCause}`
+    
+    navigator.clipboard.writeText(snapshotText)
+      .then(() => {
+        window.dispatchEvent(new CustomEvent('stormlens-toast', { detail: 'Copied snapshot to clipboard!' }))
+      })
+      .catch((err) => console.error('[time-machine] failed to copy snapshot:', err))
+  }
 
   const alertsPerSec = stats?.alerts_per_sec
   const totalAlerts = stats?.total_alerts ?? null
@@ -50,6 +75,24 @@ export function WarRoom() {
     }
     window.addEventListener('stormlens-audio-mute', handleMuteEvent)
     return () => window.removeEventListener('stormlens-audio-mute', handleMuteEvent)
+  }, [])
+
+  // Listen to keyboard shortcut 'V' to toggle view
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement)?.contentEditable === 'true'
+      ) {
+        return
+      }
+      if (e.key.toLowerCase() === 'v') {
+        setView((prev) => (prev === 'stream' ? 'lens' : 'stream'))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   // Listen to keyboard shortcut events for card selection
@@ -150,31 +193,58 @@ export function WarRoom() {
           )}
         </div>
 
-        {/* Center: Hero Equation [total_alerts] alerts → [active_incidents] incidents */}
-        <div className="justify-self-center flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none">
-          <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-semibold" />
-          <span className="text-text-muted">alerts</span>
-          
-          <span className="text-text-muted">→</span>
-          
-          <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-semibold" />
-          <span className="text-text-muted">incidents</span>
-          
-          <span className="text-border-strong font-sans">·</span>
-          
-          <motion.span
-            animate={shouldPulse ? { scale: [1, 1.03, 1] } : {}}
-            transition={{ duration: 0.2 }}
-            className="inline-block"
-          >
-            <Odometer
-              value={compressionRatio}
-              format="percent2"
-              easing="spring"
-              className="text-accent font-semibold"
-            />
-          </motion.span>
-          <span className="text-text-muted">noise suppressed</span>
+        {/* Center: Segmented Control [Stream | Lens] + Hero Equation */}
+        <div className="justify-self-center flex items-center gap-6 z-20">
+          <div className="flex bg-bg-base p-0.5 rounded border border-border">
+            <button
+              onClick={() => setView('stream')}
+              className={`px-3 py-1 rounded text-[11px] font-sans font-medium transition-colors ${
+                view === 'stream'
+                  ? 'bg-bg-surface text-text-primary border border-border shadow-sm font-semibold'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Stream
+            </button>
+            <button
+              onClick={() => setView('lens')}
+              className={`px-3 py-1 rounded text-[11px] font-sans font-medium transition-colors ${
+                view === 'lens'
+                  ? 'bg-bg-surface text-text-primary border border-border shadow-sm font-semibold'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Lens
+            </button>
+          </div>
+
+          {view === 'stream' && (
+            <div className="flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none animate-fade-in">
+              <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-semibold" />
+              <span className="text-text-muted">alerts</span>
+              
+              <span className="text-text-muted">→</span>
+              
+              <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-semibold" />
+              <span className="text-text-muted">incidents</span>
+              
+              <span className="text-border-strong font-sans">·</span>
+              
+              <motion.span
+                animate={shouldPulse ? { scale: [1, 1.03, 1] } : {}}
+                transition={{ duration: 0.2 }}
+                className="inline-block"
+              >
+                <Odometer
+                  value={compressionRatio}
+                  format="percent2"
+                  easing="spring"
+                  className="text-accent font-semibold"
+                />
+              </motion.span>
+              <span className="text-text-muted">noise suppressed</span>
+            </div>
+          )}
         </div>
 
         {/* Right Cluster, in order: alerts/sec component, sound toggle, single overflow menu */}
@@ -348,34 +418,55 @@ export function WarRoom() {
         <StormTimeline />
       </PanelErrorBoundary>
 
-      {/* ── Main Split View (Two Panels) ──────────────────────────────── */}
-      <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base">
-        {/* Left Panel: Raw Stream (40%) */}
-        <section
-          className={`w-[40%] flex flex-col h-full rounded-card border-t-2 border-t-severity-critical ${
-            showCriticalGlow ? 'border-glow-critical' : ''
-          } transition-all duration-300`}
-        >
-          <PanelErrorBoundary label="Storm Stream">
-            <RawStreamPanel />
-          </PanelErrorBoundary>
-        </section>
+      {/* ── Main Layout: Stream Split View vs Lens view ────────────────── */}
+      {view === 'stream' ? (
+        <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base animate-fade-in">
+          {/* Left Panel: Raw Stream (40%) */}
+          <section
+            className={`w-[40%] flex flex-col h-full rounded-card border-t-2 border-t-severity-critical ${
+              showCriticalGlow ? 'border-glow-critical' : ''
+            } transition-all duration-300`}
+          >
+            <PanelErrorBoundary label="Storm Stream">
+              <RawStreamPanel />
+            </PanelErrorBoundary>
+          </section>
 
-        {/* Right Panel: Incidents (60%) */}
-        <section className="w-[60%] flex flex-col h-full rounded-card border-t-2 border-t-accent">
-          <PanelErrorBoundary label="Incidents">
-            <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
-          </PanelErrorBoundary>
-        </section>
-      </main>
+          {/* Right Panel: Incidents (60%) */}
+          <section className="w-[60%] flex flex-col h-full rounded-card border-t-2 border-t-accent">
+            <PanelErrorBoundary label="Incidents">
+              <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
+            </PanelErrorBoundary>
+          </section>
+        </main>
+      ) : (
+        <LensPanel onIncidentSelect={setSelectedIncidentId} />
+      )}
+
+      {/* ── Time Machine REVIEWING Pill DOM Overlay ─────────────────────── */}
+      {scrubMode && (
+        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-bg-surface/90 border border-accent/40 shadow-elevated px-3 py-1.5 rounded-full font-mono text-[10px] text-accent select-none backdrop-blur-md animate-fade-in">
+          <span>⏸ REVIEWING — t+{scrubTime.toFixed(1)}s</span>
+          <button
+            onClick={handleCaptureSnapshot}
+            className="p-1 hover:bg-bg-elevated rounded text-text-secondary hover:text-accent transition-colors flex items-center justify-center cursor-pointer"
+            title="Copy shareable text snapshot to clipboard"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* ── Demo Replay Controller ─────────────────────────────────────────── */}
       <div className="absolute bottom-6 right-6 z-50">
         <DemoDriver />
       </div>
 
-      {/* ── Convergence Particle Overlay ────────────────────────────────────── */}
-      <ConvergenceOverlay />
+      {/* ── Convergence Particle Overlay (Disabled in Lens view) ────────────── */}
+      {view === 'stream' && <ConvergenceOverlay />}
 
       {/* Toast Notification Container */}
       <Toast />

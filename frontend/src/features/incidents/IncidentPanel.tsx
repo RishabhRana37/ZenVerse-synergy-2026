@@ -509,8 +509,10 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
   const resolvedIncidents = incidents.filter((i) => i.status === 'resolved')
 
   const activeCount = useStreamStore((s) => {
-    if (s.stats) return s.stats.active_incidents
-    return [...s.incidents.values()].filter((i) => i.status === 'active').length
+    const stats = s.scrubMode && s.scrubState ? s.scrubState.stats : s.stats
+    const incs = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
+    if (stats) return stats.active_incidents
+    return [...incs.values()].filter((i) => i.status === 'active').length
   })
 
   return (

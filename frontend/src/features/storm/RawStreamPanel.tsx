@@ -148,8 +148,8 @@ const AlertRow = React.memo(
 // ── RawStreamPanel component ─────────────────────────────────────────────
 
 export function RawStreamPanel() {
-  const alerts = useStreamStore((s) => s.alerts)
-  const alertsPerSec = useStreamStore((s) => s.stats?.alerts_per_sec)
+  const alerts = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.alerts : s.alerts)
+  const alertsPerSec = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.stats?.alerts_per_sec : s.stats?.alerts_per_sec)
 
   // Filters State
   const [critEnabled, setCritEnabled] = useState(true)
@@ -268,8 +268,8 @@ export function RawStreamPanel() {
     }
   }
 
-  const totalAlerts = useStreamStore((s) => s.stats?.total_alerts ?? 0)
-  const incidentCount = useStreamStore((s) => s.incidents.size)
+  const totalAlerts = useStreamStore((s) => (s.scrubMode && s.scrubState ? s.scrubState.stats?.total_alerts : s.stats?.total_alerts) ?? 0)
+  const incidentCount = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.incidents.size : s.incidents.size)
 
   const isFilterActive =
     !critEnabled || !warnEnabled || !infoEnabled || !showClaimed || searchQuery.trim() !== ''

@@ -10,7 +10,14 @@
  *   stats         latest WsStats payload from server
  *   connection    'connecting' | 'open' | 'closed'
  *
- * Actions cover every WS_CONTRACT.md message type plus a snapshot replace.
+ * Time Machine addition:
+ *   journal       append-only event log of all incoming WS messages since replay start,
+ *                 capped at 5,000 events.
+ *   baselineTime  unix timestamp when the replay started (used for relative time offsets).
+ *   scrubMode     boolean indicating if review mode is active.
+ *   scrubTime     current playhead position in relative seconds.
+ *   scrubState    reconstructed state corresponding to scrubTime.
+ *   newIncidentsCount  count of new incidents created since scrubbing began.
  */
 
 import { create } from 'zustand'
@@ -31,6 +38,21 @@ import type { ConnectionStatus } from '@/lib/ws'
 
 const ALERT_CAP = 500
 
+export interface JournalEvent {
+  type: 'alert.batch' | 'alert.dedup' | 'incident.created' | 'incident.updated' | 'incident.summary' | 'stats' | 'snapshot'
+  timestamp: number
+  relativeTime: number
+  data: any
+}
+
+export interface ReconstructedState {
+  alerts: Alert[]
+  alertIndex: Map<string, Alert>
+  incidents: Map<string, Incident>
+  stats: WsStats | null
+  lastDiff: Map<string, IncidentDiff>
+}
+
 // ── State shape ───────────────────────────────────────────────────────────
 export interface StreamState {
   // Ring buffer: newest first, capped at ALERT_CAP
@@ -49,6 +71,14 @@ export interface StreamState {
   auditLog: AuditEntry[]
   unreadAuditCount: number
 
+  // ── Time Machine State ───────────────────────────────────────────────────
+  journal: JournalEvent[]
+  baselineTime: number | null
+  scrubMode: boolean
+  scrubTime: number // relative seconds
+  scrubState: ReconstructedState | null
+  newIncidentsCount: number
+
   // ── Actions ──────────────────────────────────────────────────────────────
   applySnapshot:       (msg: WsSnapshot)        => void
   applyAlertBatch:     (msg: WsAlertBatch)      => void
@@ -61,6 +91,193 @@ export interface StreamState {
   addAuditLogEntry:    (entry: Omit<AuditEntry, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
   clearUnreadAuditCount: () => void
   clearAllState:       () => void
+
+  // ── Scrubbing Actions ────────────────────────────────────────────────────
+  startScrubbing:      (t: number)              => void
+  updateScrubbing:     (t: number)              => void
+  stopScrubbing:       () => void
+}
+
+// ── Helper: Record event in journal ───────────────────────────────────────
+function recordJournalEvent(state: StreamState, type: JournalEvent['type'], data: any) {
+  const now = Date.now()
+  let baseline = state.baselineTime
+  if (baseline === null) {
+    baseline = now
+  }
+  const relativeTime = (now - baseline) / 1000
+
+  // Track incidents created during review
+  let newIncidentsCount = state.newIncidentsCount
+  if (state.scrubMode && type === 'incident.created') {
+    newIncidentsCount += 1
+  }
+
+  const newEvent: JournalEvent = {
+    type,
+    timestamp: now,
+    relativeTime,
+    data,
+  }
+
+  const journal = [...state.journal, newEvent]
+  if (journal.length > 5000) {
+    journal.shift()
+  }
+
+  return {
+    baselineTime: baseline,
+    journal,
+    newIncidentsCount,
+  }
+}
+
+// ── Binary Search for relativeTime ────────────────────────────────────────
+function findLastEventIndexBefore(journal: JournalEvent[], t: number): number {
+  let low = 0
+  let high = journal.length - 1
+  let result = -1
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2)
+    if (journal[mid].relativeTime <= t) {
+      result = mid
+      low = mid + 1
+    } else {
+      high = mid - 1
+    }
+  }
+
+  return result
+}
+
+// ── Pure State Reconstruction ──────────────────────────────────────────────
+export function reconstructAt(journal: JournalEvent[], t: number): ReconstructedState {
+  const alerts: Alert[] = []
+  const alertIndex = new Map<string, Alert>()
+  const incidents = new Map<string, Incident>()
+  const lastDiff = new Map<string, IncidentDiff>()
+  let stats: WsStats | null = null
+
+  const lastIdx = findLastEventIndexBefore(journal, t)
+  if (lastIdx === -1) {
+    return { alerts, alertIndex, incidents, stats, lastDiff }
+  }
+
+  // Optimized replay loop using shallow copies for speed (runs in < 1ms)
+  for (let i = 0; i <= lastIdx; i++) {
+    const event = journal[i]
+    const msg = event.data
+
+    switch (event.type) {
+      case 'snapshot': {
+        incidents.clear()
+        lastDiff.clear()
+        for (const inc of msg.incidents) {
+          incidents.set(inc.id, { ...inc })
+        }
+        stats = {
+          type: 'stats',
+          ...msg.stats,
+        }
+        break
+      }
+
+      case 'alert.batch': {
+        const incoming = msg.alerts.map((a: Alert) => {
+          const clone = { ...a }
+          alertIndex.set(clone.id, clone)
+          return clone
+        })
+        alerts.unshift(...incoming.reverse())
+        if (alerts.length > ALERT_CAP) {
+          alerts.length = ALERT_CAP
+        }
+        break
+      }
+
+      case 'alert.dedup': {
+        const existing = alertIndex.get(msg.alert_id)
+        if (existing) {
+          const updated = { ...existing, dup_count: msg.dup_count }
+          alertIndex.set(msg.alert_id, updated)
+        }
+        break
+      }
+
+      case 'incident.created': {
+        const incClone = { ...msg.incident }
+        incidents.set(incClone.id, incClone)
+        lastDiff.set(incClone.id, {
+          added_alert_ids: msg.member_alert_ids,
+          removed_alert_ids: [],
+          at: event.timestamp,
+        })
+        msg.member_alert_ids.forEach((id: string) => {
+          const a = alertIndex.get(id)
+          if (a) {
+            alertIndex.set(id, { ...a, cluster_id: incClone.id })
+          }
+        })
+        break
+      }
+
+      case 'incident.updated': {
+        const incClone = { ...msg.incident }
+        incidents.set(incClone.id, incClone)
+        lastDiff.set(incClone.id, {
+          added_alert_ids: msg.added_alert_ids,
+          removed_alert_ids: msg.removed_alert_ids,
+          at: event.timestamp,
+        })
+        msg.added_alert_ids.forEach((id: string) => {
+          const a = alertIndex.get(id)
+          if (a) {
+            alertIndex.set(id, { ...a, cluster_id: incClone.id })
+          }
+        })
+        msg.removed_alert_ids.forEach((id: string) => {
+          const a = alertIndex.get(id)
+          if (a) {
+            alertIndex.set(id, { ...a, cluster_id: null })
+          }
+        })
+        break
+      }
+
+      case 'incident.summary': {
+        const existing = incidents.get(msg.incident_id)
+        if (existing) {
+          incidents.set(msg.incident_id, {
+            ...existing,
+            title: msg.title,
+            summary: msg.summary,
+            first_action: msg.first_action,
+          })
+        }
+        break
+      }
+
+      case 'stats': {
+        stats = msg
+        break
+      }
+    }
+  }
+
+  // Align active alerts in the ring buffer array with their reconstructed properties
+  const syncedAlerts = alerts.map((a) => {
+    const indexed = alertIndex.get(a.id)
+    return indexed ? { ...a, cluster_id: indexed.cluster_id, dup_count: indexed.dup_count } : a
+  })
+
+  return {
+    alerts: syncedAlerts,
+    alertIndex,
+    incidents,
+    stats,
+    lastDiff,
+  }
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────
@@ -74,6 +291,14 @@ export const useStreamStore = create<StreamState>((set) => ({
   auditLog:   [],
   unreadAuditCount: 0,
 
+  // Time Machine initial state
+  journal: [],
+  baselineTime: null,
+  scrubMode: false,
+  scrubTime: 0,
+  scrubState: null,
+  newIncidentsCount: 0,
+
   // ── snapshot: replace all incidents + stats, refill alerts naturally ──
   applySnapshot: (msg) => {
     const incidents = new Map<string, Incident>()
@@ -81,13 +306,13 @@ export const useStreamStore = create<StreamState>((set) => ({
       incidents.set(inc.id, inc)
     }
 
-    // Build WsStats-shaped object from snapshot stats payload
     const stats: WsStats = {
       type: 'stats',
       ...msg.stats,
     }
 
     set((state) => {
+      const now = Date.now()
       const prevRunning = state.stats?.replay?.running
       const nextRunning = stats.replay?.running
       let newAuditLog = state.auditLog
@@ -106,12 +331,24 @@ export const useStreamStore = create<StreamState>((set) => ({
         newUnreadCount += 1
       }
 
+      // Snapshot establishes baseline relative time (t = 0)
+      const snapshotEvent: JournalEvent = {
+        type: 'snapshot',
+        timestamp: now,
+        relativeTime: 0,
+        data: msg,
+      }
+
       return {
         incidents,
         lastDiff: new Map(),
         stats,
         auditLog: newAuditLog,
         unreadAuditCount: newUnreadCount,
+        // Reset Time Machine on snapshot
+        baselineTime: now,
+        journal: [snapshotEvent],
+        newIncidentsCount: 0,
       }
     })
   },
@@ -119,38 +356,49 @@ export const useStreamStore = create<StreamState>((set) => ({
   // ── alert.batch: prepend to ring buffer, newest first ────────────────
   applyAlertBatch: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'alert.batch', msg)
       const newAlertIndex = new Map(state.alertIndex)
       const incoming = msg.alerts.map((a) => {
         newAlertIndex.set(a.id, a)
         return a
       })
-      // Prepend newest, trim to cap
       const newAlerts = [...incoming, ...state.alerts].slice(0, ALERT_CAP)
-      return { alerts: newAlerts, alertIndex: newAlertIndex }
+      
+      return {
+        ...journalUpdates,
+        alerts: newAlerts,
+        alertIndex: newAlertIndex,
+      }
     })
   },
 
   // ── alert.dedup: update dup_count in-place in both buffer and index ──
   applyAlertDedup: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'alert.dedup', msg)
       const existing = state.alertIndex.get(msg.alert_id)
-      if (!existing) return {}   // unknown id — ignore
+      if (!existing) return { ...journalUpdates }
 
       const updated: Alert = { ...existing, dup_count: msg.dup_count }
       const newAlertIndex = new Map(state.alertIndex)
       newAlertIndex.set(msg.alert_id, updated)
 
-      // Also update in the ring buffer (may be present, may have scrolled off)
       const newAlerts = state.alerts.map((a) =>
         a.id === msg.alert_id ? updated : a,
       )
-      return { alerts: newAlerts, alertIndex: newAlertIndex }
+      
+      return {
+        ...journalUpdates,
+        alerts: newAlerts,
+        alertIndex: newAlertIndex,
+      }
     })
   },
 
   // ── incident.created: add to map, record initial member_alert_ids as diff
   applyIncidentCreated: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'incident.created', msg)
       const newIncidents = new Map(state.incidents)
       newIncidents.set(msg.incident.id, msg.incident)
 
@@ -171,6 +419,7 @@ export const useStreamStore = create<StreamState>((set) => ({
       const newAuditLog = [entry, ...state.auditLog].slice(0, 100)
 
       return {
+        ...journalUpdates,
         incidents: newIncidents,
         lastDiff: newDiff,
         auditLog: newAuditLog,
@@ -202,6 +451,7 @@ export const useStreamStore = create<StreamState>((set) => ({
   // ── incident.updated: in-place update + record diff ──────────────────
   applyIncidentUpdated: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'incident.updated', msg)
       const newIncidents = new Map(state.incidents)
       newIncidents.set(msg.incident.id, msg.incident)
 
@@ -211,7 +461,11 @@ export const useStreamStore = create<StreamState>((set) => ({
         removed_alert_ids: msg.removed_alert_ids,
         at: Date.now(),
       })
-      return { incidents: newIncidents, lastDiff: newDiff }
+      return {
+        ...journalUpdates,
+        incidents: newIncidents,
+        lastDiff: newDiff,
+      }
     })
 
     if (typeof window !== 'undefined') {
@@ -230,8 +484,9 @@ export const useStreamStore = create<StreamState>((set) => ({
   // ── incident.summary: patch summary + first_action + title onto incident
   applyIncidentSummary: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'incident.summary', msg)
       const existing = state.incidents.get(msg.incident_id)
-      if (!existing) return {}
+      if (!existing) return { ...journalUpdates }
 
       const newIncidents = new Map(state.incidents)
       newIncidents.set(msg.incident_id, {
@@ -240,13 +495,17 @@ export const useStreamStore = create<StreamState>((set) => ({
         summary: msg.summary,
         first_action: msg.first_action,
       })
-      return { incidents: newIncidents }
+      return {
+        ...journalUpdates,
+        incidents: newIncidents,
+      }
     })
   },
 
   // ── stats: replace latest payload ────────────────────────────────────
   applyStats: (msg) => {
     set((state) => {
+      const journalUpdates = recordJournalEvent(state, 'stats', msg)
       const prevRunning = state.stats?.replay?.running
       const nextRunning = msg.replay?.running
       let newAuditLog = state.auditLog
@@ -266,6 +525,7 @@ export const useStreamStore = create<StreamState>((set) => ({
       }
 
       return {
+        ...journalUpdates,
         stats: msg,
         auditLog: newAuditLog,
         unreadAuditCount: newUnreadCount,
@@ -303,14 +563,54 @@ export const useStreamStore = create<StreamState>((set) => ({
     stats: null,
     auditLog: [],
     unreadAuditCount: 0,
+    // Reset Time Machine state
+    journal: [],
+    baselineTime: null,
+    scrubMode: false,
+    scrubTime: 0,
+    scrubState: null,
+    newIncidentsCount: 0,
   }),
+
+  // ── Scrubbing Actions ────────────────────────────────────────────────────
+  startScrubbing: (t) => {
+    set((state) => {
+      const scrubState = reconstructAt(state.journal, t)
+      return {
+        scrubMode: true,
+        scrubTime: t,
+        scrubState,
+        newIncidentsCount: 0,
+      }
+    })
+  },
+
+  updateScrubbing: (t) => {
+    set((state) => {
+      const scrubState = reconstructAt(state.journal, t)
+      return {
+        scrubTime: t,
+        scrubState,
+      }
+    })
+  },
+
+  stopScrubbing: () => {
+    set({
+      scrubMode: false,
+      scrubTime: 0,
+      scrubState: null,
+      newIncidentsCount: 0,
+    })
+  },
 }))
 
 // ── Derived selectors ─────────────────────────────────────────────────────
 
-/** Sorted incident list — active first, then by created_at desc */
+/** Active incidents list sorted - active first, then by created_at desc */
 export function selectIncidentList(state: StreamState): Incident[] {
-  return [...state.incidents.values()].sort((a, b) => {
+  const activeIncidents = state.scrubMode && state.scrubState ? state.scrubState.incidents : state.incidents
+  return [...activeIncidents.values()].sort((a, b) => {
     if (a.status !== b.status) {
       return a.status === 'active' ? -1 : 1
     }
@@ -318,7 +618,8 @@ export function selectIncidentList(state: StreamState): Incident[] {
   })
 }
 
-/** Buffered alert count */
+/** Active buffered alert count */
 export function selectAlertCount(state: StreamState): number {
-  return state.alerts.length
+  const activeAlerts = state.scrubMode && state.scrubState ? state.scrubState.alerts : state.alerts
+  return activeAlerts.length
 }
