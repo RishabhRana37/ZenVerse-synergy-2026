@@ -7,6 +7,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
+import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 
 // ── RelativeTime component ───────────────────────────────────────────────
 
@@ -415,6 +416,9 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
           {activeCount} active
         </div>
       </div>
+
+      {/* Topology Health Map — collapsible, above incident cards */}
+      <TopologyHealthMap onNodeClick={(incidentId) => onIncidentSelect?.(incidentId)} />
 
       {/* Body */}
       {incidents.length === 0 ? (

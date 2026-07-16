@@ -4,6 +4,7 @@ import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
 import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
+import { StormTimeline } from '@/features/storm/StormTimeline'
 import { IncidentPanel } from '@/features/incidents/IncidentPanel'
 import { DemoDriver } from '@/features/demo-driver/DemoDriver'
 import { Odometer } from '@/components/ui/Odometer'
@@ -313,6 +314,9 @@ export function WarRoom() {
 
         </div>
       </header>
+
+      {/* ── Storm Timeline Strip (canvas, 72px + 28px collapse bar) ──────────── */}
+      <StormTimeline />
 
       {/* ── Main Split View (Two Panels) ──────────────────────────────────── */}
       <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base">
