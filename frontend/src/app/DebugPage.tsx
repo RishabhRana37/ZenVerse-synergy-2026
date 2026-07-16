@@ -35,7 +35,7 @@ export function DebugPage() {
           status: <span style={{ color: connColor, fontWeight: 'bold' }}>{connection}</span>
           {'  '}
           <span style={{ color: '#4D5866', fontSize: 11 }}>
-            (kill mock server to test reconnect — should recover without page refresh)
+            (kill the backend server to test reconnect — should recover without page refresh)
           </span>
         </div>
       </section>

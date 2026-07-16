@@ -1,0 +1,32 @@
+scenario: rolling-deploy
+description: "Bad canary deployment of checkout-svc causing error rate spike"
+
+services:
+  - name: checkout-svc
+  - name: inventory-svc
+    depends_on: [checkout-svc]
+  - name: cart-svc
+    depends_on: [checkout-svc]
+  - name: api-gateway
+    depends_on: [cart-svc, inventory-svc]
+  - name: cdn-edge
+    depends_on: [api-gateway]
+
+failure_script:
+  - t: 0
+    service: checkout-svc
+    event: deploy_regression
+  - t: 5
+    service: inventory-svc
+    event: upstream_error
+  - t: 5
+    service: cart-svc
+    event: upstream_error
+  - t: 10
+    service: api-gateway
+    event: upstream_error
+  - t: 15
+    service: cdn-edge
+    event: upstream_error
+
+background_noise_rate: 1.0

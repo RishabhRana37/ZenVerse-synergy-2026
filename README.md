@@ -72,6 +72,34 @@ Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 Synergy 2026 · Dept. of CSE, Manipal University Jaipur · Industry Partner: HPE
 
+## Getting Started
+
+To run StormLens locally, you'll need two terminal windows.
+
+### 1. Backend
+Navigate to the `backend/` directory and create a virtual environment:
+```bash
+cd backend
+python -m venv .venv
+
+# Activate on Windows:
+.venv\Scripts\activate
+# Activate on macOS/Linux:
+# source .venv/bin/activate
+
+pip install -e ".[dev]"
+python scripts/fetch_model.py
+uvicorn app.api.main:app --reload
+```
+
+### 2. Frontend
+In a separate terminal, navigate to the `frontend/` directory:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Status
 
 - [x] Problem statement selected (PS #10)

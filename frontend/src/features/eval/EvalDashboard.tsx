@@ -66,17 +66,22 @@ export function EvalDashboard() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         const res = await fetch(`${apiBase}/eval/results`)
         if (!res.ok) {
-          throw new Error(`HTTP Error ${res.status}`)
+          throw new Error('API failed')
         }
         const json = await res.json()
         setData(json)
         setError(null)
       } catch (err: any) {
-        console.error('[eval] Failed to load results:', err)
-        setError(err.message || 'Failed to resolve eval harness metrics.')
+        console.error('Eval fetch err:', err)
+        setError(
+          <div className="flex flex-col gap-2 text-text-secondary text-sm bg-surface rounded p-4 border border-border">
+            <span className="text-status-error font-medium">Network Error</span>
+            Could not fetch ablation metrics. Ensure the backend API server is running.
+          </div>
+        )
       } finally {
         setLoading(false)
       }

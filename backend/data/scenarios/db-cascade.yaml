@@ -1,0 +1,38 @@
+scenario: db-cascade
+description: "PostgreSQL primary disk exhaustion cascading through the order service path"
+
+services:
+  - name: postgres-primary
+  - name: redis-cache
+  - name: auth-svc
+    depends_on: [postgres-primary]
+  - name: order-svc
+    depends_on: [postgres-primary, redis-cache]
+  - name: api-gateway
+    depends_on: [auth-svc, order-svc]
+  - name: payment-svc
+    depends_on: [postgres-primary]
+  - name: notification-svc
+    depends_on: [order-svc]
+
+failure_script:
+  - t: 0
+    service: postgres-primary
+    event: disk_full
+  - t: 5
+    service: order-svc
+    event: connection_timeout
+  - t: 8
+    service: auth-svc
+    event: connection_timeout
+  - t: 10
+    service: payment-svc
+    event: connection_timeout
+  - t: 14
+    service: api-gateway
+    event: upstream_error
+  - t: 18
+    service: notification-svc
+    event: upstream_error
+
+background_noise_rate: 2.0   # alerts/s from unrelated services

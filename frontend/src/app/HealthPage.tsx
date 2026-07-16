@@ -15,7 +15,8 @@ export function HealthPage() {
   useEffect(() => {
     const checkApi = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
+        
         const res = await fetch(`${apiBase}/topology`)
         if (res.ok) {
           setApiReachable('ok')
@@ -124,7 +125,7 @@ export function HealthPage() {
 
           {/* API Reachability */}
           <DiagRow
-            label="REST API reachability (port 8788):"
+            label="REST API reachability (port 8000):"
             value={apiReachable.toUpperCase()}
             color={apiReachable === 'ok' ? 'accent' : apiReachable === 'fail' ? 'critical' : 'muted'}
           />
@@ -169,10 +170,10 @@ export function HealthPage() {
         {!allReady && (
           <div className="flex flex-col gap-1.5 text-[10px] font-mono text-text-muted border-t border-border/30 pt-3">
             {connection !== 'open' && (
-              <span>• WebSocket: run <code className="text-text-secondary">node mock/server.mjs</code> then reload</span>
+              <span>• WebSocket: ensure the FastAPI backend is running</span>
             )}
             {apiReachable === 'fail' && (
-              <span>• API: mock server must be running on port 8788</span>
+              <span>• API: backend API server must be running on port 8000</span>
             )}
             {fps < 55 && (
               <span>• FPS: close other browser tabs and GPU-heavy apps</span>
