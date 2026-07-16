@@ -42,6 +42,8 @@ function formatValue(value: number, format: OdometerFormat): string {
  * Uses AnimatePresence with a unique `key` per value to re-trigger animation.
  */
 function Digit({ char, digitClassName }: { char: string; digitClassName?: string }) {
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
   return (
     <span
       className={clsx('relative inline-block overflow-hidden', digitClassName)}
@@ -52,10 +54,10 @@ function Digit({ char, digitClassName }: { char: string; digitClassName?: string
         <motion.span
           key={char}
           className="inline-block"
-          initial={{ y: '100%', opacity: 0 }}
+          initial={prefersReduced ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 }}
           animate={{ y: '0%',   opacity: 1 }}
-          exit={{    y: '-100%', opacity: 0 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          exit={prefersReduced ? { y: 0, opacity: 0 } : { y: '-100%', opacity: 0 }}
+          transition={prefersReduced ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
           {char}
         </motion.span>

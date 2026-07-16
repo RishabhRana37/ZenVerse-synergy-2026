@@ -54,6 +54,7 @@ export interface StreamState {
   applyIncidentSummary:(msg: WsIncidentSummary) => void
   applyStats:          (msg: WsStats)           => void
   setConnection:       (status: ConnectionStatus) => void
+  clearAllState:       () => void
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────
@@ -198,6 +199,14 @@ export const useStreamStore = create<StreamState>((set) => ({
 
   // ── connection status ─────────────────────────────────────────────────
   setConnection: (status) => set({ connection: status }),
+
+  clearAllState: () => set({
+    alerts: [],
+    alertIndex: new Map(),
+    incidents: new Map(),
+    lastDiff: new Map(),
+    stats: null,
+  }),
 }))
 
 // ── Derived selectors ─────────────────────────────────────────────────────

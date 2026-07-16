@@ -54,6 +54,7 @@ const state = {
 let scenarioBaseTs = null     // real Date when scenario started (t=0)
 let scenarioTimers = []       // setTimeout handles for cleanup on restart
 let statsTimer = null
+let replaySpeed = 1           // scenario playback speed multiplier
 
 // ── Load scenario ──────────────────────────────────────────────────────────
 let scenario = null
@@ -100,8 +101,9 @@ function buildStats() {
       ? parseFloat((1 - activeIncidents / state.totalAlertsByVolume).toFixed(4))
       : 0
 
-  const scenarioElapsed = scenarioBaseTs ? (now - scenarioBaseTs) / 1000 : 0
-  const progress = Math.min(scenarioElapsed / 90, 1)
+  const running = scenarioTimers.length > 0
+  const scenarioElapsed = (running && scenarioBaseTs) ? (now - scenarioBaseTs) / 1000 : 0
+  const progress = running ? Math.min((scenarioElapsed * replaySpeed) / 90, 1) : 0
 
   return {
     type: 'stats',
@@ -112,9 +114,9 @@ function buildStats() {
     compression_ratio: compressionRatio,
     alerts_per_sec: parseFloat(alertsPerSec),
     replay: {
-      running: scenarioTimers.length > 0,
+      running,
       dataset: 'db-cascade',
-      speed: 1,
+      speed: replaySpeed,
       progress: parseFloat(progress.toFixed(3)),
     },
   }
@@ -156,26 +158,36 @@ function resetState() {
   state.windowStart = Date.now()
 }
 
-function startScenario() {
+function startScenario(speed = 1) {
   clearTimers()
   resetState()
+  replaySpeed = speed
   scenarioBaseTs = Date.now()
 
-  log('SCENARIO', 'Starting replay from t=0', C.green)
+  log('SCENARIO', `Starting replay from t=0 at ${speed}x speed`, C.green)
 
   for (const event of scenario.events) {
     const timer = setTimeout(() => {
       handleScenarioEvent(event)
-    }, event.t)
+    }, event.t / speed)
     scenarioTimers.push(timer)
   }
 
-  // After scenario ends (90s), clean up timers list so stats shows running=false
+  // After scenario ends (90s scaled by speed), clean up timers list so stats shows running=false
   const endTimer = setTimeout(() => {
     scenarioTimers = []
-    log('SCENARIO', 'Scenario complete. Stats continue. Press "r" to restart.', C.yellow)
-  }, 91000)
+    log('SCENARIO', 'Scenario complete. Stats continue.', C.yellow)
+  }, 91000 / speed)
   scenarioTimers.push(endTimer)
+
+  // Broadcast immediate stats tick to notify speed/running changes
+  broadcast(buildStats())
+}
+
+function stopScenario() {
+  clearTimers()
+  log('SCENARIO', 'Replay stopped', C.yellow)
+  broadcast(buildStats())
 }
 
 function handleScenarioEvent(event) {
@@ -285,9 +297,6 @@ function startStatsBroadcast() {
   statsTimer = setInterval(() => {
     const stats = buildStats()
     broadcast(stats)
-    // Reset window counters after building stats
-    state.alertsEmittedLastWindow = 0
-    state.windowStart = Date.now()
   }, 2000)
 }
 
@@ -327,7 +336,7 @@ wss.on('error', (err) => {
 // ── HTTP API Server on port 8788 ───────────────────────────────────────────
 const httpServer = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   res.setHeader('Content-Type', 'application/json')
 
@@ -338,6 +347,35 @@ const httpServer = createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
+
+  // POST /replay/start { scenario, speed }
+  if (req.method === 'POST' && url.pathname === '/replay/start') {
+    let body = ''
+    req.on('data', chunk => {
+      body += chunk.toString()
+    })
+    req.on('end', () => {
+      let speed = 1
+      try {
+        const parsed = JSON.parse(body)
+        speed = parseFloat(parsed.speed) || 1
+      } catch (e) {
+        // ignore
+      }
+      startScenario(speed)
+      res.writeHead(200)
+      res.end(JSON.stringify({ status: 'ok', speed }))
+    })
+    return
+  }
+
+  // POST /replay/stop
+  if (req.method === 'POST' && url.pathname === '/replay/stop') {
+    stopScenario()
+    res.writeHead(200)
+    res.end(JSON.stringify({ status: 'ok' }))
+    return
+  }
 
   if (req.method === 'GET' && url.pathname === '/topology') {
     const topology = {

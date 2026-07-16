@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AreaChart, Area, ResponsiveContainer } from 'recharts'
+import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
 import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
 import { IncidentPanel } from '@/features/incidents/IncidentPanel'
@@ -8,6 +9,7 @@ import { DemoDriver } from '@/features/demo-driver/DemoDriver'
 import { Odometer } from '@/components/ui/Odometer'
 import { ConvergenceOverlay } from '@/components/ui/ConvergenceOverlay'
 import { DrillDownSlideOver } from '@/features/drilldown/DrillDownSlideOver'
+import { audioManager } from '@/lib/audio'
 
 export function WarRoom() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
@@ -20,6 +22,51 @@ export function WarRoom() {
   const activeIncidents = stats?.active_incidents ?? null
   const compressionRatio = stats?.compression_ratio ?? null
   const replayRunning = stats?.replay?.running ?? false
+
+  const [muted, setMuted] = useState(audioManager.getMuted())
+
+  // Sync mute state on custom events
+  useEffect(() => {
+    const handleMuteEvent = (e: Event) => {
+      setMuted((e as CustomEvent<boolean>).detail)
+    }
+    window.addEventListener('stormlens-audio-mute', handleMuteEvent)
+    return () => window.removeEventListener('stormlens-audio-mute', handleMuteEvent)
+  }, [])
+
+  // Listen to keyboard shortcut events for card selection
+  useEffect(() => {
+    const handleShortcutSelect = (e: Event) => {
+      const idx = (e as CustomEvent<number>).detail
+      const sortedIncidents = [...useStreamStore.getState().incidents.values()].sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'active' ? -1 : 1
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+      const target = sortedIncidents[idx]
+      if (target) {
+        setSelectedIncidentId(target.id)
+      }
+    }
+
+    const handleShortcutClose = () => {
+      setSelectedIncidentId(null)
+    }
+
+    window.addEventListener('stormlens-shortcut-incident', handleShortcutSelect)
+    window.addEventListener('stormlens-shortcut-close', handleShortcutClose)
+
+    return () => {
+      window.removeEventListener('stormlens-shortcut-incident', handleShortcutSelect)
+      window.removeEventListener('stormlens-shortcut-close', handleShortcutClose)
+    }
+  }, [])
+
+  // ── Ambience hum tracking alerts per second ──────────────────────────────
+  useEffect(() => {
+    if (alertsPerSec !== undefined) {
+      audioManager.updateRumble(alertsPerSec)
+    }
+  }, [alertsPerSec])
 
   // ── Sparkline Rate History (30 points) ──────────────────────────────────
   const [rateHistory, setRateHistory] = useState<{ value: number }[]>([])
@@ -149,6 +196,31 @@ export function WarRoom() {
               Replay
             </div>
           )}
+
+          {/* Mute speaker button */}
+          <button
+            onClick={() => audioManager.toggleMute()}
+            className="p-1.5 rounded hover:bg-bg-elevated text-text-secondary hover:text-accent transition-colors flex items-center justify-center flex-shrink-0"
+            title={muted ? "Unmute ambience (M)" : "Mute ambience (M)"}
+          >
+            {muted ? (
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5v6h3l4.5 3.75V5.25z" />
+              </svg>
+            ) : (
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+              </svg>
+            )}
+          </button>
+
+          {/* Tiny Eval link */}
+          <Link
+            to="/eval"
+            className="px-2.5 py-1 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-[11px] font-mono font-semibold text-text-secondary hover:text-text-primary transition-all duration-200"
+          >
+            Eval
+          </Link>
         </div>
       </header>
 
@@ -170,7 +242,7 @@ export function WarRoom() {
       </main>
 
       {/* ── Demo Replay Controller ─────────────────────────────────────────── */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg overflow-hidden glass border border-border shadow-elevated">
+      <div className="absolute bottom-6 right-6 z-50">
         <DemoDriver />
       </div>
 

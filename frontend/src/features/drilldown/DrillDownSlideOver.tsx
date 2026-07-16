@@ -269,6 +269,17 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     cy.edges().removeClass('active-prop-edge')
     cy.nodes().removeClass('active-node-blink')
 
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced) {
+      path.forEach((edge) => {
+        const src = edge[0]
+        const dest = edge[1]
+        cy.edges(`[source="${src}"][target="${dest}"]`).addClass('active-prop-edge')
+        cy.nodes(`#${dest}`).addClass('active-node-blink')
+      })
+      return
+    }
+
     // 2. Stagger activation
     path.forEach((edge, idx) => {
       setTimeout(() => {
