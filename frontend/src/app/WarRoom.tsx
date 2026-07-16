@@ -10,13 +10,18 @@ import { Odometer } from '@/components/ui/Odometer'
 import { ConvergenceOverlay } from '@/components/ui/ConvergenceOverlay'
 import { DrillDownSlideOver } from '@/features/drilldown/DrillDownSlideOver'
 import { audioManager } from '@/lib/audio'
+import { Toast } from '@/components/ui/Toast'
 
 export function WarRoom() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [auditOpen, setAuditOpen] = useState(false)
   
   const connection = useStreamStore((s) => s.connection)
   const stats = useStreamStore((s) => s.stats)
+  const auditLog = useStreamStore((s) => s.auditLog)
+  const unreadAuditCount = useStreamStore((s) => s.unreadAuditCount)
+  const clearUnreadAuditCount = useStreamStore((s) => s.clearUnreadAuditCount)
 
   const alertsPerSec = stats?.alerts_per_sec
   const totalAlerts = stats?.total_alerts ?? null
@@ -211,6 +216,67 @@ export function WarRoom() {
             )}
           </button>
 
+          {/* Activity Log Popover Button */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => {
+                if (!auditOpen) {
+                  clearUnreadAuditCount()
+                }
+                setAuditOpen(!auditOpen)
+              }}
+              className="p-1.5 rounded hover:bg-bg-elevated text-text-secondary hover:text-accent transition-colors flex items-center justify-center flex-shrink-0 relative"
+              title="Activity Log"
+            >
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {unreadAuditCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full bg-severity-critical border border-bg-surface text-[8px] font-mono font-bold text-text-inverse flex items-center justify-center px-0.5 select-none animate-pulse">
+                  {unreadAuditCount}
+                </span>
+              )}
+            </button>
+            {auditOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setAuditOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-[320px] max-h-[400px] overflow-y-auto rounded bg-bg-elevated border border-border shadow-elevated p-3.5 z-50 flex flex-col font-sans text-left">
+                  <h4 className="text-[10px] font-bold text-text-primary uppercase tracking-wider mb-2.5 pb-1.5 border-b border-border/40 select-none">
+                    Activity Log
+                  </h4>
+                  {auditLog.length === 0 ? (
+                    <div className="text-[11px] text-text-muted py-6 text-center select-none font-mono">
+                      No activity logged yet
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {auditLog.map((entry) => {
+                        const formattedTime = new Date(entry.timestamp).toLocaleTimeString(undefined, {
+                          hour12: false,
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })
+
+                        return (
+                          <div key={entry.id} className="flex flex-col text-[11px] font-mono leading-tight">
+                            <div className="flex items-center justify-between text-[9px] text-text-muted mb-0.5 select-none">
+                              <span className="font-bold uppercase text-accent/80">
+                                {entry.type.replace(/_/g, ' ')}
+                              </span>
+                              <span>{formattedTime}</span>
+                            </div>
+                            <span className="text-text-primary select-text">{entry.message}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
           {/* SINGLE Navigation Overflow Menu */}
           <div className="relative flex-shrink-0">
             <button
@@ -272,6 +338,9 @@ export function WarRoom() {
 
       {/* ── Convergence Particle Overlay ────────────────────────────────────── */}
       <ConvergenceOverlay />
+
+      {/* Toast Notification Container */}
+      <Toast />
 
       {/* ── Drill-down Slide-over ─────────────────────────────────────────── */}
       <AnimatePresence>

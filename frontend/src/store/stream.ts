@@ -25,6 +25,7 @@ import type {
   WsIncidentUpdated,
   WsIncidentSummary,
   IncidentDiff,
+  AuditEntry,
 } from '@/lib/types'
 import type { ConnectionStatus } from '@/lib/ws'
 
@@ -44,6 +45,9 @@ export interface StreamState {
   stats: WsStats | null
   // WS connection state
   connection: ConnectionStatus
+  // Audit log
+  auditLog: AuditEntry[]
+  unreadAuditCount: number
 
   // ── Actions ──────────────────────────────────────────────────────────────
   applySnapshot:       (msg: WsSnapshot)        => void
@@ -54,6 +58,8 @@ export interface StreamState {
   applyIncidentSummary:(msg: WsIncidentSummary) => void
   applyStats:          (msg: WsStats)           => void
   setConnection:       (status: ConnectionStatus) => void
+  addAuditLogEntry:    (entry: Omit<AuditEntry, 'id' | 'timestamp'> & { id?: string; timestamp?: string }) => void
+  clearUnreadAuditCount: () => void
   clearAllState:       () => void
 }
 
@@ -65,6 +71,8 @@ export const useStreamStore = create<StreamState>((set) => ({
   lastDiff:   new Map(),
   stats:      null,
   connection: 'closed',
+  auditLog:   [],
+  unreadAuditCount: 0,
 
   // ── snapshot: replace all incidents + stats, refill alerts naturally ──
   applySnapshot: (msg) => {
@@ -79,11 +87,32 @@ export const useStreamStore = create<StreamState>((set) => ({
       ...msg.stats,
     }
 
-    set({
-      incidents,
-      lastDiff: new Map(),
-      stats,
-      // Raw stream intentionally NOT cleared — refills naturally per §8 of contract
+    set((state) => {
+      const prevRunning = state.stats?.replay?.running
+      const nextRunning = stats.replay?.running
+      let newAuditLog = state.auditLog
+      let newUnreadCount = state.unreadAuditCount
+
+      if (prevRunning !== nextRunning && nextRunning !== undefined) {
+        const entry: AuditEntry = {
+          id: `audit-${Date.now()}-${Math.random()}`,
+          timestamp: new Date().toISOString(),
+          type: nextRunning ? 'replay_started' : 'replay_stopped',
+          message: nextRunning
+            ? `Replay started: dataset "${stats.replay.dataset}" at speed ${stats.replay.speed}x`
+            : 'Replay stopped',
+        }
+        newAuditLog = [entry, ...state.auditLog].slice(0, 100)
+        newUnreadCount += 1
+      }
+
+      return {
+        incidents,
+        lastDiff: new Map(),
+        stats,
+        auditLog: newAuditLog,
+        unreadAuditCount: newUnreadCount,
+      }
     })
   },
 
@@ -131,7 +160,22 @@ export const useStreamStore = create<StreamState>((set) => ({
         removed_alert_ids: [],
         at: Date.now(),
       })
-      return { incidents: newIncidents, lastDiff: newDiff }
+
+      const entry: AuditEntry = {
+        id: `audit-${Date.now()}-${Math.random()}`,
+        timestamp: new Date().toISOString(),
+        type: 'incident_created',
+        message: `Incident created: "${msg.incident.title}" (${msg.member_alert_ids.length} alerts)`,
+        incidentId: msg.incident.id,
+      }
+      const newAuditLog = [entry, ...state.auditLog].slice(0, 100)
+
+      return {
+        incidents: newIncidents,
+        lastDiff: newDiff,
+        auditLog: newAuditLog,
+        unreadAuditCount: state.unreadAuditCount + 1,
+      }
     })
 
     if (typeof window !== 'undefined') {
@@ -194,11 +238,54 @@ export const useStreamStore = create<StreamState>((set) => ({
 
   // ── stats: replace latest payload ────────────────────────────────────
   applyStats: (msg) => {
-    set({ stats: msg })
+    set((state) => {
+      const prevRunning = state.stats?.replay?.running
+      const nextRunning = msg.replay?.running
+      let newAuditLog = state.auditLog
+      let newUnreadCount = state.unreadAuditCount
+
+      if (prevRunning !== nextRunning && nextRunning !== undefined) {
+        const entry: AuditEntry = {
+          id: `audit-${Date.now()}-${Math.random()}`,
+          timestamp: new Date().toISOString(),
+          type: nextRunning ? 'replay_started' : 'replay_stopped',
+          message: nextRunning
+            ? `Replay started: dataset "${msg.replay.dataset}" at speed ${msg.replay.speed}x`
+            : 'Replay stopped',
+        }
+        newAuditLog = [entry, ...state.auditLog].slice(0, 100)
+        newUnreadCount += 1
+      }
+
+      return {
+        stats: msg,
+        auditLog: newAuditLog,
+        unreadAuditCount: newUnreadCount,
+      }
+    })
   },
 
   // ── connection status ─────────────────────────────────────────────────
   setConnection: (status) => set({ connection: status }),
+
+  // ── add audit log entry manually ──────────────────────────────────────
+  addAuditLogEntry: (entry) => {
+    set((state) => {
+      const fullEntry: AuditEntry = {
+        id: entry.id || `audit-${Date.now()}-${Math.random()}`,
+        timestamp: entry.timestamp || new Date().toISOString(),
+        type: entry.type,
+        message: entry.message,
+        incidentId: entry.incidentId,
+      }
+      return {
+        auditLog: [fullEntry, ...state.auditLog].slice(0, 100),
+        unreadAuditCount: state.unreadAuditCount + 1,
+      }
+    })
+  },
+
+  clearUnreadAuditCount: () => set({ unreadAuditCount: 0 }),
 
   clearAllState: () => set({
     alerts: [],
@@ -206,6 +293,8 @@ export const useStreamStore = create<StreamState>((set) => ({
     incidents: new Map(),
     lastDiff: new Map(),
     stats: null,
+    auditLog: [],
+    unreadAuditCount: 0,
   }),
 }))
 

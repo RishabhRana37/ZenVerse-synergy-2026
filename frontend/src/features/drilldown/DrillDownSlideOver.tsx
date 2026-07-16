@@ -10,6 +10,7 @@ import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Badge } from '@/components/ui/Badge'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
+import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
 
 // Register dagre layout extension in cytoscape
 cytoscape.use(dagre)
@@ -177,14 +178,32 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
   const cyRef = useRef<any>(null)
   const membersParentRef = useRef<HTMLDivElement>(null)
 
-  // Escape key support
+  // Escape key & operator shortcuts support
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      // Don't trigger if user is typing in input
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      ) {
+        return
+      }
+
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'a' || e.key === 'A') {
+        if (incidentId) {
+          acknowledgeIncident(incidentId)
+        }
+      } else if (e.key === 'R' && e.shiftKey) {
+        if (incidentId) {
+          resolveIncident(incidentId)
+        }
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+  }, [onClose, incidentId])
 
   // Fetch topology + incident details
   useEffect(() => {
@@ -443,10 +462,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                 const rank = idx + 1
                 const isFirst = rank === 1
                 return (
-                  <div
+                  <motion.div
+                    layout
                     key={candidate.alert_id}
                     className={clsx(
-                      "flex items-center gap-3 transition-all duration-200 select-text",
+                      "flex items-center gap-3 transition-all duration-200 select-text group",
                       isFirst
                         ? "bg-bg-elevated border border-accent/30 ring-1 ring-accent/30 rounded p-3"
                         : "bg-bg-base/30 border border-border/50 rounded p-2.5"
@@ -465,6 +485,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                         <span className="text-[12px] font-semibold text-text-primary truncate">
                           {candidate.service}
                         </span>
+                        {candidate.is_confirmed && (
+                          <span className="text-[8px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                            Confirmed
+                          </span>
+                        )}
                       </div>
                       <div className="text-[10px] font-mono text-text-secondary truncate mt-0.5">
                         {candidate.template}
@@ -479,7 +504,21 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                         amberThreshold={0.3}
                       />
                     </div>
-                  </div>
+                    {rank > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          confirmRootCause(storeIncident.id, candidate.alert_id)
+                        }}
+                        title="Set as root cause"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1.5 rounded hover:bg-bg-elevated border border-border text-text-muted hover:text-accent hover:border-accent/40 shrink-0"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      </button>
+                    )}
+                  </motion.div>
                 )
               })}
             </div>
