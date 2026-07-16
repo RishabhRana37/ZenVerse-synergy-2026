@@ -16,6 +16,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react'
 import CytoscapeComponent from 'react-cytoscapejs'
 import { useStreamStore } from '@/store/stream'
+import { Odometer } from '@/components/ui/Odometer'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
 // ── API base ───────────────────────────────────────────────────────────────
@@ -259,16 +260,20 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="text-[10px] font-mono font-bold text-text-muted tracking-wider uppercase">
+          <span className="text-[11px] font-mono font-bold text-text-muted tracking-wider uppercase select-none">
             Topology Health
           </span>
         </div>
         <div className="flex items-center gap-2 text-[9px] font-mono">
           {rootCauseCount > 0 && (
-            <span className="text-severity-critical">{rootCauseCount} critical</span>
+            <span className="text-severity-critical inline-flex items-baseline gap-0.5 select-all">
+              <Odometer value={rootCauseCount} easing="spring" className="text-severity-critical" /> critical
+            </span>
           )}
           {degradedCount > 0 && (
-            <span className="text-severity-warning">{degradedCount} degraded</span>
+            <span className="text-severity-warning inline-flex items-baseline gap-0.5 select-all">
+              <Odometer value={degradedCount} easing="spring" className="text-severity-warning" /> degraded
+            </span>
           )}
           {rootCauseCount === 0 && degradedCount === 0 && (
             <span className="text-accent">all healthy</span>

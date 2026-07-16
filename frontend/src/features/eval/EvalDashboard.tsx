@@ -375,7 +375,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {(b.compression_ratio * 100).toFixed(1)}%
+                          <Odometer value={b.compression_ratio} format="percent1" easing="spring" />
                         </td>
 
                         {/* Purity */}
@@ -385,7 +385,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {(b.purity * 100).toFixed(1)}%
+                          <Odometer value={b.purity} format="percent1" easing="spring" />
                         </td>
 
                         {/* ARI */}
@@ -395,7 +395,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {(b.ari * 100).toFixed(1)}%
+                          <Odometer value={b.ari} format="percent1" easing="spring" />
                         </td>
 
                         {/* Hit@1 */}
@@ -405,7 +405,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {(b.hit_at_1 * 100).toFixed(1)}%
+                          <Odometer value={b.hit_at_1} format="percent1" easing="spring" />
                         </td>
 
                         {/* Hit@3 */}
@@ -415,7 +415,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {(b.hit_at_3 * 100).toFixed(1)}%
+                          <Odometer value={b.hit_at_3} format="percent1" easing="spring" />
                         </td>
 
                         {/* p50 Latency */}
@@ -425,7 +425,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {b.latency_p50_ms}ms
+                          <Odometer value={b.latency_p50_ms} format="integer" easing="spring" />ms
                         </td>
 
                         {/* p95 Latency */}
@@ -435,7 +435,7 @@ export function EvalDashboard() {
                             ? "text-accent font-semibold"
                             : "text-text-primary"
                         )}>
-                          {b.latency_p95_ms}ms
+                          <Odometer value={b.latency_p95_ms} format="integer" easing="spring" />ms
                         </td>
                       </tr>
                     )

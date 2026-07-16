@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
+import { Sparkline } from '@/components/ui/Sparkline'
 import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
 import { StormTimeline } from '@/features/storm/StormTimeline'
 import { IncidentPanel } from '@/features/incidents/IncidentPanel'
@@ -152,12 +152,12 @@ export function WarRoom() {
 
         {/* Center: Hero Equation [total_alerts] alerts → [active_incidents] incidents */}
         <div className="justify-self-center flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none">
-          <Odometer value={totalAlerts} format="integer" className="text-text-primary font-semibold" />
+          <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-semibold" />
           <span className="text-text-muted">alerts</span>
           
           <span className="text-text-muted">→</span>
           
-          <Odometer value={activeIncidents} format="integer" className="text-accent font-semibold" />
+          <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-semibold" />
           <span className="text-text-muted">incidents</span>
           
           <span className="text-border-strong font-sans">·</span>
@@ -170,6 +170,7 @@ export function WarRoom() {
             <Odometer
               value={compressionRatio}
               format="percent2"
+              easing="spring"
               className="text-accent font-semibold"
             />
           </motion.span>
@@ -188,25 +189,12 @@ export function WarRoom() {
             {/* Sparkline chart */}
             <div className="w-[42px] h-[14px] opacity-80">
               {rateHistory.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rateHistory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                    <defs>
-                      <linearGradient id="rateSparkline" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2DD4A7" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#2DD4A7" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#2DD4A7"
-                      strokeWidth={1}
-                      fill="url(#rateSparkline)"
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <Sparkline
+                  data={rateHistory.map(d => d.value)}
+                  width={42}
+                  height={14}
+                  color="#2DD4A7"
+                />
               )}
             </div>
           </div>
@@ -245,7 +233,7 @@ export function WarRoom() {
               </svg>
               {unreadAuditCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full bg-severity-critical border border-bg-surface text-[8px] font-mono font-bold text-text-inverse flex items-center justify-center px-0.5 select-none animate-pulse">
-                  {unreadAuditCount}
+                  <Odometer value={unreadAuditCount} format="integer" easing="spring" className="text-text-inverse text-[8px] font-bold" />
                 </span>
               )}
             </button>

@@ -5,6 +5,7 @@ import CytoscapeComponent from 'react-cytoscapejs'
 import { useStreamStore } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Badge } from '@/components/ui/Badge'
+import { Odometer } from '@/components/ui/Odometer'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
@@ -426,11 +427,15 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               />
               <span className="text-[10px] font-mono uppercase font-semibold text-text-muted">{storeIncident.status}</span>
             </div>
-            <h2 className="text-[15px] font-semibold text-text-primary leading-snug select-text font-sans">
+            <h2 className="text-[15px] font-semibold text-text-primary leading-snug select-text font-sans line-clamp-2">
               {storeIncident.title}
             </h2>
-            <div className="flex items-center gap-1.5 text-[11px] text-text-muted font-mono mt-1">
-              <span>{storeIncident.alert_count} alerts (×{storeIncident.unique_count} unique)</span>
+            <div className="flex items-center gap-1.5 text-[11px] text-text-muted font-mono mt-1 select-none">
+              <span className="inline-flex items-baseline gap-0.5">
+                <Odometer value={storeIncident.alert_count} easing="spring" />
+                <span>alerts</span>
+              </span>
+              <span>(×<Odometer value={storeIncident.unique_count} easing="spring" /> unique)</span>
               <span>·</span>
               <span>created {new Date(storeIncident.created_at).toLocaleTimeString()}</span>
             </div>
@@ -449,7 +454,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
           
           {/* Section 1: Ranked Candidates (podium style) */}
           <section className="flex flex-col flex-shrink-0">
-            <h4 className="text-[10px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
+            <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
               Ranked candidates
             </h4>
             <div className="flex flex-col gap-2">
@@ -522,7 +527,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
           {/* Section 2: Propagation Graph */}
           <section className="flex flex-col flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[10px] text-text-muted font-mono font-bold tracking-wider uppercase select-none">
+              <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase select-none">
                 Propagation graph
               </h4>
               {detail && (
@@ -584,7 +589,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
 
           {/* Section 3: Summary details */}
           <section className="flex flex-col flex-shrink-0 select-text">
-            <h4 className="text-[10px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
+            <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
               Incident summary
             </h4>
             {storeIncident.summary ? (
@@ -610,8 +615,8 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
 
           {/* Section 4: Members list (virtualized) */}
           <section className="flex flex-col flex-1 min-h-[220px]">
-            <h4 className="text-[10px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
-              Correlated alerts ({sortedMembers.length})
+            <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
+              Correlated alerts (<Odometer value={sortedMembers.length} easing="spring" />)
             </h4>
             
             <div className="flex-1 border border-border rounded bg-bg-base overflow-hidden flex flex-col min-h-0">

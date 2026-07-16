@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AreaChart, Area, ResponsiveContainer } from 'recharts'
 import { useStreamStore, selectIncidentList } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Odometer } from '@/components/ui/Odometer'
+import { Sparkline } from '@/components/ui/Sparkline'
 import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
@@ -12,31 +12,37 @@ import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 // ── RelativeTime component ───────────────────────────────────────────────
 
 function RelativeTime({ timestamp }: { timestamp: string }) {
-  const [text, setText] = useState('')
+  const [msAgo, setMsAgo] = useState<number>(0)
 
   useEffect(() => {
     const update = () => {
-      const ms = Date.now() - new Date(timestamp).getTime()
-      const sec = Math.floor(ms / 1000)
-      if (sec < 60) {
-        setText('just now')
-        return
-      }
-      const min = Math.floor(sec / 60)
-      if (min < 60) {
-        setText(`${min}m ago`)
-        return
-      }
-      const hr = Math.floor(min / 60)
-      setText(`${hr}h ago`)
+      setMsAgo(Date.now() - new Date(timestamp).getTime())
     }
-
     update()
-    const timer = setInterval(update, 15000) // update every 15s
+    const timer = setInterval(update, 10000) // update every 10s
     return () => clearInterval(timer)
   }, [timestamp])
 
-  return <span className="text-[11px] text-text-secondary font-mono">{text}</span>
+  const sec = Math.floor(msAgo / 1000)
+  if (sec < 60) {
+    return <span className="text-[11px] text-text-secondary font-mono select-none">just now</span>
+  }
+  const min = Math.floor(sec / 60)
+  if (min < 60) {
+    return (
+      <span className="text-[11px] text-text-secondary font-mono inline-flex items-baseline gap-0.5 select-none">
+        <Odometer value={min} easing="spring" className="text-[11px] text-text-secondary" />
+        <span>m ago</span>
+      </span>
+    )
+  }
+  const hr = Math.floor(min / 60)
+  return (
+    <span className="text-[11px] text-text-secondary font-mono inline-flex items-baseline gap-0.5 select-none">
+      <Odometer value={hr} easing="spring" className="text-[11px] text-text-secondary" />
+      <span>h ago</span>
+    </span>
+  )
 }
 
 // ── TypewriterSummary component ──────────────────────────────────────────
@@ -123,16 +129,11 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
-        transition={{
-          duration: 0.25,
-          layout: { type: 'spring', stiffness: 200, damping: 25 },
-        }}
-        className="w-full text-left cursor-pointer"
       >
         <div
           data-incident-id={incident.id}
           onClick={handleClick}
-          className="bg-bg-elevated/40 border border-border/40 hover:border-border hover:bg-bg-hover rounded-card px-3 py-2 transition-colors duration-200 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px]"
+          className="bg-bg-elevated/40 border border-text-muted/20 hover:border-border hover:bg-bg-hover rounded-card px-3 py-2 transition-colors duration-200 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px]"
         >
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
@@ -150,7 +151,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted">
-            <span>{incident.alert_count} alerts</span>
+            <span className="inline-flex items-baseline gap-0.5">
+              <Odometer value={incident.alert_count} easing="spring" className="text-text-muted" />
+              <span>alerts</span>
+            </span>
             {incident.resolved_at && (
               <span className="opacity-80">
                 (<RelativeTime timestamp={incident.resolved_at} />)
@@ -165,6 +169,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   // Visible services limit (max 4 + '+N more')
   const visibleServices = incident.services.slice(0, 4)
   const extraServices = incident.services.length - 4
+
+  const borderClass = incident.acknowledged
+    ? 'border border-accent/25 bg-bg-elevated' // acknowledged = accent-dim
+    : 'border border-border bg-bg-elevated' // active = hairline
 
   return (
     <motion.div
@@ -182,13 +190,24 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
-        className="bg-bg-elevated border border-border rounded-card p-4 transition-colors duration-200 hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance"
+        className={clsx(
+          "rounded-card p-4 transition-colors duration-200 hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
+          borderClass
+        )}
       >
+        {/* Top Accent Line whose opacity = top root-cause confidence */}
+        {topCandidate && (
+          <div
+            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none"
+            style={{ opacity: topCandidate.confidence }}
+          />
+        )}
+
         {/* Cap inner content at max-width 720px, left-aligned */}
         <div className="w-full max-w-[720px] text-left flex flex-col h-full">
           {/* Header */}
           <div className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
-            <h3 className="text-[13px] font-semibold text-text-primary leading-tight font-sans select-text">
+            <h3 className="text-[13px] font-semibold text-text-primary leading-tight font-sans select-text line-clamp-2">
               {incident.title}
             </h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -333,7 +352,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
             ) : (
               <>
                 <div className="flex items-baseline gap-1 font-mono text-[11px] text-text-muted">
-                  <Odometer value={incident.alert_count} className="text-text-secondary font-semibold" />
+                  <Odometer value={incident.alert_count} className="text-text-secondary font-semibold" easing="spring" />
                   <span>alerts</span>
                   <span className="text-text-muted mx-0.5">(×{incident.unique_count} unique)</span>
                 </div>
@@ -365,19 +384,12 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 {/* Sparkline chart */}
                 <div className="group-hover:opacity-0 transition-opacity duration-150 w-[60px] h-[20px] opacity-75">
                   {sparklineData.length > 0 && (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={sparklineData}>
-                        <Area
-                          type="monotone"
-                          dataKey="val"
-                          stroke="#2DD4A7"
-                          strokeWidth={1.5}
-                          fill="transparent"
-                          dot={false}
-                          isAnimationActive={false}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <Sparkline
+                      data={sparklineData.map(d => d.val)}
+                      width={60}
+                      height={20}
+                      color="#2DD4A7"
+                    />
                   )}
                 </div>
               </>
@@ -412,8 +424,8 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <span className="text-ui font-semibold text-text-primary font-sans">Incidents</span>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono tabular-nums select-none">
-          {activeCount} active
+        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
+          <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
         </div>
       </div>
 
@@ -422,16 +434,17 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
 
       {/* Body */}
       {incidents.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center select-none">
-          <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
-            <svg className="w-5 h-5 text-accent/60" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center select-none animate-fade-in">
+          <div className="relative w-12 h-12 flex items-center justify-center">
+            {/* Concentric rings */}
+            <div className="absolute inset-0 rounded-full border border-accent/20 animate-concentric" />
+            <div className="absolute inset-2.5 rounded-full border border-accent/40 animate-concentric" style={{ animationDelay: '1s' }} />
+            <div className="w-3.5 h-3.5 rounded-full bg-accent" />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[13px] font-semibold text-text-secondary font-sans">No incidents detected</span>
-            <span className="text-[11px] text-text-muted font-mono leading-relaxed max-w-[220px]">
-              System nominal — start a replay to begin monitoring
+            <span className="text-[13px] font-semibold text-text-secondary font-sans">Monitoring — no active incidents</span>
+            <span className="text-[10px] text-text-muted font-mono tracking-wide uppercase">
+              System Nominal
             </span>
           </div>
         </div>
@@ -449,7 +462,7 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
               <div className="mt-2 border-t border-border/20 pt-4">
                 <button
                   onClick={() => setResolvedExpanded(!resolvedExpanded)}
-                  className="flex items-center justify-between w-full text-text-muted hover:text-text-primary transition-colors text-[10px] font-mono uppercase font-bold tracking-wider select-none mb-3"
+                  className="flex items-center justify-between w-full text-text-muted hover:text-text-primary transition-colors text-[11px] font-mono uppercase font-bold tracking-wider select-none mb-3"
                 >
                   <span className="flex items-center gap-1.5">
                     <svg

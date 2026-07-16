@@ -52,14 +52,15 @@ export function ConfidenceBar({
   const pct = Math.round(Math.min(Math.max(confidence, 0), 1) * 100)
   const color = confidenceColor(confidence, greenThreshold, amberThreshold)
   const glow = confidenceGlow(confidence, greenThreshold, amberThreshold)
-
+  const isShimmering = confidence < 0.4
 
   return (
-    <div className={clsx('flex items-center gap-2', className)}>
+    // relative + pt-4 ensures room for the floating text bubble above the bar
+    <div className={clsx('relative w-full pt-4 flex items-center', className)}>
       {/* Track */}
       <div
         className={clsx(
-          'flex-1 rounded-full overflow-hidden',
+          'flex-1 rounded-full relative',
           'bg-bg-elevated border border-border',
           heightMap[height],
         )}
@@ -68,11 +69,17 @@ export function ConfidenceBar({
         aria-valuemin={0}
         aria-valuemax={100}
       >
+        {/* Fine tick marks at 25/50/75% behind the fill (1px, low alpha) */}
+        <div className="absolute inset-0 pointer-events-none flex justify-between z-0">
+          <div className="absolute left-[25%] top-0 bottom-0 w-px bg-white/5" />
+          <div className="absolute left-[50%] top-0 bottom-0 w-px bg-white/5" />
+          <div className="absolute left-[75%] top-0 bottom-0 w-px bg-white/5" />
+        </div>
+
         {/* Fill */}
         <div
           className={clsx(
-            'h-full rounded-l-full',
-            pct === 100 && 'rounded-r-full',
+            'h-full rounded-full relative overflow-hidden z-10',
             animated && 'transition-[width] duration-700 ease-out',
           )}
           style={{
@@ -81,18 +88,29 @@ export function ConfidenceBar({
             backgroundColor: color,
             boxShadow: glow,
           }}
-        />
-      </div>
-
-      {/* Label */}
-      {showLabel && (
-        <span
-          className="font-mono text-[11px] tabular font-medium w-8 text-right"
-          style={{ color }}
         >
-          {pct}%
-        </span>
-      )}
+          {/* Subtle animated shimmer for low confidence */}
+          {isShimmering && (
+            <div className="absolute inset-0 animate-conf-shimmer pointer-events-none" />
+          )}
+        </div>
+
+        {/* Floating Indicator Label (Leading Edge) */}
+        {showLabel && (
+          <div
+            className={clsx(
+              'absolute -top-4 -translate-x-1/2 font-mono text-[9px] font-bold tabular-nums px-1.5 py-0.2 rounded bg-bg-surface border border-border/80 shadow-card z-20 transition-[left] duration-700 ease-out',
+            )}
+            style={{
+              left: `${pct}%`,
+              color,
+              borderColor: `${color}40`,
+            }}
+          >
+            {pct}%
+          </div>
+        )}
+      </div>
     </div>
   )
 }

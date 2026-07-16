@@ -4,6 +4,7 @@ import { useStreamStore } from '@/store/stream'
 import { Badge } from '@/components/ui/Badge'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
+import { Odometer } from '@/components/ui/Odometer'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -89,7 +90,10 @@ const AlertRow = React.memo(
     return (
       <div
         data-alert-id={alert.id}
-        style={style}
+        style={{
+          ...style,
+          boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
+        }}
         className={clsx(
           "flex items-center gap-3 px-4 border-l-[3px] border-b border-b-border/40 font-mono text-[12px] h-[44px] select-none",
           sevBorderColor,
@@ -285,13 +289,20 @@ export function RawStreamPanel() {
         <div className="flex items-center gap-2">
           <span className="text-ui font-semibold text-text-primary font-sans">Raw Stream</span>
           {alerts.length > 0 && (
-            <span className="text-[11px] text-text-muted font-mono tabular-nums">
-              ({alerts.length} buffered)
+            <span className="text-[11px] text-text-muted font-mono inline-flex items-baseline gap-1 select-none">
+              (<Odometer value={alerts.length} easing="spring" className="text-text-muted" /> buffered)
             </span>
           )}
         </div>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono tabular-nums">
-          {alertsPerSec !== undefined ? `${alertsPerSec.toFixed(1)}/s` : '—/s'}
+        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono">
+          {alertsPerSec !== undefined ? (
+            <>
+              <Odometer value={alertsPerSec} format="float1" easing="linear" className="text-text-secondary" />
+              <span>/s</span>
+            </>
+          ) : (
+            '—/s'
+          )}
         </div>
       </div>
 
@@ -314,7 +325,7 @@ export function RawStreamPanel() {
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              CRIT <span className="font-mono tabular-nums font-medium opacity-80">({critCount})</span>
+              CRIT <span className="font-mono font-medium opacity-80">(<Odometer value={critCount} easing="spring" className="text-severity-critical" />)</span>
             </button>
             <button
               onClick={() => setWarnEnabled(!warnEnabled)}
@@ -325,7 +336,7 @@ export function RawStreamPanel() {
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              WARN <span className="font-mono tabular-nums font-medium opacity-80">({warnCount})</span>
+              WARN <span className="font-mono font-medium opacity-80">(<Odometer value={warnCount} easing="spring" className="text-severity-warning" />)</span>
             </button>
             <button
               onClick={() => setInfoEnabled(!infoEnabled)}
@@ -336,7 +347,7 @@ export function RawStreamPanel() {
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              INFO <span className="font-mono tabular-nums font-medium opacity-80">({infoCount})</span>
+              INFO <span className="font-mono font-medium opacity-80">(<Odometer value={infoCount} easing="spring" className="text-severity-info" />)</span>
             </button>
           </div>
 

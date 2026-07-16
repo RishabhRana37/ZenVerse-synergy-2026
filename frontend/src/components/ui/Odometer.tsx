@@ -16,12 +16,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { clsx } from 'clsx'
 
 type OdometerFormat = 'integer' | 'percent2' | 'percent1' | 'float1'
+type OdometerEasing = 'spring' | 'linear' | 'default'
 
 interface OdometerProps {
   value: number | null
   format?: OdometerFormat
   className?: string
   digitClassName?: string
+  easing?: OdometerEasing
 }
 
 function formatValue(value: number, format: OdometerFormat): string {
@@ -41,8 +43,36 @@ function formatValue(value: number, format: OdometerFormat): string {
  * A single character cell — slides the digit in from below when it changes.
  * Uses AnimatePresence with a unique `key` per value to re-trigger animation.
  */
-function Digit({ char, digitClassName }: { char: string; digitClassName?: string }) {
+function Digit({
+  char,
+  digitClassName,
+  easing = 'default',
+}: {
+  char: string
+  digitClassName?: string
+  easing?: OdometerEasing
+}) {
   const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  let transition = prefersReduced
+    ? { duration: 0 }
+    : { duration: 0.25, ease: [0.22, 1, 0.36, 1] } // default fast ease-out
+
+  if (!prefersReduced) {
+    if (easing === 'spring') {
+      transition = {
+        type: 'spring',
+        stiffness: 450,
+        damping: 25, // very fast, settles within ~250ms, minor overshoot
+        mass: 0.7,
+      } as any
+    } else if (easing === 'linear') {
+      transition = {
+        duration: 0.15,
+        ease: 'linear',
+      } as any
+    }
+  }
 
   return (
     <span
@@ -57,7 +87,7 @@ function Digit({ char, digitClassName }: { char: string; digitClassName?: string
           initial={prefersReduced ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 }}
           animate={{ y: '0%',   opacity: 1 }}
           exit={prefersReduced ? { y: 0, opacity: 0 } : { y: '-100%', opacity: 0 }}
-          transition={prefersReduced ? { duration: 0 } : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          transition={transition}
         >
           {char}
         </motion.span>
@@ -71,6 +101,7 @@ export function Odometer({
   format = 'integer',
   className,
   digitClassName,
+  easing = 'default',
 }: OdometerProps) {
   const [displayStr, setDisplayStr] = useState<string>(
     value !== null ? formatValue(value, format) : '—',
@@ -97,7 +128,7 @@ export function Odometer({
       {chars.map((char, i) => (
         // Non-digit characters (commas, dots, %) don't animate
         /[\d]/.test(char) ? (
-          <Digit key={i} char={char} digitClassName={digitClassName} />
+          <Digit key={i} char={char} digitClassName={digitClassName} easing={easing} />
         ) : (
           <span key={i} className={digitClassName} style={{ minWidth: '0.35ch' }}>
             {char}
@@ -107,3 +138,4 @@ export function Odometer({
     </span>
   )
 }
+

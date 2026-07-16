@@ -275,6 +275,37 @@ html.presentation-mode {
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
+/* ── Confidence bar animated shimmer ────────────────────────────────── */
+@keyframes conf-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+.animate-conf-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200px 100%;
+  animation: conf-shimmer 2s infinite linear;
+}
+
+/* ── Concentric circle empty state breath ────────────────────────────── */
+@keyframes concentric-breath {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.65;
+  }
+}
+.animate-concentric {
+  animation: concentric-breath 4s ease-in-out infinite;
+}
+
 /* ── prefers-reduced-motion: disable all non-essential animations ─────── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -290,8 +321,11 @@ html.presentation-mode {
   .animate-flash-critical,
   .animate-border-pulse-entrance,
   .live-dot::before,
-  .animate-shimmer {
+  .animate-shimmer,
+  .animate-conf-shimmer,
+  .animate-concentric {
     animation: none !important;
+    background-image: none !important;
   }
 
   /* Keep opacity/visibility transitions for focus states */
