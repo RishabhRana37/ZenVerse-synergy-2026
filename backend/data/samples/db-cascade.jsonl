@@ -1,0 +1,57 @@
+{"id": "6e3401ed-3cde-4921-a423-ae57cf19e38b", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:58:51.956736+00:00"}
+{"id": "a3a45571-8c1e-4340-b3d2-e3ccc35fa2ee", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:58:53.956736+00:00"}
+{"id": "ce01e476-6dac-4fb0-b839-15beb39b5cee", "service": "payment-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:58:55.956736+00:00"}
+{"id": "607c7b1a-b9ff-443e-89ac-d702d23f8996", "service": "payment-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:58:57.956736+00:00"}
+{"id": "bc2a2f80-ee37-44e8-9737-c0bd912ca929", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:58:59.956736+00:00"}
+{"id": "f2e15a8f-369d-4da4-88dd-0d1ce953c04c", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:59:01.956736+00:00"}
+{"id": "988bd926-295f-44e5-af2d-69dabd471df6", "service": "payment-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:59:03.956736+00:00"}
+{"id": "8f76f6df-84c3-4218-a668-31766532c55e", "service": "payment-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:59:05.956736+00:00"}
+{"id": "3b2ef4ef-c85c-42fb-83d5-710e306473ca", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:06.956736+00:00"}
+{"id": "748e64fd-e0ab-4081-ad40-5652a81a6379", "service": "payment-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:59:07.956736+00:00"}
+{"id": "d58bc67a-3ccc-408b-84c3-df0e00cae719", "service": "redis-cache", "message": "Memory usage exceeded 99%", "severity": "warning", "timestamp": "2026-07-16T12:59:07.956736+00:00"}
+{"id": "606c0dea-6e08-471f-9f53-7e3f16aea72d", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:07.956736+00:00"}
+{"id": "d8944d36-e3f1-4708-a042-d5d0f103ca2f", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:08.956736+00:00"}
+{"id": "3a211240-4624-4798-8c10-a7bc32f889e0", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-16T12:59:09.956736+00:00"}
+{"id": "3f4165ee-e57d-4758-8cd4-f3a8ee8f1795", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:09.956736+00:00"}
+{"id": "8692e848-4d58-4fb4-8f02-d333b6af8f63", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:10.956736+00:00"}
+{"id": "1c28752b-903c-4184-a370-3ed1a17ae1f4", "service": "redis-cache", "message": "Connection refused: port 6379", "severity": "critical", "timestamp": "2026-07-16T12:59:11.956736+00:00"}
+{"id": "90e7a6c8-1056-4653-8034-74983c2153f7", "service": "auth-svc", "message": "Redis timeout waiting for connection", "severity": "error", "timestamp": "2026-07-16T12:59:11.956736+00:00"}
+{"id": "e8fdeb37-7f91-485c-9b4e-44448f71949e", "service": "auth-svc", "message": "Failed to validate JWT token", "severity": "error", "timestamp": "2026-07-16T12:59:13.956736+00:00"}
+{"id": "399d68a2-261e-48ad-9376-b4f7afd8072e", "service": "auth-svc", "message": "High error rate (5xx > 10%)", "severity": "critical", "timestamp": "2026-07-16T12:59:16.956736+00:00"}
+{"id": "e33e3b69-4f55-413f-9604-234f10e74fb3", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=80394656)", "severity": "error", "timestamp": "2026-07-16T12:59:16.956736+00:00"}
+{"id": "d2a49006-1f77-4f5c-bbac-9f1c6f68df29", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=afc69305)", "severity": "error", "timestamp": "2026-07-16T12:59:17.456736+00:00"}
+{"id": "41e53775-cb49-4a3c-a3bf-24fd33c961a9", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=924e3b15)", "severity": "error", "timestamp": "2026-07-16T12:59:17.956736+00:00"}
+{"id": "024d6400-f00a-4d42-b999-9ac45af460fb", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=c9642c89)", "severity": "error", "timestamp": "2026-07-16T12:59:18.456736+00:00"}
+{"id": "f6d40ea7-a3e3-40e1-b014-340d628d7163", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=d8d0b563)", "severity": "error", "timestamp": "2026-07-16T12:59:18.956736+00:00"}
+{"id": "2c22fb1c-3378-4a02-815a-236b59cbd9f9", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=cacd2058)", "severity": "error", "timestamp": "2026-07-16T12:59:19.456736+00:00"}
+{"id": "842f958d-3ab4-421f-b922-e4bb30a6f91c", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=15b321f8)", "severity": "error", "timestamp": "2026-07-16T12:59:19.956736+00:00"}
+{"id": "c5486693-d6b5-4662-8d42-e6e693060450", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=5b1f9d9a)", "severity": "error", "timestamp": "2026-07-16T12:59:20.456736+00:00"}
+{"id": "f1d191d6-b10a-4276-8bdf-9b94a18f6384", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=1fb781db)", "severity": "error", "timestamp": "2026-07-16T12:59:20.956736+00:00"}
+{"id": "2560f2f0-01dc-4a57-a44b-15ca43d83876", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=0ca98029)", "severity": "error", "timestamp": "2026-07-16T12:59:21.456736+00:00"}
+{"id": "67a64499-8de3-4ef8-8fe6-23d582f58022", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=acd58d3b)", "severity": "error", "timestamp": "2026-07-16T12:59:21.956736+00:00"}
+{"id": "4143e220-3946-47ec-ade6-da045fdbdab6", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:21.956736+00:00"}
+{"id": "b8c520ce-2372-4206-954e-e3289b5d5692", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=8b3c505e)", "severity": "error", "timestamp": "2026-07-16T12:59:22.456736+00:00"}
+{"id": "125f6853-3b3e-49b6-b646-02b80a7ded5a", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=1a122ce8)", "severity": "error", "timestamp": "2026-07-16T12:59:22.956736+00:00"}
+{"id": "772b7f4c-460f-4dc4-95d3-bda7ac0553c2", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=c561dc53)", "severity": "error", "timestamp": "2026-07-16T12:59:23.456736+00:00"}
+{"id": "73d3472b-8166-4a08-911d-8a88b039005a", "service": "auth-svc", "message": "Failed to validate JWT token (trace_id=af0ae382)", "severity": "error", "timestamp": "2026-07-16T12:59:23.956736+00:00"}
+{"id": "66ce427b-a682-436c-b54d-c53d556c8d2a", "service": "order-svc", "message": "Checkout failed: internal server error", "severity": "critical", "timestamp": "2026-07-16T12:59:23.956736+00:00"}
+{"id": "ae3d153b-6195-424d-bcca-de2cd75def9a", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:23.956736+00:00"}
+{"id": "06dc2a44-0336-45ea-8b06-85b745d1ab92", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:24.456736+00:00"}
+{"id": "d0f38cde-7515-4998-a2d6-9221e69c6010", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:24.956736+00:00"}
+{"id": "bcfe9753-6260-4b6b-8f78-dd89a9cbb652", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:25.456736+00:00"}
+{"id": "94e7982a-0429-4054-a30c-ae82c2462f1c", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:25.956736+00:00"}
+{"id": "2a69b016-6c2e-45eb-8c2a-57de805f7d3a", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:26.456736+00:00"}
+{"id": "4bed064c-6337-406c-8829-73af83886718", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:26.956736+00:00"}
+{"id": "12ac7709-78b1-413b-8adc-96c5e7c30808", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:27.456736+00:00"}
+{"id": "6168fa94-280d-4103-b10e-3927fc4a369d", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:27.956736+00:00"}
+{"id": "fa3af3b7-69aa-4a35-aa53-21f6e3684e07", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:28.456736+00:00"}
+{"id": "35ed2574-55ee-4527-903a-da6ac0715903", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:28.956736+00:00"}
+{"id": "a9d954a3-fbd3-4ed5-b5b6-a0de803ffcf7", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:29.456736+00:00"}
+{"id": "3499deda-f776-4ca7-be2b-d6e0156c7814", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:29.956736+00:00"}
+{"id": "135084d0-c274-452b-be6c-42e4f851d649", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:30.456736+00:00"}
+{"id": "980bcd02-ecc5-4d8f-a690-9364ff2ed1e4", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:30.956736+00:00"}
+{"id": "e7f2cac7-1b08-4cb1-8a29-f4399451bdb7", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:31.456736+00:00"}
+{"id": "502a4ad1-dd9f-42f4-ac99-ff58cd791b76", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:31.956736+00:00"}
+{"id": "a7520cba-1b81-4589-bf08-00b3644529d9", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:32.456736+00:00"}
+{"id": "56a7eec4-a631-4b98-8c7c-b0f0520cfb97", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:32.956736+00:00"}
+{"id": "ceac3f50-b875-4bc7-80c4-c8c01e218355", "service": "order-svc", "message": "Unauthorized: Auth service returned 503", "severity": "error", "timestamp": "2026-07-16T12:59:33.456736+00:00"}

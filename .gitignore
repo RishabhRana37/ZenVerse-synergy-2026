@@ -221,6 +221,9 @@ __marimo__/
 node_modules/
 *.local
 
+# AIOps Data
+data/AIOps 2020/
+
 # StormLens — raw datasets are fetched via scripts/, never committed
 data/raw/
 

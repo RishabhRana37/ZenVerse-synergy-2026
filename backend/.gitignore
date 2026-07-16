@@ -1,0 +1,32 @@
+# StormLens .gitignore
+
+# Raw datasets — never commit (too large)
+data/raw/
+
+# Downloaded model weights
+models/
+!models/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# SQLite database
+*.db
+
+# Eval results are committed (they're small + traceable by git SHA)
+# eval/results/ — keep
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/

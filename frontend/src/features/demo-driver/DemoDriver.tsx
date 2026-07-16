@@ -22,7 +22,7 @@ export function DemoDriver() {
 
   const handleStart = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+      const apiBase = import.meta.env.VITE_API_URL || '/api'
       await fetch(`${apiBase}/replay/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,7 +35,7 @@ export function DemoDriver() {
 
   const handleStop = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+      const apiBase = import.meta.env.VITE_API_URL || '/api'
       await fetch(`${apiBase}/replay/stop`, { method: 'POST' })
     } catch (e) {
       console.error('[replay] Failed to stop:', e)
@@ -77,6 +77,7 @@ export function DemoDriver() {
               className="w-full text-xs bg-bg-base border border-border rounded px-2 py-1 focus:outline-none"
             >
               <option value="db-cascade">db-cascade (90s DB fault)</option>
+              <option value="aiops-scn1">aiops-scn1 (AIOps 2020 Data)</option>
             </select>
           </div>
 

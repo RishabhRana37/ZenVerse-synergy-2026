@@ -15,3 +15,32 @@ Rules:
 - Each stage = one class with a single `process()` entry point, composed in a top-level `pipeline.py`
 - Everything must run offline on one laptop; the LLM call is the only permitted network dependency and must have a fallback
 - `ruff check .` + `ruff format .` before every commit; tests in `tests/` per stage
+
+## Running the Backend
+
+1. **Set up the virtual environment and install dependencies** (from the `backend/` directory):
+   ```bash
+   python -m venv .venv
+   
+   # Activate on Windows:
+   .venv\Scripts\activate
+   # Activate on macOS/Linux:
+   # source .venv/bin/activate
+   
+   pip install -e ".[dev]"
+   ```
+
+2. **Download the embedding model** (first-time setup):
+   ```bash
+   python scripts/fetch_model.py
+   ```
+
+3. **Start the API Server**:
+   ```bash
+   uvicorn app.api.main:app --reload
+   ```
+
+4. **Run the Test Suite** (optional):
+   ```bash
+   pytest
+   ```

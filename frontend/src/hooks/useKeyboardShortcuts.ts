@@ -30,7 +30,7 @@ export function useKeyboardShortcuts() {
       // S — Start Replay
       if (key === 's') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         fetch(`${apiBase}/replay/start`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -42,7 +42,7 @@ export function useKeyboardShortcuts() {
       // X — Stop Replay
       if (key === 'x') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         fetch(`${apiBase}/replay/stop`, { method: 'POST' }).catch((err) =>
           console.error('[shortcuts] failed to stop replay:', err)
         )
@@ -52,7 +52,7 @@ export function useKeyboardShortcuts() {
       // R — Reset (stop + clear store + restart mock scenario after a beat)
       if (key === 'r') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         
         // Stop first
         fetch(`${apiBase}/replay/stop`, { method: 'POST' })

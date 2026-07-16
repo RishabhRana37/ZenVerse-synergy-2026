@@ -1,0 +1,34 @@
+scenario: network-partition
+description: "Network switch failure isolating the datacenter-b rack"
+
+services:
+  - name: switch-dc-b
+  - name: db-replica-b
+    depends_on: [switch-dc-b]
+  - name: cache-b
+    depends_on: [switch-dc-b]
+  - name: worker-b
+    depends_on: [db-replica-b, cache-b]
+  - name: api-gateway
+    depends_on: [worker-b]
+  - name: load-balancer
+    depends_on: [api-gateway]
+
+failure_script:
+  - t: 0
+    service: switch-dc-b
+    event: network_partition
+  - t: 3
+    service: db-replica-b
+    event: connection_timeout
+  - t: 3
+    service: cache-b
+    event: connection_timeout
+  - t: 8
+    service: worker-b
+    event: upstream_error
+  - t: 12
+    service: api-gateway
+    event: upstream_error
+
+background_noise_rate: 1.5
