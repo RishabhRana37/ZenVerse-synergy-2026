@@ -9,6 +9,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import type { Alert, Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
+import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
@@ -615,7 +616,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
       {/* Dimmed backdrop (War room remains visible and streaming behind) */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-bg-base/60 backdrop-blur-[3px] z-[60]"
+        className="fixed inset-0 bg-bg-base/70 backdrop-blur-[10px] z-[60]"
       />
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
@@ -624,11 +625,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface/85 backdrop-blur-xl border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
       >
         <CornerBrackets />
         {/* Header (Instantly populated from store data) */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-border flex-shrink-0 bg-bg-surface">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-border/40 flex-shrink-0 bg-transparent">
           <div className="flex flex-col gap-1 pr-6">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-mono text-text-secondary select-text">{storeIncident.id}</span>
@@ -670,13 +671,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         </div>
 
         {/* Scrollable Content zone */}
-        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-5 p-6 bg-bg-surface/50">
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-6 p-6 bg-transparent">
           
           {/* Section 1: Ranked Candidates (podium style) */}
           <section className="flex flex-col flex-shrink-0">
-            <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
-              Ranked candidates
-            </h4>
+            <Eyebrow>Ranked candidates</Eyebrow>
             <div className="flex flex-col gap-2">
               {storeIncident.root_candidates.slice(0, 3).map((candidate, idx) => {
                 const rank = idx + 1
@@ -686,16 +685,16 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                     layout
                     key={candidate.alert_id}
                     className={clsx(
-                      "flex items-center gap-3 transition-all duration-200 select-text group",
+                      "flex items-center gap-3 transition-all duration-150 select-text group",
                       isFirst
-                        ? "bg-bg-elevated border border-accent/30 ring-1 ring-accent/30 rounded p-3"
-                        : "bg-bg-base/30 border border-border/50 rounded p-2.5"
+                        ? "bg-bg-surface/80 border border-accent/45 rounded-[10px] p-3 shadow-md"
+                        : "bg-bg-surface/30 border border-border/40 rounded-[10px] p-2.5"
                     )}
                   >
                     <span
                       className={clsx(
-                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0",
-                        isFirst ? "bg-accent text-text-inverse" : "bg-bg-elevated border border-border text-text-secondary"
+                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 border",
+                        isFirst ? "bg-accent border-accent text-[#0A0A0B]" : "bg-bg-surface border-border text-text-secondary"
                       )}
                     >
                       {rank}

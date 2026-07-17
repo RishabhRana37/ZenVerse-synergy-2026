@@ -206,7 +206,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
             boxShadow: isHovered ? `0 0 10px ${colors.glow}` : undefined,
             transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
           }}
-          className="bg-bg-elevated/40 border border-text-muted/20 hover:bg-bg-hover rounded-card px-3 py-2 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px] relative overflow-hidden"
+          className="bg-bg-surface/50 border border-border/40 hover:bg-bg-hover/80 hover:border-border-hover rounded-[10px] px-3.5 py-2.5 flex items-center justify-between gap-3 text-text-secondary select-none text-[11.5px] relative overflow-hidden transition-all duration-150 shadow-sm"
         >
           {isHovered && (
             <div
@@ -252,8 +252,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   const extraServices = incident.services.length - 4
 
   const borderClass = incident.acknowledged
-    ? 'border border-accent/25 bg-bg-elevated' // acknowledged = accent-dim
-    : 'border border-border bg-bg-elevated' // active = hairline
+    ? 'border-accent/30 bg-bg-surface/50'
+    : 'border-border bg-bg-surface/85 backdrop-blur-xl'
 
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -358,7 +358,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
         }}
         className={clsx(
-          "rounded-card p-4 flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
+          "rounded-card p-5 flex flex-col relative overflow-hidden select-none shadow-card hover:-translate-y-0.5 transition-all duration-150 ease-out border",
           borderClass
         )}
       >

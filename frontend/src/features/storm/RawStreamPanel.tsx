@@ -97,7 +97,7 @@ const AlertRow = React.memo(
           boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
         }}
         className={clsx(
-          "flex items-center gap-3 px-4 border-l-[3px] border-b border-b-border/40 font-mono text-[12px] h-[44px] select-none",
+          "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
           sevBorderColor,
           flashClass,
           claimedClass

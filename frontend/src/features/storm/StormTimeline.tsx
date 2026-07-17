@@ -16,16 +16,16 @@ const WINDOW_SECS = 90          // rolling window width
 const CANVAS_HEIGHT = 72        // px — must match the outer wrapper height
 const GRID_LINES = 4            // horizontal y-grid lines
 
-const COLOR_CRIT  = 'rgba(255, 77, 79,  0.30)'
-const COLOR_WARN  = 'rgba(245, 166, 35, 0.25)'
-const COLOR_INFO  = 'rgba(77, 159, 255, 0.20)'
-const COLOR_EDGE  = '#2DD4A7'   // accent — top stroke
+const COLOR_CRIT  = 'rgba(255, 90, 95,  0.30)'
+const COLOR_WARN  = 'rgba(255, 184, 77, 0.25)'
+const COLOR_INFO  = 'rgba(61, 214, 140, 0.20)'
+const COLOR_EDGE  = '#FF6363'   // accent — top stroke
 const COLOR_GRID  = 'rgba(255, 255, 255, 0.04)'
-const COLOR_TEXT  = 'rgba(139, 152, 169, 0.9)'
-const COLOR_CRIT_SOLID  = '#FF4D4F'
-const COLOR_ACCENT_SOLID = '#2DD4A7'
-const COLOR_PLAYHEAD = 'rgba(45, 212, 167, 0.5)'
-const COLOR_MARKER_LINE = 'rgba(255, 255, 255, 0.15)'
+const COLOR_TEXT  = 'rgba(161, 161, 166, 0.9)'
+const COLOR_CRIT_SOLID  = '#FF5A5F'
+const COLOR_ACCENT_SOLID = '#FF6363'
+const COLOR_PLAYHEAD = 'rgba(255, 99, 99, 0.5)'
+const COLOR_MARKER_LINE = 'rgba(255, 255, 255, 0.08)'
 
 interface Bucket {
   ts: number      // unix ms (start of the 1s bucket)
@@ -599,7 +599,7 @@ export function StormTimeline() {
           {/* Hover tooltip */}
           {tooltip.visible && !isDraggingRef.current && (
             <div
-              className="pointer-events-none absolute z-10 px-2.5 py-1.5 rounded bg-bg-elevated border border-border shadow-elevated text-[10px] font-mono leading-snug"
+              className="pointer-events-none absolute z-10 px-3 py-2 rounded-[10px] bg-bg-elevated/90 backdrop-blur-md border border-border shadow-elevated text-[10px] font-mono leading-snug"
               style={{
                 left: Math.min(tooltip.x + 10, window.innerWidth - 140),
                 top: 4,

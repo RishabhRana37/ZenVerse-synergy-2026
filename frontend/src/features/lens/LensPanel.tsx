@@ -14,9 +14,9 @@ const HOVER_RADIUS_WELL = 25
 
 // Severity colors
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#FF4D4F',
-  warning: '#F5A623',
-  info: '#4D9FFF',
+  critical: '#FF5A5F',
+  warning: '#FFB84D',
+  info: '#3DD68C',
 }
 
 interface GravityWell {
@@ -1050,7 +1050,7 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       />
 
       {/* Hero Equation DOM Overlay (top-left) */}
-      <div className="absolute top-4 left-6 z-20 flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none bg-bg-surface/50 backdrop-blur-md px-3 py-1.5 rounded border border-border/30">
+      <div className="absolute top-4 left-6 z-20 flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none bg-bg-surface/80 backdrop-blur-xl px-4 py-2.5 rounded-[10px] border border-border shadow-card">
         <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-semibold" />
         <span className="text-text-muted">alerts</span>
         
@@ -1071,9 +1071,9 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       </div>
 
       {/* Legend DOM Overlay (bottom-left) */}
-      <div className="absolute bottom-4 left-6 z-20 flex flex-col gap-1.5 text-[9px] font-mono text-text-muted select-none bg-bg-surface/60 backdrop-blur-md p-3 rounded border border-border/30 shadow-elevated">
+      <div className="absolute bottom-4 left-6 z-20 flex flex-col gap-1.5 text-[9.5px] font-mono text-text-muted select-none bg-bg-surface/80 backdrop-blur-xl p-3.5 rounded-[10px] border border-border shadow-card">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-severity-critical shadow-[0_0_6px_#FF4D4F] flex-shrink-0" />
+          <span className="w-2.5 h-2.5 rounded-full bg-severity-critical shadow-[0_0_6px_#FF5A5F] flex-shrink-0" />
           <span>Critical alert particle</span>
         </div>
         <div className="flex items-center gap-2">
@@ -1091,20 +1091,20 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       </div>
 
       {/* Floating Topology Health Map DOM Overlay (top-right) */}
-      <div className="absolute top-4 right-6 z-20 w-[330px] rounded-card border border-border bg-bg-surface/85 backdrop-blur-md shadow-elevated overflow-hidden text-left">
+      <div className="absolute top-4 right-6 z-20 w-[330px] rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card overflow-hidden text-left hover:border-border-hover transition-all duration-150 ease-out">
         <TopologyHealthMap onNodeClick={onIncidentSelect} />
       </div>
 
       {/* Zero React Render Particle Tooltip */}
       <div
         ref={particleTooltipRef}
-        className="absolute pointer-events-none z-30 hidden px-2.5 py-1.5 rounded border border-border bg-bg-surface/90 backdrop-blur shadow-elevated font-mono text-[9px] text-text-primary whitespace-nowrap"
+        className="absolute pointer-events-none z-30 hidden px-3 py-2 rounded-[10px] border border-border bg-bg-surface/90 backdrop-blur-xl shadow-card font-mono text-[9.5px] text-text-primary whitespace-nowrap"
       />
 
       {/* Zero React Render Well Tooltip */}
       <div
         ref={wellTooltipRef}
-        className="absolute pointer-events-none z-30 hidden w-[280px] p-3 rounded border border-border bg-bg-surface/95 backdrop-blur-md shadow-elevated font-mono text-[10px] text-text-secondary text-left leading-normal"
+        className="absolute pointer-events-none z-30 hidden w-[280px] p-4 rounded-[10px] border border-border bg-bg-surface/95 backdrop-blur-xl shadow-card font-mono text-[10px] text-text-secondary text-left leading-normal"
       />
     </div>
   )

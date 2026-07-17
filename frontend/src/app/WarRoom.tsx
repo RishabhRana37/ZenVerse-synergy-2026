@@ -134,10 +134,10 @@ export function WarRoom() {
 
       {/* ── Main Layout: Stream Split View vs Lens view ────────────────── */}
       {view === 'stream' ? (
-        <main className="flex-1 min-h-0 w-full p-4 flex gap-4 bg-bg-base animate-fade-in relative z-10">
+        <main className="flex-1 min-h-0 w-full p-5 flex gap-5 bg-transparent animate-fade-in relative z-10">
           {/* Left Panel: Raw Stream (40%) with Corner Brackets */}
           <section
-            className="w-[40%] flex flex-col h-full rounded-card border border-border relative group/bracket bg-bg-surface transition-all duration-240 ease-lens"
+            className="w-[40%] flex flex-col h-full rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card transition-all duration-150 hover:border-border-hover relative group/bracket"
           >
             <PanelErrorBoundary label="Storm Stream">
               <RawStreamPanel />
@@ -146,7 +146,7 @@ export function WarRoom() {
           </section>
 
           {/* Right Panel: Incidents (60%) with Corner Brackets */}
-          <section className="w-[60%] flex flex-col h-full rounded-card border border-border relative group/bracket bg-bg-surface transition-all duration-240 ease-lens">
+          <section className="w-[60%] flex flex-col h-full rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card transition-all duration-150 hover:border-border-hover relative group/bracket">
             <PanelErrorBoundary label="Incidents">
               <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
             </PanelErrorBoundary>

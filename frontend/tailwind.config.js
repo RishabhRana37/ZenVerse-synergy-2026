@@ -6,42 +6,39 @@ export default {
     extend: {
       // ── Colour palette ────────────────────────────────────────────────
       colors: {
-        // Backgrounds / surfaces
         bg: {
-          base:     '#05080E',  // page background
-          surface:  '#0B0F19',  // panel / card surface
-          elevated: '#111827',  // elevated card / tooltip
-          hover:    '#1A2436',  // hover state on surfaces
+          base:     '#0A0A0B',  // app canvas
+          surface:  'rgba(255,255,255,0.03)', // glass panel fill
+          elevated: '#101012',  // elevated card / tooltip
+          hover:    'rgba(255,255,255,0.06)',  // surface hover state
         },
-        // Borders
         border: {
-          DEFAULT: 'rgba(255,255,255,0.06)',
-          subtle:  'rgba(255,255,255,0.03)',
+          DEFAULT: 'rgba(255,255,255,0.08)',
+          hover:   'rgba(255,255,255,0.16)',
+          top:     'rgba(255,255,255,0.14)',
+          subtle:  'rgba(255,255,255,0.04)',
           strong:  'rgba(255,255,255,0.12)',
         },
-        // Text
         text: {
-          primary:   '#F8FAFC',
-          secondary: '#94A3B8',
-          muted:     '#64748B',
+          primary:   '#EDEDEF',
+          secondary: '#A1A1A6',
+          muted:     '#6B6B70',
           inverse:   '#05080E',
         },
-        // Severity
         severity: {
-          critical: '#FF4D4F',
-          warning:  '#F5A623',
-          info:     '#4D9FFF',
+          critical: '#FF5A5F', // --danger
+          warning:  '#FFB84D', // --warning
+          info:     '#3DD68C', // --success
         },
-        // Accent / success / correlated
         accent: {
-          DEFAULT: '#2DD4A7',
-          dim:     'rgba(45,212,167,0.15)',
+          DEFAULT: '#FF6363', // Raycast red
+          violet:  '#7B61FF', // Violet for gradients
+          dim:     'rgba(255,99,99,0.15)',
         },
-        // Confidence gradient anchors (use in inline styles for gradient)
         confidence: {
-          high: '#2DD4A7',
-          mid:  '#F5A623',
-          low:  '#FF4D4F',
+          high: '#3DD68C',
+          mid:  '#FFB84D',
+          low:  '#FF5A5F',
         },
       },
 
@@ -62,18 +59,18 @@ export default {
 
       // ── Spacing & sizing ─────────────────────────────────────────────
       borderRadius: {
-        card:  '6px',
-        badge: '4px',
-        sm: '4px',
-        md: '6px',
-        lg: '8px',
+        card:  '14px',
+        badge: '10px',
+        sm: '6px',
+        md: '10px',
+        lg: '14px',
+        pill: '999px',
       },
 
       // ── Box shadows ──────────────────────────────────────────────────
-      // Depth from surface steps, minimal shadows
       boxShadow: {
-        card:    '0 1px 3px rgba(0,0,0,0.4)',
-        elevated:'0 4px 16px rgba(0,0,0,0.5)',
+        card:    'inset 0 1px 0 var(--border-top), 0 8px 24px rgba(0,0,0,0.4)',
+        elevated:'inset 0 1px 0 var(--border-top), 0 12px 32px rgba(0,0,0,0.6)',
         none:    'none',
       },
 

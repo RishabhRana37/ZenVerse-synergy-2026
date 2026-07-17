@@ -12,6 +12,10 @@ import { useStreamStore } from '@/store/stream'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { ReticleLogo } from '@/components/ui/ReticleLogo'
+import { GlowBackdrop } from '@/components/ui/GlowBackdrop'
+import { GrainOverlay } from '@/components/ui/GrainOverlay'
+import { CommandBar } from '@/components/ui/CommandBar'
+import { Kbd } from '@/components/ui/Kbd'
 import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
 import { Button } from '@/components/ui/Button'
@@ -283,8 +287,11 @@ function AppInner() {
 
   return (
     <div className="flex h-screen w-screen bg-bg-base overflow-hidden font-sans select-none text-text-primary relative">
+      <GlowBackdrop />
+      <GrainOverlay />
+      
       {/* ── Left Sidebar Navigation (Linear / Notion dashboard density) ── */}
-      <aside className="w-56 border-r border-border bg-bg-surface flex flex-col h-full flex-shrink-0 z-40 relative group/bracket transition-all duration-240 ease-lens">
+      <aside className="w-56 border-r border-border bg-bg-surface/85 backdrop-blur-xl flex flex-col h-full flex-shrink-0 z-40 relative group/bracket transition-all duration-240 ease-lens">
         <CornerBrackets />
         
         {/* Workspace Switcher (Visual Dropdown UI) */}
@@ -304,7 +311,7 @@ function AppInner() {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 py-4 px-2.5 flex flex-col gap-1 min-h-0 overflow-y-auto">
+        <nav className="flex-1 py-4 px-2.5 flex flex-col gap-1.5 min-h-0 overflow-y-auto">
           {[
             { to: '/', label: 'War Room', badge: '01' },
             { to: '/eval', label: 'Metrics Eval', badge: '02' },
@@ -316,10 +323,10 @@ function AppInner() {
               key={item.to}
               to={item.to}
               className={({ isActive }) => clsx(
-                "w-full text-left px-3.5 py-2 flex items-center justify-between text-[12px] font-sans font-medium transition-all duration-120 ease-lens rounded-md border border-transparent",
+                "w-full text-left px-3.5 py-2 flex items-center justify-between text-[12px] font-sans font-medium transition-all duration-150 ease-out rounded-[10px] border border-transparent",
                 isActive
-                  ? "bg-bg-hover/80 text-text-primary border-border/60 shadow-[inset_2.5px_0_0_0_#2DD4A7] pl-4 font-semibold"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                  ? "bg-bg-hover text-text-primary border-border/80 shadow-[inset_2.5px_0_0_0_var(--accent)] pl-4 font-semibold"
+                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary hover:translate-x-0.5"
               )}
             >
               <span>{item.label}</span>
@@ -329,10 +336,10 @@ function AppInner() {
         </nav>
 
         {/* Command Menu Shortcut & Help at the bottom */}
-        <div className="mt-auto p-4 border-t border-border/40 flex flex-col gap-2.5 bg-bg-surface flex-shrink-0 font-sans">
+        <div className="mt-auto p-4 border-t border-border/40 flex flex-col gap-2.5 bg-bg-surface/80 backdrop-blur-md flex-shrink-0 font-sans">
           <div className="flex items-center justify-between text-[10px] text-text-secondary font-mono">
             <span>Command Menu</span>
-            <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd>
+            <Kbd>⌘K</Kbd>
           </div>
           <div className="flex items-center justify-between text-[10px] text-text-secondary font-mono">
             <span>Shortcuts Help</span>
@@ -340,7 +347,7 @@ function AppInner() {
               size="sm"
               variant="accent"
               onClick={() => setShowOverlay(true)}
-              className="text-[9px] font-mono font-bold px-2 py-0.5 h-auto"
+              className="text-[9px] font-mono font-bold px-2 py-0.5 h-auto rounded"
             >
               Press ?
             </Button>
@@ -377,7 +384,7 @@ function AppInner() {
         </div>
 
         {/* Global Page Header */}
-        <header className="h-16 border-b border-border bg-bg-surface flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
+        <header className="h-16 border-b border-border/60 bg-bg-surface/60 backdrop-blur-md flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
           {/* Severity Heatmap Strip from Stripe */}
           <div
             className="absolute top-0 left-0 right-0 h-[3px] animate-mesh-gradient"
@@ -410,8 +417,9 @@ function AppInner() {
                 )}
               </div>
 
-              {/* Center: Segmented Control [Stream | Lens] + Hero Equation (Left-anchored at 38% total offset) */}
-              <div className="flex-1 flex items-center justify-start pl-[8%] gap-6 z-20">
+              {/* Center: CommandBar + Segmented Control [Stream | Lens] */}
+              <div className="flex-1 flex items-center justify-start pl-[2%] gap-6 z-20">
+                <CommandBar />
                 <div className="flex bg-bg-base p-0.5 rounded border border-border">
                   <button
                     onClick={() => useStreamStore.getState().setView('stream')}
@@ -544,10 +552,16 @@ function AppInner() {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
-                ▎ {location.pathname.replace('/', '').toUpperCase()}
-              </span>
+            <div className="flex items-center justify-between w-full z-20">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+                  ▎ {location.pathname.replace('/', '').toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 flex justify-center">
+                <CommandBar />
+              </div>
+              <div className="w-[10%]"></div>
             </div>
           )}
         </header>
