@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -27,6 +27,7 @@ def init_router(pipeline, replay_engine, topology_loader) -> None:
 
 # ── Ingestion ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/alerts", status_code=202)
 async def ingest_alerts(body: dict | list):
     """Webhook ingest. Accepts a single alert dict or a JSON array."""
@@ -39,6 +40,7 @@ async def ingest_alerts(body: dict | list):
 
 # ── Replay control ────────────────────────────────────────────────────────────
 
+
 class ReplayStartRequest(BaseModel):
     dataset: str = "aiops-scn1"
     speed: float = 1.0
@@ -47,15 +49,20 @@ class ReplayStartRequest(BaseModel):
 
 @router.post("/replay/start")
 async def replay_start(req: ReplayStartRequest):
-    # Reload topology for the new scenario before starting replay
-    _topology_loader.load(req.scenario)
+    # Reload topology + scenario-specific clustering config before starting replay
+    _pipeline.configure_scenario(req.scenario)
     await _replay_engine.start(
         dataset=req.dataset,
         speed=req.speed,
         scenario=req.scenario,
         pipeline_ingest_fn=_pipeline.ingest,
     )
-    return {"status": "started", "dataset": req.dataset, "speed": req.speed, "scenario": req.scenario}
+    return {
+        "status": "started",
+        "dataset": req.dataset,
+        "speed": req.speed,
+        "scenario": req.scenario,
+    }
 
 
 @router.post("/replay/stop")
@@ -76,6 +83,7 @@ async def replay_reset():
 
 # ── Incidents ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/incidents")
 async def list_incidents():
     return [inc.model_dump(mode="json") for inc in state.incidents.values()]
@@ -91,9 +99,7 @@ async def get_incident(incident_id: str):
     members = [state.alert_index[aid] for aid in member_ids if aid in state.alert_index]
 
     root_svc = inc.root_candidates[0].service if inc.root_candidates else None
-    topology_path = (
-        _topology_loader.propagation_path(root_svc, inc.services) if root_svc else []
-    )
+    topology_path = _topology_loader.propagation_path(root_svc, inc.services) if root_svc else []
 
     return {
         **inc.model_dump(mode="json"),
@@ -108,14 +114,17 @@ async def acknowledge_incident(incident_id: str):
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
     inc.acknowledged = True
-    inc.updated_at = datetime.now(timezone.utc)
+    inc.updated_at = datetime.now(UTC)
     from app.api.ws import broadcast
-    await broadcast({
-        "type": "incident.updated",
-        "incident": inc.model_dump(mode="json"),
-        "added_alert_ids": [],
-        "removed_alert_ids": [],
-    })
+
+    await broadcast(
+        {
+            "type": "incident.updated",
+            "incident": inc.model_dump(mode="json"),
+            "added_alert_ids": [],
+            "removed_alert_ids": [],
+        }
+    )
     return {"status": "acknowledged", "incident_id": incident_id}
 
 
@@ -125,19 +134,23 @@ async def resolve_incident(incident_id: str):
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
     inc.status = "resolved"
-    inc.resolved_at = datetime.now(timezone.utc)
-    inc.updated_at = datetime.now(timezone.utc)
+    inc.resolved_at = datetime.now(UTC)
+    inc.updated_at = datetime.now(UTC)
     from app.api.ws import broadcast
-    await broadcast({
-        "type": "incident.updated",
-        "incident": inc.model_dump(mode="json"),
-        "added_alert_ids": [],
-        "removed_alert_ids": [],
-    })
+
+    await broadcast(
+        {
+            "type": "incident.updated",
+            "incident": inc.model_dump(mode="json"),
+            "added_alert_ids": [],
+            "removed_alert_ids": [],
+        }
+    )
     return {"status": "resolved", "incident_id": incident_id}
 
 
 # ── Topology ──────────────────────────────────────────────────────────────────
+
 
 @router.get("/topology")
 async def get_topology():
@@ -149,6 +162,7 @@ async def get_topology():
 
 # ── Raw alerts (eval/debug only — not used by live war-room UI) ───────────────
 
+
 @router.get("/alerts")
 async def list_alerts(limit: int = 200, offset: int = 0):
     """
@@ -156,7 +170,7 @@ async def list_alerts(limit: int = 200, offset: int = 0):
     The live war-room UI does NOT call this endpoint — it reads from WS alert.batch events.
     """
     all_alerts = sorted(state.alert_index.values(), key=lambda a: a.ts, reverse=True)
-    page = all_alerts[offset: offset + limit]
+    page = all_alerts[offset : offset + limit]
     return [a.model_dump(mode="json") for a in page]
 
 
@@ -165,16 +179,107 @@ async def list_alerts(limit: int = 200, offset: int = 0):
 EVAL_DIR = Path(__file__).parent.parent.parent / "eval" / "results"
 
 
-@router.get("/eval/results")
-async def eval_results():
-    """Returns the latest eval run results. Consumed by the EvalDashboard."""
-    if not EVAL_DIR.exists():
-        return []
-    results = []
-    for f in sorted(EVAL_DIR.glob("*.json"), reverse=True)[:20]:
+# Ablation key -> dashboard display label. Hyphenated (no spaces) because the
+# eval chart keys its x-axis on backend_name.split(" ")[0] and needs them unique.
+_ABLATION_LABEL = {
+    "full": "Full-system",
+    "naive_dedup": "Naive-dedup",
+    "denstream": "DenStream",
+    "no_semantic": "No-semantic",
+    "no_topology": "No-topology",
+    "no_temporal": "No-temporal",
+}
+# Ordered so "Full-system" is always the first/reference row per scenario.
+_ABLATION_ORDER = ["full", "naive_dedup", "no_semantic", "no_topology", "no_temporal", "denstream"]
+
+# Targets from docs/EVALUATION.md — the pass/fail bars on the dashboard.
+_EVAL_TARGETS = {
+    "compression_ratio": 0.95,
+    "purity": 0.80,
+    "hit_at_1": 0.60,
+    "hit_at_3": 0.85,
+    "latency_p95_ms": 5000,
+}
+
+
+def _load_latency_by_dataset() -> dict[str, dict]:
+    """bench_<dataset>_<sha>.json files carry measured p50/p95 (harness accuracy
+    runs leave them null). Newest per dataset wins."""
+    import json
+
+    out: dict[str, dict] = {}
+    for f in sorted(EVAL_DIR.glob("bench_*.json")):
         try:
-            import json
-            results.append(json.loads(f.read_text()))
+            data = json.loads(f.read_text())
+            out[data["dataset"]] = data
         except Exception:
             pass
-    return results
+    return out
+
+
+@router.get("/eval/results")
+async def eval_results():
+    """
+    Aggregates the per-ablation harness result files into the single EvalData
+    object the EvalDashboard renders: one 'scenario' per dataset, one 'backend'
+    row per ablation, plus measured latency (from bench files) and the
+    EVALUATION.md target bars. Every number is traceable to a committed
+    eval/results/*.json produced by `python -m eval.harness`.
+    """
+    import json
+
+    if not EVAL_DIR.exists():
+        return {"generated_at": None, "dataset": "", "scenarios": [], "targets": _EVAL_TARGETS}
+
+    latency = _load_latency_by_dataset()
+    # dataset -> {ablation -> row}, keeping the newest file per (dataset, ablation)
+    by_dataset: dict[str, dict[str, dict]] = {}
+    newest_ts: str | None = None
+
+    for f in sorted(EVAL_DIR.glob("*.json")):
+        if f.name.startswith("bench_"):
+            continue
+        try:
+            r = json.loads(f.read_text())
+        except Exception:
+            continue
+        dataset = r.get("dataset")
+        if not dataset:
+            continue
+        ablation = r.get("ablation") or "full"
+        lat = latency.get(dataset, {})
+        row = {
+            "backend": _ABLATION_LABEL.get(ablation, ablation),
+            "compression_ratio": r.get("compression_ratio", 0.0),
+            "purity": r.get("cluster_purity", 0.0),
+            "ari": r.get("ari", 0.0),
+            "hit_at_1": r.get("hit_at_1", 0.0),
+            "hit_at_3": r.get("hit_at_3", 0.0),
+            "latency_p50_ms": r.get("latency_p50_ms") or lat.get("latency_p50_ms", 0),
+            "latency_p95_ms": r.get("latency_p95_ms") or lat.get("latency_p95_ms", 0),
+            "fragmentation": r.get("fragmentation", 0.0),
+            "_ablation": ablation,
+        }
+        by_dataset.setdefault(dataset, {})[ablation] = row
+        ts = r.get("timestamp")
+        if ts and (newest_ts is None or ts > newest_ts):
+            newest_ts = ts
+
+    scenarios = []
+    for dataset, rows in sorted(by_dataset.items()):
+        ordered = [rows[a] for a in _ABLATION_ORDER if a in rows]
+        ordered += [v for k, v in rows.items() if k not in _ABLATION_ORDER]
+        for row in ordered:
+            row.pop("_ablation", None)
+        scenarios.append({"name": dataset, "backends": ordered})
+
+    # Hero + chart key off the real labeled dataset if present, else the first.
+    primary = "aiops-scn1" if "aiops-scn1" in by_dataset else (
+        sorted(by_dataset)[0] if by_dataset else ""
+    )
+    return {
+        "generated_at": newest_ts,
+        "dataset": primary,
+        "scenarios": scenarios,
+        "targets": _EVAL_TARGETS,
+    }

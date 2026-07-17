@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react'
 import { useStreamStore } from '@/store/stream'
 import { clsx } from 'clsx'
 
+// dataset (the .jsonl file to replay) and scenario (the topology YAML to
+// score root-cause against) are independent concepts that happen to share a
+// name for db-cascade but not for aiops — aiops-scn1.jsonl pairs with
+// data/scenarios/aiops.yaml, not a nonexistent aiops-scn1.yaml.
+const SCENARIO_FOR_DATASET: Record<string, string> = {
+  'db-cascade': 'db-cascade',
+  'aiops-scn1': 'aiops',
+}
+
 export function DemoDriver() {
   const stats = useStreamStore((s) => s.stats)
   const replay = stats?.replay
@@ -26,7 +35,11 @@ export function DemoDriver() {
       await fetch(`${apiBase}/replay/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario, speed }),
+        body: JSON.stringify({
+          dataset: scenario,
+          scenario: SCENARIO_FOR_DATASET[scenario] ?? scenario,
+          speed,
+        }),
       })
     } catch (e) {
       console.error('[replay] Failed to start:', e)
@@ -86,8 +99,11 @@ export function DemoDriver() {
             <label className="text-[10px] text-text-muted font-mono uppercase">
               Multiplier
             </label>
+            {/* aiops-scn1 spans 15 real days — needs 3+ orders of magnitude
+                more speed than db-cascade's scripted 90s to finish in a
+                demo-reasonable time (100x ≈ 5 min end-to-end). */}
             <div className="grid grid-cols-4 gap-1">
-              {[0.5, 1, 2, 5].map((val) => (
+              {[1, 5, 50, 200].map((val) => (
                 <button
                   key={val}
                   onClick={() => setSpeed(val)}

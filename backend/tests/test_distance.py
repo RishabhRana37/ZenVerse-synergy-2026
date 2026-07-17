@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import networkx as nx
 import numpy as np
 import pytest
 
 from app.correlation.distance import combined_distance, d_attr, d_sem, d_time, topology_bonus
 from app.models.schema import Alert
-from datetime import datetime, timezone
 
 
 def _make_alert(service: str = "svc-a", host: str = "host-1", ts_offset: int = 0) -> Alert:
-    base = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    ts = datetime.fromtimestamp(base.timestamp() + ts_offset, tz=timezone.utc)
+    base = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+    ts = datetime.fromtimestamp(base.timestamp() + ts_offset, tz=UTC)
     return Alert(
         ts=ts,
         source="test",
@@ -34,6 +35,7 @@ def _graph() -> nx.DiGraph:
 
 
 # ── topology_bonus ────────────────────────────────────────────────────────────
+
 
 def test_topology_bonus_direct() -> None:
     g = _graph()
@@ -61,6 +63,7 @@ def test_topology_bonus_service_not_in_graph() -> None:
 
 # ── d_time ────────────────────────────────────────────────────────────────────
 
+
 def test_d_time_zero() -> None:
     a = _make_alert(ts_offset=0)
     assert d_time(a, a) == pytest.approx(0.0)
@@ -79,6 +82,7 @@ def test_d_time_clamped() -> None:
 
 
 # ── d_sem ─────────────────────────────────────────────────────────────────────
+
 
 def test_d_sem_identical() -> None:
     vec = np.array([1.0, 0.0, 0.0], dtype=np.float32)
@@ -99,15 +103,17 @@ def test_d_sem_zero_vector() -> None:
 
 # ── d_attr topology_bonus integration ────────────────────────────────────────
 
+
 def test_d_attr_direct_topology_reduces_distance() -> None:
     g = _graph()
     a = _make_alert(service="order-svc")
     b = _make_alert(service="postgres-primary")
     d = d_attr(a, b, g)
-    assert d < 1.0   # topology bonus brings distance below 1
+    assert d < 1.0  # topology bonus brings distance below 1
 
 
 # ── combined_distance sanity ──────────────────────────────────────────────────
+
 
 def test_combined_distance_same_alert() -> None:
     g = nx.DiGraph()

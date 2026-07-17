@@ -31,7 +31,7 @@ def _cooccurrence_centrality(alerts: list[Alert]) -> dict[str, float]:
     for a in alerts:
         g.add_node(a.id)
     for i, a in enumerate(alerts):
-        for b in alerts[i + 1:]:
+        for b in alerts[i + 1 :]:
             if (a.service and a.service == b.service) or (a.host and a.host == b.host):
                 g.add_edge(a.id, b.id)
     return nx.degree_centrality(g) if g.number_of_nodes() > 0 else {}
@@ -87,19 +87,17 @@ class RootCauseRanker:
             sev = _severity_score(alert.severity)
             cent = centrality.get(alert.id, 0.0)
 
-            score = (
-                self.alpha * topo
-                + self.beta * prec
-                + self.gamma * sev
-                + self.delta * cent
-            )
+            score = self.alpha * topo + self.beta * prec + self.gamma * sev + self.delta * cent
             raw_scores.append(score)
 
         confidences = _softmax(raw_scores)
 
+        # Secondary key (alert id) makes exact score ties deterministic —
+        # callers pass cluster members via set iteration (hash-order,
+        # randomized per process), so score-only sorting is unstable on ties.
         ranked = sorted(
             zip(cluster_alerts, raw_scores, confidences),
-            key=lambda x: x[1],
+            key=lambda x: (x[1], x[0].id),
             reverse=True,
         )[:top_k]
 

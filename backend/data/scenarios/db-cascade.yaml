@@ -36,3 +36,16 @@ failure_script:
     event: upstream_error
 
 background_noise_rate: 2.0   # alerts/s from unrelated services
+
+# eps tuned separately from the AIOps default (see eval/results/db-cascade_*):
+# a 90s, 6-service cascade is a much denser/faster regime than a day-long
+# single-host anomaly stream, and the aiops-tuned eps=0.20 fragments this
+# single incident into 12 separate cards. 0.35 is a middle ground — still not
+# a fully unified card (frag~3, a known open gap — see distance.py's
+# topology_bonus, which is too weak to bridge cascade tiers with legitimately
+# different symptom text), but the true root cause lands in the top-3
+# candidates (Hit@3=100%), consistent with the "ranked candidates, never a
+# single verdict" design the demo script itself narrates.
+clustering:
+  eps: 0.35
+  min_samples: 3

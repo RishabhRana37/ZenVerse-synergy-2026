@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from drain3 import TemplateMiner
@@ -34,7 +34,7 @@ class Normalizer:
         return Alert(
             id=str(normalised.get("id") or uuid.uuid4()),
             ts=normalised["ts"],
-            received_at=datetime.now(timezone.utc),
+            received_at=datetime.now(UTC),
             source=source,
             host=normalised.get("host"),
             service=normalised.get("service"),
@@ -92,21 +92,15 @@ class Normalizer:
         """Best-effort generic webhook mapping."""
         return {
             "id": raw.get("id"),
-            "ts": self._parse_ts(
-                raw.get("timestamp") or raw.get("ts") or raw.get("time")
-            ) or datetime.now(timezone.utc),
+            "ts": self._parse_ts(raw.get("timestamp") or raw.get("ts") or raw.get("time"))
+            or datetime.now(UTC),
             "host": raw.get("host") or raw.get("hostname") or raw.get("source"),
-            "service": (
-                raw.get("service") or raw.get("service_name") or raw.get("application")
-            ),
+            "service": (raw.get("service") or raw.get("service_name") or raw.get("application")),
             "severity": self._normalise_severity(
                 raw.get("severity") or raw.get("level") or raw.get("priority")
             ),
             "message": (
-                raw.get("message")
-                or raw.get("description")
-                or raw.get("text")
-                or str(raw)
+                raw.get("message") or raw.get("description") or raw.get("text") or str(raw)
             ),
         }
 
@@ -114,12 +108,24 @@ class Normalizer:
 
     def _parse_ts(self, value: Any) -> datetime:
         if value is None:
-            return datetime.now(timezone.utc)
+            return datetime.now(UTC)
         if isinstance(value, datetime):
-            return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+            return value if value.tzinfo else value.replace(tzinfo=UTC)
         if isinstance(value, (int, float)):
-            return datetime.fromtimestamp(float(value), tz=timezone.utc)
+            return datetime.fromtimestamp(float(value), tz=UTC)
         if isinstance(value, str):
+            # fromisoformat handles the +00:00 / +08:00 offsets Python's own
+            # datetime.isoformat() emits (used by every generator/parser
+            # script in this repo) — the strptime patterns below never
+            # matched them and silently fell through to "now", which meant
+            # the temporal distance signal was a no-op for every alert
+            # sourced this way. See git history for the eval numbers this
+            # invalidated before the fix.
+            try:
+                dt = datetime.fromisoformat(value)
+                return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
+            except ValueError:
+                pass
             for fmt in (
                 "%Y-%m-%dT%H:%M:%S.%fZ",
                 "%Y-%m-%dT%H:%M:%SZ",
@@ -127,10 +133,10 @@ class Normalizer:
                 "%Y-%m-%d %H:%M:%S",
             ):
                 try:
-                    return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+                    return datetime.strptime(value, fmt).replace(tzinfo=UTC)
                 except ValueError:
                     continue
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     def _normalise_severity(self, raw_sev: str | None) -> str:
         if raw_sev is None:

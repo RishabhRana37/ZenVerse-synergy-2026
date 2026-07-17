@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     from pipeline import pipeline
 
     init_db()
-    pipeline.topology.load("db-cascade")   # default scenario
+    pipeline.configure_scenario("db-cascade")  # default scenario
     pipeline.set_broadcast(broadcast)
 
     replay_engine = ReplayEngine()
@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
     yield
     # ── Shutdown ───────────────────────────────────────────────────────────────
     from app.models.state import state
+
     if state.replay_status.running:
         await replay_engine.stop()
     logger.info("StormLens backend stopped")

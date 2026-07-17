@@ -3,9 +3,9 @@
 # Raw datasets — never commit (too large)
 data/raw/
 
-# Downloaded model weights
-models/
-!models/.gitkeep
+# Downloaded model weights (repo-root only — NOT app/models, the Python package)
+/models/
+!/models/.gitkeep
 
 # Python
 __pycache__/

@@ -9,7 +9,7 @@ from app.correlation.reconciler import reconcile
 from app.ingest.deduplicator import Deduplicator
 from app.ingest.normalizer import Normalizer
 from app.models.db import AlertORM, get_session
-from app.models.schema import Alert, Incident, StatsPayload
+from app.models.schema import Alert, StatsPayload
 from app.models.state import state
 from app.rootcause.ranker import RootCauseRanker
 from app.rootcause.topology import TopologyLoader
@@ -28,7 +28,7 @@ class Pipeline:
 
     TICK_INTERVAL = 2.0
     T_MAX_SECONDS = 300
-    WS_FLUSH_INTERVAL = 0.1   # 100 ms
+    WS_FLUSH_INTERVAL = 0.1  # 100 ms
     WS_FLUSH_BATCH_SIZE = 50
 
     def __init__(self) -> None:
@@ -46,6 +46,14 @@ class Pipeline:
     def set_broadcast(self, fn) -> None:
         self._broadcast_fn = fn
 
+    def configure_scenario(self, scenario: str) -> None:
+        """Load a scenario's topology AND its clustering config (if any) —
+        eps/min_samples are density-tuned per scenario, not global (see
+        TopologyLoader.clustering_overrides)."""
+        self.topology.load(scenario)
+        overrides = self.topology.clustering_overrides
+        self.clusterer = DBSCANClusterer(**overrides) if overrides else DBSCANClusterer()
+
     async def broadcast(self, msg: dict) -> None:
         if self._broadcast_fn:
             await self._broadcast_fn(msg)
@@ -58,11 +66,13 @@ class Pipeline:
             alert, is_dup = self.deduplicator.process(alert, state)
 
             if is_dup:
-                await self.broadcast({
-                    "type": "alert.dedup",
-                    "alert_id": alert.id,
-                    "dup_count": alert.dup_count,
-                })
+                await self.broadcast(
+                    {
+                        "type": "alert.dedup",
+                        "alert_id": alert.id,
+                        "dup_count": alert.dup_count,
+                    }
+                )
                 return
 
             # Cache embedding (in-memory only — never written to DB)
@@ -81,20 +91,22 @@ class Pipeline:
     async def _persist_alert(self, alert: Alert) -> None:
         try:
             session = get_session()
-            session.add(AlertORM(
-                id=alert.id,
-                ts=alert.ts,
-                received_at=alert.received_at,
-                source=alert.source,
-                host=alert.host,
-                service=alert.service,
-                severity=alert.severity,
-                message=alert.message,
-                template=alert.template,
-                template_id=alert.template_id,
-                dup_count=alert.dup_count,
-                cluster_id=alert.cluster_id,
-            ))
+            session.add(
+                AlertORM(
+                    id=alert.id,
+                    ts=alert.ts,
+                    received_at=alert.received_at,
+                    source=alert.source,
+                    host=alert.host,
+                    service=alert.service,
+                    severity=alert.severity,
+                    message=alert.message,
+                    template=alert.template,
+                    template_id=alert.template_id,
+                    dup_count=alert.dup_count,
+                    cluster_id=alert.cluster_id,
+                )
+            )
             session.commit()
             session.close()
         except Exception:
@@ -113,10 +125,12 @@ class Pipeline:
             batch = state.alert_batch_buffer[: self.WS_FLUSH_BATCH_SIZE]
             state.alert_batch_buffer = state.alert_batch_buffer[self.WS_FLUSH_BATCH_SIZE :]
             if batch:
-                await self.broadcast({
-                    "type": "alert.batch",
-                    "alerts": [a.model_dump(mode="json") for a in batch],
-                })
+                await self.broadcast(
+                    {
+                        "type": "alert.batch",
+                        "alerts": [a.model_dump(mode="json") for a in batch],
+                    }
+                )
 
     # ── Tick loop ─────────────────────────────────────────────────────────────
 
@@ -142,9 +156,7 @@ class Pipeline:
             return
 
         # 3. Run DBSCAN on active window
-        cluster_result = self.clusterer.cluster(
-            active_alerts, self.embedder, self.topology.graph
-        )
+        cluster_result = self.clusterer.cluster(active_alerts, self.embedder, self.topology.graph)
 
         # Mark noise alerts as unclustered
         for aid in cluster_result.noise:
@@ -166,43 +178,55 @@ class Pipeline:
             for aid in member_ids:
                 if aid in state.alert_index:
                     state.alert_index[aid].cluster_id = inc.id
-            member_alerts = [state.alert_index[aid] for aid in member_ids if aid in state.alert_index]
+            member_alerts = [
+                state.alert_index[aid] for aid in member_ids if aid in state.alert_index
+            ]
             inc.root_candidates = self.ranker.rank(member_alerts, self.topology)
             inc.sparkline = state.update_sparkline(inc.id, len(member_ids))
-            await self.broadcast({
-                "type": "incident.created",
-                "incident": inc.model_dump(mode="json"),
-                "member_alert_ids": list(member_ids),
-            })
+            await self.broadcast(
+                {
+                    "type": "incident.created",
+                    "incident": inc.model_dump(mode="json"),
+                    "member_alert_ids": list(member_ids),
+                }
+            )
             asyncio.create_task(self.run_summarizer(inc.id))
 
         # 6. Handle updated incidents
         for inc, diff in rec.updated:
             current_members = self._incident_members.get(inc.id, set())
-            current_members = (current_members | set(diff.added_alert_ids)) - set(diff.removed_alert_ids)
+            current_members = (current_members | set(diff.added_alert_ids)) - set(
+                diff.removed_alert_ids
+            )
             self._incident_members[inc.id] = current_members
             for aid in diff.added_alert_ids:
                 if aid in state.alert_index:
                     state.alert_index[aid].cluster_id = inc.id
-            member_alerts = [state.alert_index[aid] for aid in current_members if aid in state.alert_index]
+            member_alerts = [
+                state.alert_index[aid] for aid in current_members if aid in state.alert_index
+            ]
             inc.root_candidates = self.ranker.rank(member_alerts, self.topology)
             inc.sparkline = state.update_sparkline(inc.id, len(diff.added_alert_ids))
             if diff.added_alert_ids or diff.removed_alert_ids:
-                await self.broadcast({
-                    "type": "incident.updated",
-                    "incident": inc.model_dump(mode="json"),
-                    "added_alert_ids": diff.added_alert_ids,
-                    "removed_alert_ids": diff.removed_alert_ids,
-                })
+                await self.broadcast(
+                    {
+                        "type": "incident.updated",
+                        "incident": inc.model_dump(mode="json"),
+                        "added_alert_ids": diff.added_alert_ids,
+                        "removed_alert_ids": diff.removed_alert_ids,
+                    }
+                )
 
         # 7. Handle resolved incidents
         for inc in rec.resolved:
-            await self.broadcast({
-                "type": "incident.updated",
-                "incident": inc.model_dump(mode="json"),
-                "added_alert_ids": [],
-                "removed_alert_ids": [],
-            })
+            await self.broadcast(
+                {
+                    "type": "incident.updated",
+                    "incident": inc.model_dump(mode="json"),
+                    "added_alert_ids": [],
+                    "removed_alert_ids": [],
+                }
+            )
 
         # 8. Push stats
         await self._push_stats()
@@ -240,14 +264,16 @@ class Pipeline:
         inc.summary = result.summary
         inc.first_action = result.first_action
 
-        await self.broadcast({
-            "type": "incident.summary",
-            "incident_id": incident_id,
-            "title": result.title,
-            "summary": result.summary,
-            "first_action": result.first_action,
-            "generated_by": result.generated_by,
-        })
+        await self.broadcast(
+            {
+                "type": "incident.summary",
+                "incident_id": incident_id,
+                "title": result.title,
+                "summary": result.summary,
+                "first_action": result.first_action,
+                "generated_by": result.generated_by,
+            }
+        )
 
 
 # Global singleton

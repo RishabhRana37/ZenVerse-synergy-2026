@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 eval/bench.py — Streaming latency benchmark.
 
@@ -11,13 +9,15 @@ Usage:
 Outputs p50/p95 to stdout and appends to eval/results/ (consumed by /eval/results endpoint).
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import json
 import logging
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -30,17 +30,16 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
     from app.api.ws import broadcast
     from app.ingest.replay_engine import ReplayEngine
     from app.models.db import init_db
-    from app.models.state import state
     from pipeline import pipeline
 
     logging.basicConfig(level=logging.WARNING)  # suppress noise during bench
 
     init_db()
-    pipeline.topology.load("db-cascade")
+    pipeline.configure_scenario("db-cascade")
     pipeline.set_broadcast(broadcast)
 
     latencies: list[float] = []
-    ingest_timestamps: dict[str, float] = {}   # alert_id → monotonic time of ingest
+    ingest_timestamps: dict[str, float] = {}  # alert_id → monotonic time of ingest
 
     original_ingest = pipeline.ingest
 
@@ -61,7 +60,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
             if ingest_timestamps:
                 latest_ingest_t = max(ingest_timestamps.values())
                 latency_ms = (t_now - latest_ingest_t) * 1000
-                if 0 < latency_ms < 30_000:   # sanity bound: < 30 s
+                if 0 < latency_ms < 30_000:  # sanity bound: < 30 s
                     latencies.append(latency_ms)
         if original_broadcast:
             await original_broadcast(msg)
@@ -104,9 +103,13 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
     print(f"  Target p95 < 5000 ms: {'✓ PASS' if p95 < 5000 else '✗ FAIL'}")
 
     try:
-        sha = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL
-        ).decode().strip()
+        sha = (
+            subprocess.check_output(
+                ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL
+            )
+            .decode()
+            .strip()
+        )
     except Exception:
         sha = "unknown"
 
@@ -116,7 +119,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
         "speed": speed,
         "duration_s": duration,
         "git_sha": sha,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "latency_p50_ms": round(p50, 2),
         "latency_p95_ms": round(p95, 2),
         "n_samples": len(latencies),

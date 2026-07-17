@@ -1,0 +1,15 @@
+{
+  "dataset": "aiops-scn1",
+  "ablation": "naive_dedup",
+  "git_sha": "4f8eaed",
+  "timestamp": "2026-07-17T04:13:16.430302+00:00",
+  "compression_ratio": 0.9579,
+  "cluster_purity": 0.8592,
+  "ari": 0.3144,
+  "fragmentation": 4.8462,
+  "hit_at_1": 0.1154,
+  "hit_at_3": 0.2308,
+  "hit_breakdown": {},
+  "latency_p50_ms": null,
+  "latency_p95_ms": null
+}

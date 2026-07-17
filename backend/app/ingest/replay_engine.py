@@ -4,9 +4,10 @@ import asyncio
 import csv
 import json
 import logging
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from app.models.schema import ReplayStatus
 from app.models.state import state
@@ -21,6 +22,13 @@ class ReplayEngine:
     """
 
     DATA_DIR = Path(__file__).parent.parent.parent / "data"
+    # aiops-scn1 spans 15 non-contiguous days (only the AIOps Challenge days
+    # with released raw metrics) — consecutive alerts can be up to 28.8 real
+    # days apart at a day boundary. Uncapped, gap/speed turns that into a
+    # multi-day wall-clock stall even at high speed multipliers. Capping
+    # preserves relative pacing *within* a burst (the gaps that matter for
+    # d_time / clustering) while never blocking the replay itself.
+    MAX_GAP_S = 3.0
 
     def __init__(self) -> None:
         self._task: asyncio.Task | None = None
@@ -41,9 +49,7 @@ class ReplayEngine:
         state.replay_status = ReplayStatus(
             running=True, dataset=dataset, scenario=scenario, speed=speed
         )
-        self._task = asyncio.create_task(
-            self._stream_loop(dataset, speed, pipeline_ingest_fn)
-        )
+        self._task = asyncio.create_task(self._stream_loop(dataset, speed, pipeline_ingest_fn))
 
     async def stop(self) -> None:
         """Stop the current replay gracefully."""
@@ -51,7 +57,7 @@ class ReplayEngine:
         if self._task and not self._task.done():
             try:
                 await asyncio.wait_for(self._task, timeout=5.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except (TimeoutError, asyncio.CancelledError):
                 self._task.cancel()
         state.replay_status.running = False
 
@@ -82,16 +88,17 @@ class ReplayEngine:
             if self._stop_event.is_set():
                 break
 
-            # Real-time pacing: wait proportional to inter-alert gap
+            # Real-time pacing: wait proportional to inter-alert gap, capped
+            # so a day-boundary jump can't stall the replay for real days.
             if i > 0:
                 prev_epoch = alerts[i - 1].get("_ts_epoch", 0.0)
                 curr_epoch = raw.get("_ts_epoch", 0.0)
-                gap_secs = max(0.0, (curr_epoch - prev_epoch) / speed)
+                gap_secs = min(max(0.0, (curr_epoch - prev_epoch) / speed), self.MAX_GAP_S)
                 if gap_secs > 0:
                     try:
                         await asyncio.wait_for(self._stop_event.wait(), timeout=gap_secs)
                         break  # stop event fired mid-wait
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         pass
 
             if ingest_fn:
@@ -124,9 +131,7 @@ class ReplayEngine:
                     continue
                 try:
                     obj = json.loads(line)
-                    obj["_ts_epoch"] = self._to_epoch(
-                        obj.get("timestamp") or obj.get("ts")
-                    )
+                    obj["_ts_epoch"] = self._to_epoch(obj.get("timestamp") or obj.get("ts"))
                     yield obj
                 except json.JSONDecodeError:
                     continue
@@ -135,9 +140,7 @@ class ReplayEngine:
         with open(path, encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                row["_ts_epoch"] = self._to_epoch(
-                    row.get("timestamp") or row.get("ts")
-                )
+                row["_ts_epoch"] = self._to_epoch(row.get("timestamp") or row.get("ts"))
                 yield dict(row)
 
     @staticmethod
@@ -149,7 +152,7 @@ class ReplayEngine:
             try:
                 dt = datetime.fromisoformat(value)
                 if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
+                    dt = dt.replace(tzinfo=UTC)
                 return dt.timestamp()
             except ValueError:
                 pass
@@ -161,12 +164,7 @@ class ReplayEngine:
                 "%Y-%m-%d %H:%M:%S",
             ):
                 try:
-                    return (
-                        datetime.strptime(value, fmt)
-                        .replace(tzinfo=timezone.utc)
-                        .timestamp()
-                    )
+                    return datetime.strptime(value, fmt).replace(tzinfo=UTC).timestamp()
                 except ValueError:
                     continue
         return 0.0
-

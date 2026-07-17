@@ -327,8 +327,14 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
         return
       }
       const rootSvc = activeIncidents[0].root_candidates?.[0]?.service
-      const rootNode = cy.getElementById(rootSvc)
-      if (rootNode) {
+      // cy.getElementById() always returns a (possibly empty) collection —
+      // it's truthy even when no matching node exists, e.g. when the root
+      // cause's service isn't one of the ~10 nodes the topology graph
+      // happens to declare (common once real data surfaces faults on hosts
+      // outside that set). .renderedPosition() on an empty collection
+      // returns undefined, so check .length, not truthiness.
+      const rootNode = rootSvc ? cy.getElementById(rootSvc) : null
+      if (rootNode && rootNode.length > 0) {
         const pos = rootNode.renderedPosition()
         setRootNodePos({ x: pos.x, y: pos.y })
       } else {
