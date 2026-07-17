@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-import pytest
+from datetime import UTC, datetime
 
 from app.ingest.deduplicator import Deduplicator
 from app.models.schema import Alert
@@ -11,7 +9,7 @@ from app.models.state import AppState
 
 def _make_alert(**kwargs) -> Alert:
     defaults = {
-        "ts": datetime.now(timezone.utc),
+        "ts": datetime.now(UTC),
         "source": "test",
         "message": "disk full on host-1",
         "template": "disk full on <HOST>",
@@ -61,25 +59,38 @@ def test_different_service_not_dup() -> None:
     assert not is_dup
 
 
-def test_ttl_eviction() -> None:
-    """Expired fingerprints should be evicted and the next alert treated as new."""
+def test_ttl_eviction_event_time() -> None:
+    """TTL runs on EVENT time: a same-fingerprint alert whose event ts falls
+    beyond the entry's expiry must be treated as new, and eviction is driven
+    by the event clock (latest_event_ts), not the wall clock — otherwise
+    accelerated replay over-collapses recurrences (observed live at 100x)."""
     from datetime import timedelta
-    dedup = Deduplicator(t_max_seconds=1)  # 1 s TTL
-    st = AppState()
-    a1 = _make_alert()
-    st.add_alert(a1)
-    dedup.process(a1, st)
 
+    dedup = Deduplicator(t_max_seconds=300)
+    st = AppState()
+    t0 = datetime.now(UTC)
+
+    a1 = _make_alert(ts=t0)
+    st.add_alert(a1)
+    _, is_dup = dedup.process(a1, st)
+    assert not is_dup
     assert len(st.dedup_index) == 1
 
-    # Manually expire the entry
-    import time
-    time.sleep(1.1)
-    evicted = st.evict_expired_dedup()
-    assert evicted == 1
-    assert len(st.dedup_index) == 0
+    # Same fingerprint 100s later (event time) — still within TTL: dup hit
+    a2 = _make_alert(ts=t0 + timedelta(seconds=100))
+    existing, is_dup = dedup.process(a2, st)
+    assert is_dup
+    assert existing.id == a1.id
 
-    # Same fingerprint should now be treated as new
-    a3 = _make_alert()
+    # Same fingerprint 400s after first occurrence — past TTL: new canonical,
+    # even with zero wall-clock time elapsed
+    a3 = _make_alert(ts=t0 + timedelta(seconds=400))
+    st.add_alert(a3)
     _, is_dup = dedup.process(a3, st)
     assert not is_dup
+
+    # Eviction follows the event clock (advanced by add_alert above)
+    evicted = st.evict_expired_dedup()
+    assert evicted == 0  # a1's stale entry was already replaced in-line by a3
+    st.advance_event_clock(t0 + timedelta(seconds=800))
+    assert st.evict_expired_dedup() == 1  # a3's entry now expired too
