@@ -24,11 +24,13 @@ class TopologyLoader:
     def __init__(self) -> None:
         self._graph: nx.DiGraph = nx.DiGraph()
         self._scenario: str = ""
+        self._clustering_overrides: dict = {}
 
     def load(self, scenario: str) -> nx.DiGraph:
         """Load topology from data/scenarios/{scenario}.yaml. Resets existing graph."""
         self._scenario = scenario
         self._graph = nx.DiGraph()
+        self._clustering_overrides = {}
 
         path = self.DATA_DIR / "scenarios" / f"{scenario}.yaml"
         if not path.exists():
@@ -44,15 +46,29 @@ class TopologyLoader:
             for dep in svc.get("depends_on", []):
                 self._graph.add_edge(name, dep)  # name depends_on dep
 
+        self._clustering_overrides = data.get("clustering", {})
+
         logger.info(
             "Topology: loaded scenario '%s' — %d nodes, %d edges",
-            scenario, self._graph.number_of_nodes(), self._graph.number_of_edges(),
+            scenario,
+            self._graph.number_of_nodes(),
+            self._graph.number_of_edges(),
         )
         return self._graph
 
     @property
     def graph(self) -> nx.DiGraph:
         return self._graph
+
+    @property
+    def clustering_overrides(self) -> dict:
+        """Optional per-scenario {eps, min_samples} from the scenario YAML's
+        `clustering:` block. Density-appropriate eps is scale-sensitive — a
+        90 s multi-service cascade and a day-long single-host anomaly stream
+        are different density regimes (see eval/results/db-cascade_* vs
+        aiops-scn1_* for the evidence). Empty dict if the scenario doesn't
+        declare one; callers should fall back to DBSCANClusterer's default."""
+        return self._clustering_overrides
 
     # ── Root-cause helpers ────────────────────────────────────────────────────
 

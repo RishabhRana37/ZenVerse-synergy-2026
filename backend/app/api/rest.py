@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -27,6 +27,7 @@ def init_router(pipeline, replay_engine, topology_loader) -> None:
 
 # ── Ingestion ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/alerts", status_code=202)
 async def ingest_alerts(body: dict | list):
     """Webhook ingest. Accepts a single alert dict or a JSON array."""
@@ -39,6 +40,7 @@ async def ingest_alerts(body: dict | list):
 
 # ── Replay control ────────────────────────────────────────────────────────────
 
+
 class ReplayStartRequest(BaseModel):
     dataset: str = "aiops-scn1"
     speed: float = 1.0
@@ -47,15 +49,20 @@ class ReplayStartRequest(BaseModel):
 
 @router.post("/replay/start")
 async def replay_start(req: ReplayStartRequest):
-    # Reload topology for the new scenario before starting replay
-    _topology_loader.load(req.scenario)
+    # Reload topology + scenario-specific clustering config before starting replay
+    _pipeline.configure_scenario(req.scenario)
     await _replay_engine.start(
         dataset=req.dataset,
         speed=req.speed,
         scenario=req.scenario,
         pipeline_ingest_fn=_pipeline.ingest,
     )
-    return {"status": "started", "dataset": req.dataset, "speed": req.speed, "scenario": req.scenario}
+    return {
+        "status": "started",
+        "dataset": req.dataset,
+        "speed": req.speed,
+        "scenario": req.scenario,
+    }
 
 
 @router.post("/replay/stop")
@@ -76,6 +83,7 @@ async def replay_reset():
 
 # ── Incidents ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/incidents")
 async def list_incidents():
     return [inc.model_dump(mode="json") for inc in state.incidents.values()]
@@ -91,9 +99,7 @@ async def get_incident(incident_id: str):
     members = [state.alert_index[aid] for aid in member_ids if aid in state.alert_index]
 
     root_svc = inc.root_candidates[0].service if inc.root_candidates else None
-    topology_path = (
-        _topology_loader.propagation_path(root_svc, inc.services) if root_svc else []
-    )
+    topology_path = _topology_loader.propagation_path(root_svc, inc.services) if root_svc else []
 
     return {
         **inc.model_dump(mode="json"),
@@ -108,14 +114,17 @@ async def acknowledge_incident(incident_id: str):
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
     inc.acknowledged = True
-    inc.updated_at = datetime.now(timezone.utc)
+    inc.updated_at = datetime.now(UTC)
     from app.api.ws import broadcast
-    await broadcast({
-        "type": "incident.updated",
-        "incident": inc.model_dump(mode="json"),
-        "added_alert_ids": [],
-        "removed_alert_ids": [],
-    })
+
+    await broadcast(
+        {
+            "type": "incident.updated",
+            "incident": inc.model_dump(mode="json"),
+            "added_alert_ids": [],
+            "removed_alert_ids": [],
+        }
+    )
     return {"status": "acknowledged", "incident_id": incident_id}
 
 
@@ -125,19 +134,23 @@ async def resolve_incident(incident_id: str):
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
     inc.status = "resolved"
-    inc.resolved_at = datetime.now(timezone.utc)
-    inc.updated_at = datetime.now(timezone.utc)
+    inc.resolved_at = datetime.now(UTC)
+    inc.updated_at = datetime.now(UTC)
     from app.api.ws import broadcast
-    await broadcast({
-        "type": "incident.updated",
-        "incident": inc.model_dump(mode="json"),
-        "added_alert_ids": [],
-        "removed_alert_ids": [],
-    })
+
+    await broadcast(
+        {
+            "type": "incident.updated",
+            "incident": inc.model_dump(mode="json"),
+            "added_alert_ids": [],
+            "removed_alert_ids": [],
+        }
+    )
     return {"status": "resolved", "incident_id": incident_id}
 
 
 # ── Topology ──────────────────────────────────────────────────────────────────
+
 
 @router.get("/topology")
 async def get_topology():
@@ -149,6 +162,7 @@ async def get_topology():
 
 # ── Raw alerts (eval/debug only — not used by live war-room UI) ───────────────
 
+
 @router.get("/alerts")
 async def list_alerts(limit: int = 200, offset: int = 0):
     """
@@ -156,7 +170,7 @@ async def list_alerts(limit: int = 200, offset: int = 0):
     The live war-room UI does NOT call this endpoint — it reads from WS alert.batch events.
     """
     all_alerts = sorted(state.alert_index.values(), key=lambda a: a.ts, reverse=True)
-    page = all_alerts[offset: offset + limit]
+    page = all_alerts[offset : offset + limit]
     return [a.model_dump(mode="json") for a in page]
 
 
@@ -174,6 +188,7 @@ async def eval_results():
     for f in sorted(EVAL_DIR.glob("*.json"), reverse=True)[:20]:
         try:
             import json
+
             results.append(json.loads(f.read_text()))
         except Exception:
             pass
