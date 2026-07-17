@@ -84,11 +84,14 @@ export function EvalDashboard() {
     fetchResults()
   }, [])
 
-  // Identify best backend on primary scenario (db-cascade)
-  const primaryScenario = data?.scenarios.find((s) => s.name === 'db-cascade')
-  const bestBackend = primaryScenario?.backends.find(
-    (b) => b.backend === 'DenStream (streaming)',
-  )
+  // Hero row = our full system on the primary (real, labeled) scenario the
+  // backend nominates via data.dataset — never an ablation, and never
+  // DenStream (which the eval proves is worst on real AIOps data).
+  const primaryScenario =
+    data?.scenarios.find((s) => s.name === data.dataset) ?? data?.scenarios[0]
+  const bestBackend =
+    primaryScenario?.backends.find((b) => b.backend === 'Full-system') ??
+    primaryScenario?.backends[0]
 
   useEffect(() => {
     if (bestBackend) {
@@ -138,12 +141,9 @@ export function EvalDashboard() {
   // Check target pass/fail status
   const evaluateTarget = (field: string, val: number) => {
     if (!data?.targets) return { pass: true, label: '' }
-    
-    // Add custom fallback for ARI target
-    let target = data.targets[field]
-    if (field === 'ari') {
-      target = 0.8
-    }
+    // ARI has no documented target — EVALUATION.md reports it alongside purity,
+    // not as a pass/fail bar. So no target => no badge (not a fabricated ≥0.8).
+    const target = data.targets[field]
 
     if (target === undefined) return { pass: true, label: '' }
 

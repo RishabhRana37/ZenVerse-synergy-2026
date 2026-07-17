@@ -179,17 +179,107 @@ async def list_alerts(limit: int = 200, offset: int = 0):
 EVAL_DIR = Path(__file__).parent.parent.parent / "eval" / "results"
 
 
-@router.get("/eval/results")
-async def eval_results():
-    """Returns the latest eval run results. Consumed by the EvalDashboard."""
-    if not EVAL_DIR.exists():
-        return []
-    results = []
-    for f in sorted(EVAL_DIR.glob("*.json"), reverse=True)[:20]:
-        try:
-            import json
+# Ablation key -> dashboard display label. Hyphenated (no spaces) because the
+# eval chart keys its x-axis on backend_name.split(" ")[0] and needs them unique.
+_ABLATION_LABEL = {
+    "full": "Full-system",
+    "naive_dedup": "Naive-dedup",
+    "denstream": "DenStream",
+    "no_semantic": "No-semantic",
+    "no_topology": "No-topology",
+    "no_temporal": "No-temporal",
+}
+# Ordered so "Full-system" is always the first/reference row per scenario.
+_ABLATION_ORDER = ["full", "naive_dedup", "no_semantic", "no_topology", "no_temporal", "denstream"]
 
-            results.append(json.loads(f.read_text()))
+# Targets from docs/EVALUATION.md — the pass/fail bars on the dashboard.
+_EVAL_TARGETS = {
+    "compression_ratio": 0.95,
+    "purity": 0.80,
+    "hit_at_1": 0.60,
+    "hit_at_3": 0.85,
+    "latency_p95_ms": 5000,
+}
+
+
+def _load_latency_by_dataset() -> dict[str, dict]:
+    """bench_<dataset>_<sha>.json files carry measured p50/p95 (harness accuracy
+    runs leave them null). Newest per dataset wins."""
+    import json
+
+    out: dict[str, dict] = {}
+    for f in sorted(EVAL_DIR.glob("bench_*.json")):
+        try:
+            data = json.loads(f.read_text())
+            out[data["dataset"]] = data
         except Exception:
             pass
-    return results
+    return out
+
+
+@router.get("/eval/results")
+async def eval_results():
+    """
+    Aggregates the per-ablation harness result files into the single EvalData
+    object the EvalDashboard renders: one 'scenario' per dataset, one 'backend'
+    row per ablation, plus measured latency (from bench files) and the
+    EVALUATION.md target bars. Every number is traceable to a committed
+    eval/results/*.json produced by `python -m eval.harness`.
+    """
+    import json
+
+    if not EVAL_DIR.exists():
+        return {"generated_at": None, "dataset": "", "scenarios": [], "targets": _EVAL_TARGETS}
+
+    latency = _load_latency_by_dataset()
+    # dataset -> {ablation -> row}, keeping the newest file per (dataset, ablation)
+    by_dataset: dict[str, dict[str, dict]] = {}
+    newest_ts: str | None = None
+
+    for f in sorted(EVAL_DIR.glob("*.json")):
+        if f.name.startswith("bench_"):
+            continue
+        try:
+            r = json.loads(f.read_text())
+        except Exception:
+            continue
+        dataset = r.get("dataset")
+        if not dataset:
+            continue
+        ablation = r.get("ablation") or "full"
+        lat = latency.get(dataset, {})
+        row = {
+            "backend": _ABLATION_LABEL.get(ablation, ablation),
+            "compression_ratio": r.get("compression_ratio", 0.0),
+            "purity": r.get("cluster_purity", 0.0),
+            "ari": r.get("ari", 0.0),
+            "hit_at_1": r.get("hit_at_1", 0.0),
+            "hit_at_3": r.get("hit_at_3", 0.0),
+            "latency_p50_ms": r.get("latency_p50_ms") or lat.get("latency_p50_ms", 0),
+            "latency_p95_ms": r.get("latency_p95_ms") or lat.get("latency_p95_ms", 0),
+            "fragmentation": r.get("fragmentation", 0.0),
+            "_ablation": ablation,
+        }
+        by_dataset.setdefault(dataset, {})[ablation] = row
+        ts = r.get("timestamp")
+        if ts and (newest_ts is None or ts > newest_ts):
+            newest_ts = ts
+
+    scenarios = []
+    for dataset, rows in sorted(by_dataset.items()):
+        ordered = [rows[a] for a in _ABLATION_ORDER if a in rows]
+        ordered += [v for k, v in rows.items() if k not in _ABLATION_ORDER]
+        for row in ordered:
+            row.pop("_ablation", None)
+        scenarios.append({"name": dataset, "backends": ordered})
+
+    # Hero + chart key off the real labeled dataset if present, else the first.
+    primary = "aiops-scn1" if "aiops-scn1" in by_dataset else (
+        sorted(by_dataset)[0] if by_dataset else ""
+    )
+    return {
+        "generated_at": newest_ts,
+        "dataset": primary,
+        "scenarios": scenarios,
+        "targets": _EVAL_TARGETS,
+    }
