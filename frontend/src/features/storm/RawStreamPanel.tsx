@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useStreamStore } from '@/store/stream'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
 import { Odometer } from '@/components/ui/Odometer'
@@ -283,12 +285,12 @@ export function RawStreamPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
-            <span className="text-accent mr-1">▎01</span> RAW STREAM
+            <span className="text-accent mr-1">▎01</span> Raw Stream
           </span>
           {alerts.length > 0 && (
             <span className="text-[11px] text-text-muted font-mono inline-flex items-baseline gap-1 select-none">
@@ -318,66 +320,66 @@ export function RawStreamPanel() {
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Severity filter chips */}
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              size="sm"
               onClick={() => setCritEnabled(!critEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
                 critEnabled
-                  ? "bg-severity-critical/20 border-severity-critical text-severity-critical"
+                  ? "bg-severity-critical/15 border-severity-critical/30 text-severity-critical hover:bg-severity-critical/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               CRIT <span className="font-mono font-medium opacity-80">(<Odometer value={critCount} easing="spring" className="text-severity-critical" />)</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setWarnEnabled(!warnEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
                 warnEnabled
-                  ? "bg-severity-warning/20 border-severity-warning text-severity-warning"
+                  ? "bg-severity-warning/15 border-severity-warning/30 text-severity-warning hover:bg-severity-warning/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               WARN <span className="font-mono font-medium opacity-80">(<Odometer value={warnCount} easing="spring" className="text-severity-warning" />)</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setInfoEnabled(!infoEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
                 infoEnabled
-                  ? "bg-severity-info/20 border-severity-info text-severity-info"
+                  ? "bg-severity-info/15 border-severity-info/30 text-severity-info hover:bg-severity-info/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               INFO <span className="font-mono font-medium opacity-80">(<Odometer value={infoCount} easing="spring" className="text-severity-info" />)</span>
-            </button>
+            </Button>
           </div>
 
           <div className="h-4 w-px bg-border/40 shrink-0" />
 
           {/* Search input */}
           <div className="relative flex-1 min-w-0 max-w-[200px]">
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="filter by service, host, text…"
-              className="w-full bg-bg-elevated border border-border/60 hover:border-border focus:border-accent text-[11px] font-mono text-text-primary placeholder:text-text-muted px-2 py-0.5 rounded-[4px] outline-none transition-colors"
+              placeholder="filter stream..."
+              className="h-6 py-0 px-2.5 text-[11px] font-mono"
             />
           </div>
 
           <div className="h-4 w-px bg-border/40 shrink-0" />
 
           {/* Claimed eye toggle */}
-          <button
+          <Button
+            size="sm"
+            variant={showClaimed ? "secondary" : "accent"}
             onClick={() => setShowClaimed(!showClaimed)}
             title={showClaimed ? "Hide claimed alerts" : "Show claimed alerts"}
-            className={clsx(
-              "p-1 rounded-[4px] border transition-all flex items-center justify-center shrink-0",
-              showClaimed
-                ? "bg-bg-elevated border-border text-text-secondary hover:text-text-primary"
-                : "bg-accent/15 border-accent text-accent"
-            )}
+            className="h-6 w-6 p-0 flex items-center justify-center shrink-0"
           >
             {showClaimed ? (
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -389,24 +391,26 @@ export function RawStreamPanel() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
               </svg>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Info tally and Clear button */}
         {isFilterActive && (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 select-none">
             <span className="text-[10px] font-mono text-text-muted tabular-nums">
               {filteredAlerts.length} of {alerts.length} shown
             </span>
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
               onClick={handleClearFilters}
               title="Clear all filters"
-              className="p-0.5 rounded-[4px] border border-border/40 bg-bg-elevated hover:bg-border/20 text-text-muted hover:text-text-primary transition-colors flex items-center justify-center"
+              className="h-6 w-6 p-0 flex items-center justify-center"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           </div>
         )}
       </div>

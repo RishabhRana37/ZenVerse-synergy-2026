@@ -11,6 +11,7 @@ import { Card }           from '@/components/ui/Card'
 import { Badge }          from '@/components/ui/Badge'
 import { Stat }           from '@/components/ui/Stat'
 import { ConfidenceBar }  from '@/components/ui/ConfidenceBar'
+import { Button } from '@/components/ui/Button'
 
 // ── Section wrapper ────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -54,11 +55,10 @@ export function TokensPage() {
 
       {/* Back button row */}
       <div className="mb-4 text-left">
-        <Link
-          to="/"
-          className="inline-block px-3 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
-        >
-          ← War Room
+        <Link to="/">
+          <Button variant="secondary" size="sm" className="font-mono text-[11px] font-semibold text-text-secondary">
+            ← Return to War Room
+          </Button>
         </Link>
       </div>
 

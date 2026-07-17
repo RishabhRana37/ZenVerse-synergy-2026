@@ -33,7 +33,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           'rounded-card border border-border',
           bg,
           paddingMap[padding],
-          interactive && 'cursor-pointer transition-colors duration-150 hover:bg-bg-hover hover:border-border-strong',
+          interactive && 'cursor-pointer transition-all duration-120 hover:bg-bg-hover hover:border-border-strong',
           className,
         )}
         style={{

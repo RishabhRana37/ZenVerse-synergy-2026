@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
 import { getPresentationMode } from '@/lib/presentationMode'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 
 export function HealthPage() {
   const connection = useStreamStore((s) => s.connection)
@@ -96,7 +99,8 @@ export function HealthPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-base text-text-primary font-sans items-center justify-center p-6 select-none">
-      <div className="w-full max-w-md p-6 bg-bg-surface border border-border rounded-lg shadow-elevated flex flex-col gap-5">
+      <Card className="w-full max-w-md p-6 flex flex-col gap-5 relative group/bracket bg-bg-surface">
+        <CornerBrackets />
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -104,11 +108,14 @@ export function HealthPage() {
             <span className="text-[14px] font-bold tracking-tight">StormLens Diagnostics</span>
             <span className="text-[10px] text-text-muted font-mono uppercase mt-0.5">Pre-Demo Checklist</span>
           </div>
-          <Link
-            to="/"
-            className="px-2 py-1 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-[10px] font-mono font-semibold text-text-secondary transition-colors"
-          >
-            ← War Room
+          <Link to="/">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-[10px] font-mono font-semibold text-text-secondary"
+            >
+              ← War Room
+            </Button>
           </Link>
         </div>
 
@@ -180,7 +187,7 @@ export function HealthPage() {
           </div>
         )}
 
-      </div>
+      </Card>
     </div>
   )
 }

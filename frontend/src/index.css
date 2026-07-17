@@ -14,20 +14,20 @@
 /* ── CSS custom properties (mirrors tailwind config for runtime access) ── */
 :root {
   /* Backgrounds */
-  --bg-base:      #0A0E14;
-  --bg-surface:   #11161F;
-  --bg-elevated:  #161D29;
-  --bg-hover:     #1C2535;
+  --bg-base:      #05080E;
+  --bg-surface:   #0B0F19;
+  --bg-elevated:  #111827;
+  --bg-hover:     #1A2436;
 
-  /* Borders — raised from 0.06→0.10 for projector legibility */
-  --border:       rgba(255,255,255,0.10);
-  --border-subtle:rgba(255,255,255,0.05);
-  --border-strong:rgba(255,255,255,0.18);
+  /* Borders */
+  --border:       rgba(255,255,255,0.06);
+  --border-subtle:rgba(255,255,255,0.03);
+  --border-strong:rgba(255,255,255,0.12);
 
-  /* Text — muted bumped from #4D5866 → #5D6B7D (projector legible) */
-  --text-primary:   #E6EDF3;
-  --text-secondary: #8B98A9;
-  --text-muted:     #5D6B7D;
+  /* Text */
+  --text-primary:   #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
 
   /* Severity */
   --severity-critical: #FF4D4F;

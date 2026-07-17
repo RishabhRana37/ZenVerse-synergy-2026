@@ -602,11 +602,11 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
   })
 
   return (
-    <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
-          <span className="text-accent mr-1">▎02</span> INCIDENTS
+          <span className="text-accent mr-1">▎02</span> Incidents
         </span>
         <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
           <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active

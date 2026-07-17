@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useStreamStore } from '@/store/stream'
+import { Button } from '@/components/ui/Button'
 import { RawStreamPanel } from '@/features/storm/RawStreamPanel'
 import { StormTimeline } from '@/features/storm/StormTimeline'
 import { IncidentPanel } from '@/features/incidents/IncidentPanel'
@@ -158,18 +159,25 @@ export function WarRoom() {
 
       {/* ── Time Machine REVIEWING Pill DOM Overlay ─────────────────────── */}
       {scrubMode && (
-        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 bg-bg-surface/90 border border-accent/40 shadow-elevated px-3 py-1.5 rounded-full font-mono text-[10px] text-accent select-none backdrop-blur-md animate-fade-in">
-          <span>⏸ REVIEWING — t+{scrubTime.toFixed(1)}s</span>
-          <button
+        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-[#0B0F19]/80 border border-accent/30 shadow-elevated px-4 py-2 rounded-full font-mono text-[10px] text-text-primary select-none backdrop-blur-md animate-fade-in">
+          <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-accent">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+            Reviewing
+          </span>
+          <span className="text-text-secondary font-mono">t+{scrubTime.toFixed(1)}s</span>
+          <span className="text-border/40 select-none">|</span>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={handleCaptureSnapshot}
-            className="p-1 hover:bg-bg-elevated rounded text-text-secondary hover:text-accent transition-colors flex items-center justify-center cursor-pointer"
+            className="h-6 w-6 p-0 hover:bg-bg-hover hover:text-accent flex items-center justify-center"
             title="Copy shareable text snapshot to clipboard"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
             </svg>
-          </button>
+          </Button>
         </div>
       )}
 

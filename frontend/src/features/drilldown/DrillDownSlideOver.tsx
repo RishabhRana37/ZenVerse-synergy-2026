@@ -9,6 +9,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import type { Alert, Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
+import { Button } from '@/components/ui/Button'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
@@ -657,13 +658,15 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               <span>created {new Date(storeIncident.created_at).toLocaleTimeString()}</span>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors p-1.5 rounded hover:bg-bg-elevated text-ui flex-shrink-0"
+            className="h-8 w-8 p-0 text-text-secondary hover:text-text-primary flex items-center justify-center"
             aria-label="Close details"
           >
             ✕
-          </button>
+          </Button>
         </div>
 
         {/* Scrollable Content zone */}
@@ -918,7 +921,37 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               )}
             </div>
           </section>
+        </div>
 
+        {/* Footer Action Bar */}
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-bg-surface flex-shrink-0 z-15">
+          <div className="flex items-center gap-3 text-[10px] text-text-secondary font-mono">
+            <span>Shortcut: <kbd className="bg-bg-base border border-border px-1.5 py-0.5 rounded font-mono font-bold text-accent">A</kbd> Ack</span>
+            <span className="text-border/40 select-none">·</span>
+            <span>Shortcut: <kbd className="bg-bg-base border border-border px-1.5 py-0.5 rounded font-mono font-bold text-accent">Shift+R</kbd> Resolve</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {storeIncident.status === 'active' && (
+              <>
+                <Button
+                  size="sm"
+                  variant={storeIncident.acknowledged ? "secondary" : "accent"}
+                  onClick={() => acknowledgeIncident(storeIncident.id)}
+                  disabled={storeIncident.acknowledged}
+                >
+                  {storeIncident.acknowledged ? "Acknowledged" : "Acknowledge"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => resolveIncident(storeIncident.id)}
+                >
+                  Resolve
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </motion.div>
     </>

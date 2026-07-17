@@ -8,23 +8,23 @@ export default {
       colors: {
         // Backgrounds / surfaces
         bg: {
-          base:     '#0A0E14',  // page background
-          surface:  '#11161F',  // panel / card surface
-          elevated: '#161D29',  // elevated card / tooltip
-          hover:    '#1C2535',  // hover state on surfaces
+          base:     '#05080E',  // page background
+          surface:  '#0B0F19',  // panel / card surface
+          elevated: '#111827',  // elevated card / tooltip
+          hover:    '#1A2436',  // hover state on surfaces
         },
         // Borders
         border: {
-          DEFAULT: 'rgba(255,255,255,0.10)',
-          subtle:  'rgba(255,255,255,0.05)',
-          strong:  'rgba(255,255,255,0.18)',
+          DEFAULT: 'rgba(255,255,255,0.06)',
+          subtle:  'rgba(255,255,255,0.03)',
+          strong:  'rgba(255,255,255,0.12)',
         },
         // Text
         text: {
-          primary:   '#E6EDF3',
-          secondary: '#8B98A9',
-          muted:     '#5D6B7D',
-          inverse:   '#0A0E14',
+          primary:   '#F8FAFC',
+          secondary: '#94A3B8',
+          muted:     '#64748B',
+          inverse:   '#05080E',
         },
         // Severity
         severity: {
@@ -62,11 +62,11 @@ export default {
 
       // ── Spacing & sizing ─────────────────────────────────────────────
       borderRadius: {
-        card:  '8px',
+        card:  '6px',
         badge: '4px',
         sm: '4px',
-        md: '8px',
-        lg: '12px',
+        md: '6px',
+        lg: '8px',
       },
 
       // ── Box shadows ──────────────────────────────────────────────────

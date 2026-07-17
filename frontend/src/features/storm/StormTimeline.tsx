@@ -6,6 +6,7 @@
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useStreamStore } from '@/store/stream'
+import { Button } from '@/components/ui/Button'
 import { fpsGuard } from '@/lib/fpsGuard'
 import { audioManager } from '@/lib/audio'
 import { clsx } from 'clsx'
@@ -581,19 +582,19 @@ export function StormTimeline() {
           />
 
           {/* Pulsing LIVE return button */}
-          <button
+          <Button
+            size="sm"
+            variant={scrubMode ? "accent" : "secondary"}
             disabled={!scrubMode}
             onClick={handleExitScrub}
             className={clsx(
-              "absolute right-4 top-1/2 -translate-y-1/2 z-30 px-2.5 py-1 rounded font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-200 border",
-              scrubMode
-                ? "bg-accent border-accent/40 text-text-inverse shadow-elevated animate-pulse cursor-pointer"
-                : "bg-bg-elevated/45 border-border/50 text-text-muted cursor-default"
+              "absolute right-4 top-1/2 -translate-y-1/2 z-30 font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-120",
+              scrubMode ? "animate-pulse shadow-elevated" : "opacity-80 disabled:opacity-50"
             )}
           >
             <span className={clsx("w-1.5 h-1.5 rounded-full", scrubMode ? "bg-text-inverse" : "bg-accent")} />
             LIVE {scrubMode && newIncidentsCount > 0 && `+${newIncidentsCount}`}
-          </button>
+          </Button>
 
           {/* Hover tooltip */}
           {tooltip.visible && !isDraggingRef.current && (

@@ -13,6 +13,8 @@ import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { ReticleLogo } from '@/components/ui/ReticleLogo'
 import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
 import { clsx } from 'clsx'
 
@@ -123,58 +125,63 @@ function AppInner() {
       <aside className="w-56 border-r border-border bg-bg-surface flex flex-col h-full flex-shrink-0 z-40 relative group/bracket transition-all duration-240 ease-lens">
         <CornerBrackets />
         
-        {/* Workspace Switcher */}
-        <div className="h-16 border-b border-border flex items-center px-4 gap-2.5 flex-shrink-0 select-none">
-          <div className="w-5 h-5 rounded bg-accent/15 border border-accent/30 flex items-center justify-center text-accent text-[11px] font-bold font-mono">
+        {/* Workspace Switcher (Visual Dropdown UI) */}
+        <div className="h-16 border-b border-border flex items-center px-4 gap-2.5 flex-shrink-0 select-none group/workspace hover:bg-bg-hover/30 transition-colors duration-120 cursor-pointer">
+          <div className="w-6 h-6 rounded bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-[10px] font-bold font-mono shadow-sm group-hover/workspace:border-accent/40 transition-colors">
             SL
           </div>
-          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-primary">
-            STORMLENS
-          </span>
-          <span className="text-[9px] text-text-muted font-mono bg-bg-base px-1.5 py-0.5 rounded border border-border/60 ml-auto">
-            HPE
-          </span>
+          <div className="flex flex-col">
+            <span className="font-sans text-[11px] font-bold tracking-wider uppercase text-text-primary leading-tight flex items-center gap-1">
+              STORMLENS
+              <svg className="w-2.5 h-2.5 text-text-muted group-hover/workspace:text-text-secondary transition-colors" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </span>
+            <span className="text-[9px] font-mono text-text-muted leading-none">HPE Cluster</span>
+          </div>
         </div>
 
         {/* Navigation Links */}
         <nav className="flex-1 py-4 px-2.5 flex flex-col gap-1 min-h-0 overflow-y-auto">
           {[
-            { to: '/', label: 'WAR ROOM', badge: '01' },
-            { to: '/eval', label: 'METRICS EVAL', badge: '02' },
-            { to: '/health', label: 'DIAGNOSTICS', badge: '03' },
-            { to: '/debug', label: 'WS DEBUGGER', badge: '04' },
-            { to: '/tokens', label: 'STYLE TOKENS', badge: '05' },
+            { to: '/', label: 'War Room', badge: '01' },
+            { to: '/eval', label: 'Metrics Eval', badge: '02' },
+            { to: '/health', label: 'Diagnostics', badge: '03' },
+            { to: '/debug', label: 'WS Debugger', badge: '04' },
+            { to: '/tokens', label: 'Style Tokens', badge: '05' },
           ].map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) => clsx(
-                "w-full text-left px-3 py-2 flex items-center justify-between text-[11px] font-mono tracking-wider transition-all duration-120 ease-lens rounded-md",
+                "w-full text-left px-3.5 py-2 flex items-center justify-between text-[12px] font-sans font-medium transition-all duration-120 ease-lens rounded-md border border-transparent",
                 isActive
-                  ? "bg-bg-hover text-text-primary border-l-2 border-accent pl-2.5 font-semibold"
-                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary border-l-2 border-transparent"
+                  ? "bg-bg-hover/80 text-text-primary border-border/60 shadow-[inset_2.5px_0_0_0_#2DD4A7] pl-4 font-semibold"
+                  : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
               )}
             >
               <span>{item.label}</span>
-              <span className="text-[9px] text-text-muted/60 opacity-60">▎{item.badge}</span>
+              <span className="text-[9px] font-mono text-text-muted/60 opacity-60">▎{item.badge}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Command Menu Shortcut & Help at the bottom */}
         <div className="mt-auto p-4 border-t border-border/40 flex flex-col gap-2.5 bg-bg-surface flex-shrink-0 font-sans">
-          <div className="flex items-center justify-between text-[10px] text-text-muted">
+          <div className="flex items-center justify-between text-[10px] text-text-secondary font-mono">
             <span>Command Menu</span>
-            <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+            <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd>
           </div>
-          <div className="flex items-center justify-between text-[10px] text-text-muted">
-            <span>Keyboard Shortcuts</span>
-            <button
+          <div className="flex items-center justify-between text-[10px] text-text-secondary font-mono">
+            <span>Shortcuts Help</span>
+            <Button
+              size="sm"
+              variant="accent"
               onClick={() => setShowOverlay(true)}
-              className="text-[9px] font-mono font-bold bg-bg-base border border-border text-accent px-1.5 py-0.5 rounded hover:border-accent/40 cursor-pointer"
+              className="text-[9px] font-mono font-bold px-2 py-0.5 h-auto"
             >
               Press ?
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -219,7 +226,7 @@ function AppInner() {
                 <span className="font-semibold text-text-primary text-[15px] tracking-tight font-sans">StormLens</span>
                 <div className="flex items-center gap-1.5 pl-2.5 border-l border-border">
                   <span className="text-[11px] text-text-secondary font-mono capitalize">
-                    {connection === 'open' ? 'connected' : connection}
+                    {connection === 'open' ? 'live' : connection}
                   </span>
                 </div>
                 {replayRunning && (
@@ -257,19 +264,23 @@ function AppInner() {
                 </div>
 
                 {view === 'stream' && (
-                  <div className="flex items-center gap-2 text-ui-sm font-mono text-text-secondary whitespace-nowrap min-w-0 max-w-full overflow-hidden text-ellipsis select-none animate-fade-in">
-                    <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-semibold" />
-                    <span className="text-text-muted">alerts</span>
-                    
-                    <span className="text-text-muted">→</span>
-                    
-                    <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-semibold" />
-                    <span className="text-text-muted">incidents</span>
-                    
-                    <span className="text-border-strong font-sans">·</span>
-                    
-                    <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-accent font-semibold" />
-                    <span className="text-text-muted">noise suppressed</span>
+                  <div className="flex items-center gap-4 bg-bg-base/40 px-3 py-1.5 rounded border border-border text-[11px] font-mono text-text-secondary select-none animate-fade-in">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80" />
+                      <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-bold" />
+                      <span className="text-[9px] text-text-muted uppercase">alerts</span>
+                    </div>
+                    <span className="text-border/40 select-none">|</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent/80 animate-pulse" />
+                      <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-bold" />
+                      <span className="text-[9px] text-text-muted uppercase">incidents</span>
+                    </div>
+                    <span className="text-border/40 select-none">|</span>
+                    <div className="flex items-center gap-1.5">
+                      <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-accent font-bold" />
+                      <span className="text-[9px] text-text-muted uppercase font-sans">Noise Suppressed</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -294,13 +305,15 @@ function AppInner() {
                 </div>
 
                 {/* Sound speaker toggle button */}
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     audioManager.toggleMute()
                     setMuted(audioManager.getMuted())
                   }}
-                  className="p-1.5 rounded border border-border bg-bg-base/50 hover:bg-bg-hover hover:border-border-strong transition-all duration-120 text-text-secondary hover:text-text-primary flex items-center justify-center cursor-pointer"
                   title={muted ? "Unmute ambient storm hum" : "Mute ambient storm hum"}
+                  className="h-7 w-7 p-0 flex items-center justify-center"
                 >
                   {muted ? (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -311,27 +324,33 @@ function AppInner() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                     </svg>
                   )}
-                </button>
+                </Button>
 
                 {/* Dropdown Menu */}
                 <div className="relative">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setMenuOpen(!menuOpen)}
-                    className="p-1.5 rounded border border-border bg-bg-base/50 hover:bg-bg-hover hover:border-border-strong transition-all duration-120 text-text-secondary hover:text-text-primary flex items-center justify-center cursor-pointer"
+                    className="h-7 w-7 p-0 flex items-center justify-center"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
-                  </button>
+                  </Button>
                   {menuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-bg-surface border border-border rounded-md shadow-elevated py-1 z-[100] flex flex-col">
+                    <Card
+                      variant="elevated"
+                      padding="none"
+                      className="absolute right-0 mt-2 w-48 py-1 z-[100] flex flex-col overflow-hidden"
+                    >
                       <button
                         onClick={() => {
                           try { sessionStorage.removeItem('intro_seen') } catch {}
                           useStreamStore.getState().setShowIntro(true)
                           setMenuOpen(false)
                         }}
-                        className="px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
+                        className="px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
                       >
                         Replay Cinematic Intro
                       </button>
@@ -340,12 +359,12 @@ function AppInner() {
                           window.dispatchEvent(new CustomEvent('stormlens-open-palette'))
                           setMenuOpen(false)
                         }}
-                        className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
+                        className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer border-t border-border/20 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
                       >
                         <span>Command Palette</span>
                         <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
                       </button>
-                    </div>
+                    </Card>
                   )}
                 </div>
               </div>
