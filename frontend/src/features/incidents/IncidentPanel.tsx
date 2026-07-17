@@ -94,7 +94,7 @@ function TypewriterSummary({
 
 // ── IncidentCard component ───────────────────────────────────────────────
 
-const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; onSelect?: (id: string) => void }) => {
+const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Incident; onSelect?: (id: string) => void; index: number }) => {
   const [isPulsing, setIsPulsing] = useState(false)
   const [showFirstAction, setShowFirstAction] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -137,11 +137,60 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   // Sparkline data mapping
   const sparklineData = (incident.sparkline || []).map((val, idx) => ({ idx, val }))
 
+  // Mouse Spotlight Tracking
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [isHovered, setIsHovered] = useState(false)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+  }
+
+  // Compute live severity from alerts
+  const alerts = useStreamStore((s) => s.alerts)
+  const severity = React.useMemo(() => {
+    const myAlerts = alerts.filter(a => a.cluster_id === incident.id)
+    if (myAlerts.some(a => a.severity === 'critical')) return 'critical'
+    if (myAlerts.some(a => a.severity === 'warning')) return 'warning'
+    if (incident.title.toLowerCase().includes('critical') || incident.title.toLowerCase().includes('error') || incident.title.toLowerCase().includes('fail')) return 'critical'
+    if (incident.title.toLowerCase().includes('warn')) return 'warning'
+    return 'info'
+  }, [alerts, incident.id, incident.title])
+
+  // Spotlight and border colors based on severity
+  const colors = React.useMemo(() => {
+    switch (severity) {
+      case 'critical':
+        return {
+          border: 'rgba(239, 68, 68, 0.4)',
+          glow: 'rgba(239, 68, 68, 0.12)',
+          rgb: '239, 68, 68',
+        }
+      case 'warning':
+        return {
+          border: 'rgba(245, 158, 11, 0.4)',
+          glow: 'rgba(245, 158, 11, 0.12)',
+          rgb: '245, 158, 11',
+        }
+      case 'info':
+      default:
+        return {
+          border: 'rgba(59, 130, 246, 0.4)',
+          glow: 'rgba(59, 130, 246, 0.12)',
+          rgb: '59, 130, 246',
+        }
+    }
+  }, [severity])
+
   // Render resolved cards in single-row compression format
   if (incident.status === 'resolved') {
     return (
       <motion.div
         layout
+        custom={index}
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
@@ -149,9 +198,25 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
         <div
           data-incident-id={incident.id}
           onClick={handleClick}
-          className="bg-bg-elevated/40 border border-text-muted/20 hover:border-border hover:bg-bg-hover rounded-card px-3 py-2 transition-colors duration-200 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px]"
+          onMouseMove={handleMouseMove}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            borderColor: isHovered ? colors.border : undefined,
+            boxShadow: isHovered ? `0 0 10px ${colors.glow}` : undefined,
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
+          }}
+          className="bg-bg-elevated/40 border border-text-muted/20 hover:bg-bg-hover rounded-card px-3 py-2 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px] relative overflow-hidden"
         >
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          {isHovered && (
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
+              style={{
+                background: `radial-gradient(150px circle at ${mousePos.x}px ${mousePos.y}px, rgba(${colors.rgb}, 0.04), transparent 80%)`,
+              }}
+            />
+          )}
+          <div className="flex items-center gap-2 min-w-0 flex-1 z-10 relative">
             <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
             <span className="font-semibold text-text-muted truncate max-w-[200px] font-sans">
               {incident.title}
@@ -166,7 +231,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted">
+          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted z-10 relative">
             <span className="inline-flex items-baseline gap-0.5">
               <Odometer value={incident.alert_count} easing="spring" className="text-text-muted" />
               <span>alerts</span>
@@ -200,7 +265,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           opacity: 1,
           transition: {
             duration: 0.18,
-            delay: 0.05, // surface fades up after 50ms (giving time for the line draw)
+            delay: 0.05,
             ease: 'easeOut'
           }
         }
@@ -274,6 +339,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   return (
     <motion.div
       layout
+      custom={index}
       initial="hidden"
       animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
       exit={{ opacity: 0, scale: 0.96 }}
@@ -283,23 +349,41 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          borderColor: isHovered ? colors.border : undefined,
+          boxShadow: isHovered ? `0 0 10px ${colors.glow}` : undefined,
+          transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
+        }}
         className={clsx(
-          "rounded-card p-4 transition-colors duration-120 ease-lens hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
+          "rounded-card p-4 flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
           borderClass
         )}
       >
+        {/* Soft radial spotlight follow */}
+        {isHovered && (
+          <div
+            className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
+            style={{
+              background: `radial-gradient(150px circle at ${mousePos.x}px ${mousePos.y}px, rgba(${colors.rgb}, 0.05), transparent 80%)`,
+            }}
+          />
+        )}
+
         {/* Draw Accent Line across where the card will be */}
         {topCandidate && (
           <motion.div
             variants={lineVariants}
             style={{ originX: 0 }}
-            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200"
+            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200 z-10"
             animate={{ opacity: isPulsing ? 1.0 : topCandidate.confidence }}
           />
         )}
 
         {/* Cap inner content at max-width 720px, left-aligned */}
-        <div className="w-full max-w-[720px] text-left flex flex-col h-full">
+        <div className="w-full max-w-[720px] text-left flex flex-col h-full z-10 relative">
           {/* Header */}
           <motion.div variants={titleVariants} className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
             <h3 className="text-[13px] font-semibold text-text-primary leading-tight font-sans select-text line-clamp-2">
@@ -351,10 +435,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 <span
                   key={svc}
                   className={clsx(
-                    "px-2 py-0.5 rounded text-[10px] font-mono leading-none border transition-all duration-200 select-text",
+                    "text-[10px] font-mono px-2 py-0.5 rounded border leading-none transition-colors",
                     isRoot
-                      ? "bg-accent-dim text-accent ring-1 ring-accent border-accent/40 font-semibold"
-                      : "bg-bg-base border-border text-text-secondary"
+                      ? "bg-severity-critical/10 border-severity-critical/30 text-severity-critical font-bold"
+                      : "bg-bg-base/60 border-border text-text-secondary"
                   )}
                 >
                   {svc}
@@ -362,17 +446,17 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
               )
             })}
             {extraServices > 0 && (
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono leading-none bg-bg-base border border-border text-text-muted">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-border bg-bg-base/30 text-text-muted font-bold leading-none">
                 +{extraServices} more
               </span>
             )}
           </motion.div>
 
-          {/* Summary Zone */}
-          <motion.div variants={summaryVariants} className="mb-3.5 flex-1 min-h-0">
+          {/* Summary / Diagnosis Brief */}
+          <motion.div variants={summaryVariants} className="flex flex-col gap-1 my-1.5 flex-1 select-text">
             {incident.summary ? (
-              <div className="text-[12px] text-text-primary leading-[1.5] font-sans select-text">
-                <div className={clsx("transition-all duration-200", !isExpanded && "line-clamp-4 overflow-hidden")}>
+              <div className="flex flex-col h-full justify-between">
+                <div className={clsx("transition-all duration-200 z-10 relative", !isExpanded && "line-clamp-4 overflow-hidden")}>
                   <TypewriterSummary
                     text={incident.summary}
                     onComplete={() => setShowFirstAction(true)}
@@ -386,7 +470,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                       e.stopPropagation()
                       setIsExpanded(!isExpanded)
                     }}
-                    className="text-accent hover:underline text-[10px] font-mono mt-1.5 block select-none"
+                    className="text-accent hover:underline text-[10px] font-mono mt-1.5 block select-none z-10 relative cursor-pointer"
                   >
                     {isExpanded ? 'Show less' : 'Show more'}
                   </button>
@@ -420,7 +504,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           </motion.div>
 
           {/* Footer / Actions */}
-          <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px]">
+          <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px] z-10">
             {confirmResolve ? (
               <div className="flex items-center gap-2 text-[11px] font-mono" onClick={(e) => e.stopPropagation()}>
                 <span className="text-severity-warning font-bold uppercase text-[9px] tracking-wider">Resolve incident?</span>
@@ -453,7 +537,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </div>
 
                 {/* Operator Actions - Hover visible */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1.5 absolute right-0 bg-bg-elevated pl-2">
+                <div className="opacity-0 group-hover/bracket:opacity-100 transition-opacity duration-150 flex items-center gap-1.5 absolute right-0 bg-bg-elevated pl-2">
                   {!incident.acknowledged && (
                     <button
                       onClick={(e) => {
@@ -477,7 +561,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </div>
 
                 {/* Sparkline chart */}
-                <div className="group-hover:opacity-0 transition-opacity duration-150 w-[60px] h-[20px] opacity-75">
+                <div className="group-hover/bracket:opacity-0 transition-opacity duration-150 w-[60px] h-[20px] opacity-75">
                   {sparklineData.length > 0 && (
                     <Sparkline
                       data={sparklineData.map(d => d.val)}
@@ -552,8 +636,8 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex flex-col gap-3 p-4">
             <AnimatePresence mode="popLayout">
-              {activeIncidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} />
+              {activeIncidents.map((inc, index) => (
+                <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} index={index} />
               ))}
             </AnimatePresence>
 
@@ -586,8 +670,8 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden flex flex-col gap-2"
                     >
-                      {resolvedIncidents.map((inc) => (
-                        <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} />
+                      {resolvedIncidents.map((inc, index) => (
+                        <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} index={index} />
                       ))}
                     </motion.div>
                   )}

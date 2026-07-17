@@ -371,6 +371,18 @@ export const useStreamStore = create<StreamState>((set) => ({
 
   // ── alert.batch: prepend to ring buffer, newest first ────────────────
   applyAlertBatch: (msg) => {
+    if (typeof window !== 'undefined' && msg.alerts.length > 0) {
+      // Dispatch events for toast notifications, capped to at most 3 from this batch
+      const maxToasts = 3
+      msg.alerts.slice(0, maxToasts).forEach((alert) => {
+        window.dispatchEvent(
+          new CustomEvent('stormlens-new-alert', {
+            detail: alert
+          })
+        )
+      })
+    }
+
     set((state) => {
       const journalUpdates = recordJournalEvent(state, 'alert.batch', msg)
       const newAlertIndex = new Map(state.alertIndex)

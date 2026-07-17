@@ -396,3 +396,16 @@ html.presentation-mode {
   background-size: 200% 200%;
   animation: mesh-gradient 8s ease infinite;
 }
+
+/* ── Aceternity animated beam flow animation ─────────────────────────── */
+@keyframes beam-flow {
+  0% {
+    stroke-dashoffset: 120;
+  }
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+.animate-beam-flow {
+  animation: beam-flow 2.5s linear infinite;
+}

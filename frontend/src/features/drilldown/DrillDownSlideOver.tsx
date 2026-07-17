@@ -6,11 +6,193 @@ import { useStreamStore } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Badge } from '@/components/ui/Badge'
 import { Odometer } from '@/components/ui/Odometer'
-import type { Alert } from '@/lib/types'
+import type { Alert, Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
+
+interface CorrelationBeamsProps {
+  incident: Incident
+  alerts: Alert[]
+  topology: { nodes: any[]; edges: any[] } | null
+}
+
+function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps) {
+  // 1. Find the root alert (corresponds to the first root candidate, or the oldest alert in the list)
+  const topCandidate = incident.root_candidates?.[0]
+  const rootAlert = alerts.find(a => topCandidate && a.service === topCandidate.service) || alerts[0]
+
+  // 2. Affected alerts (excluding rootAlert, cap at 3 items for nice rendering)
+  const affectedAlerts = alerts.filter(a => a.id !== rootAlert?.id).slice(0, 3)
+
+  if (!rootAlert) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-text-muted font-mono text-[11px]">
+        No correlation details available
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-between p-4 relative font-sans text-text-primary overflow-hidden">
+      {/* Background SVG Beams */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="beamGradCritical" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(239, 68, 68, 0.1)" />
+            <stop offset="50%" stopColor="rgba(239, 68, 68, 0.95)" />
+            <stop offset="100%" stopColor="rgba(239, 68, 68, 0.1)" />
+          </linearGradient>
+          <linearGradient id="beamGradWarning" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(245, 158, 11, 0.1)" />
+            <stop offset="50%" stopColor="rgba(245, 158, 11, 0.95)" />
+            <stop offset="100%" stopColor="rgba(245, 158, 11, 0.1)" />
+          </linearGradient>
+          <linearGradient id="beamGradInfo" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(45, 212, 167, 0.1)" />
+            <stop offset="50%" stopColor="rgba(45, 212, 167, 0.95)" />
+            <stop offset="100%" stopColor="rgba(45, 212, 167, 0.1)" />
+          </linearGradient>
+        </defs>
+
+        {affectedAlerts.map((targetAlert, idx) => {
+          const h = 220
+          const startX = 145
+          const startY = h / 2
+          
+          const endX = 355
+          let endY = h / 2
+          if (affectedAlerts.length === 2) {
+            endY = idx === 0 ? 55 : 165
+          } else if (affectedAlerts.length === 3) {
+            endY = idx === 0 ? 45 : idx === 1 ? 110 : 175
+          }
+
+          // Curved path
+          const pathD = `M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`
+
+          // Determine connection reason
+          let reason = "Temporal window"
+          if (rootAlert.service === targetAlert.service) {
+            reason = "Shared Service"
+          } else if (topology) {
+            const hasEdge = topology.edges.some(e => 
+              (e.source === rootAlert.service && e.target === targetAlert.service) ||
+              (e.source === targetAlert.service && e.target === rootAlert.service)
+            )
+            if (hasEdge) {
+              reason = "Downstream Cascade"
+            }
+          }
+
+          // Choose gradient based on alert severity
+          const gradId = 
+            targetAlert.severity === 'critical' ? 'url(#beamGradCritical)' :
+            targetAlert.severity === 'warning' ? 'url(#beamGradWarning)' :
+            'url(#beamGradInfo)'
+
+          return (
+            <g key={targetAlert.id}>
+              {/* Background trace edge */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.05)"
+                strokeWidth="1.5"
+              />
+              {/* Glowing animated beam overlay */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke={gradId}
+                strokeWidth="2"
+                strokeDasharray="20, 100"
+                className="animate-beam-flow"
+                style={{
+                  animation: 'beam-flow 2.5s linear infinite',
+                  animationDelay: `${idx * 0.6}s`
+                }}
+              />
+              {/* Text label over the beam path */}
+              <text
+                x={(startX + endX) / 2}
+                y={(startY + endY) / 2 - 5}
+                fill="rgba(255, 255, 255, 0.35)"
+                fontSize="7"
+                fontFamily="JetBrains Mono"
+                textAnchor="middle"
+                className="select-none"
+              >
+                {reason}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+
+      {/* Root Node card on Left */}
+      <div className="w-[130px] border border-accent/40 bg-[#090E11]/90 rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-accent transition-colors duration-120">
+        <CornerBrackets />
+        <div className="flex items-center justify-between">
+          <span className="text-[7px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+        </div>
+        <div className="text-[10px] font-semibold text-text-primary truncate font-sans">
+          {rootAlert.service || 'unknown-service'}
+        </div>
+        <div className="text-[8px] font-mono text-text-muted truncate leading-none">
+          {rootAlert.host || 'unknown-host'}
+        </div>
+        <div className="text-[9px] text-text-secondary line-clamp-2 mt-0.5 leading-snug font-sans select-text">
+          {rootAlert.message}
+        </div>
+      </div>
+
+      {/* Affected Nodes cards on Right */}
+      <div className="flex flex-col justify-around h-full py-1 z-10 w-[130px]">
+        {affectedAlerts.map((alert) => {
+          const isCritical = alert.severity === 'critical'
+          const borderStyle = 
+            alert.severity === 'critical' ? 'border-severity-critical/30' :
+            alert.severity === 'warning' ? 'border-severity-warning/30' :
+            'border-severity-info/30'
+
+          return (
+            <div
+              key={alert.id}
+              className={clsx(
+                "border bg-[#090E11]/90 rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-120 relative group/bracket",
+                borderStyle
+              )}
+            >
+              <CornerBrackets />
+              <div className="flex items-center justify-between">
+                <span className={clsx(
+                  "text-[7px] font-mono uppercase font-bold tracking-wider leading-none",
+                  isCritical ? "text-severity-critical" : "text-text-muted"
+                )}>
+                  {alert.severity} alert
+                </span>
+                <span className={clsx(
+                  "w-1.5 h-1.5 rounded-full",
+                  alert.severity === 'critical' ? "bg-severity-critical" :
+                  alert.severity === 'warning' ? "bg-severity-warning" : "bg-severity-info"
+                )} />
+              </div>
+              <div className="text-[9px] font-semibold text-text-primary truncate font-sans leading-tight">
+                {alert.service || 'unknown-service'}
+              </div>
+              <div className="text-[8px] text-text-secondary line-clamp-1 leading-snug font-sans select-text">
+                {alert.message}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 interface DrillDownSlideOverProps {
   incidentId: string | null
@@ -197,6 +379,8 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     x: number
     y: number
   } | null>(null)
+
+  const [activeTab, setActiveTab] = useState<'blast' | 'beams'>('blast')
 
   const cyRef = useRef<any>(null)
   const membersParentRef = useRef<HTMLDivElement>(null)
@@ -557,65 +741,95 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
             </div>
           </section>
 
-          {/* Section 2: Propagation Graph */}
+          {/* Section 2: Propagation Graph & Beams */}
           <section className="flex flex-col flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase select-none">
-                Propagation graph
-              </h4>
-              {detail && (
+              <div className="flex bg-bg-base p-0.5 rounded border border-border">
+                <button
+                  onClick={() => setActiveTab('blast')}
+                  className={clsx(
+                    "px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors cursor-pointer",
+                    activeTab === 'blast'
+                      ? "bg-bg-surface text-text-primary border border-border shadow-sm font-semibold"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Blast Radius
+                </button>
+                <button
+                  onClick={() => setActiveTab('beams')}
+                  className={clsx(
+                    "px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors cursor-pointer",
+                    activeTab === 'beams'
+                      ? "bg-bg-surface text-text-primary border border-border shadow-sm font-semibold"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Correlation Beams
+                </button>
+              </div>
+
+              {activeTab === 'blast' && detail && (
                 <button
                   onClick={() => runPropagationAnimation(cyRef.current, detail.topology_path)}
-                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[9px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[9px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   replay propagation ↻
                 </button>
               )}
             </div>
             
-            <div className="relative h-[180px] bg-bg-base border border-border rounded overflow-hidden">
+            <div className="relative h-[220px] bg-bg-base border border-border rounded overflow-hidden">
               {loading ? (
                 // Shimmering skeleton loader for the graph
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 animate-pulse bg-bg-base/50">
                   <div className="w-32 h-6 rounded bg-bg-elevated" />
                   <div className="w-48 h-4 rounded bg-bg-elevated/80" />
                 </div>
-              ) : topology && cyElements.length > 0 ? (
-                <>
-                  <CytoscapeComponent
-                    elements={cyElements}
-                    stylesheet={CYTOSCAPE_STYLES as any}
-                    cy={handleCyInit}
-                    layout={{
-                      name: 'dagre',
-                      nodeSep: 35,
-                      rankSep: 40,
-                      rankDir: 'TB',
-                    } as any}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+              ) : activeTab === 'blast' ? (
+                topology && cyElements.length > 0 ? (
+                  <>
+                    <CytoscapeComponent
+                      elements={cyElements}
+                      stylesheet={CYTOSCAPE_STYLES as any}
+                      cy={handleCyInit}
+                      layout={{
+                        name: 'dagre',
+                        nodeSep: 35,
+                        rankSep: 40,
+                        rankDir: 'TB',
+                      } as any}
+                      style={{ width: '100%', height: '100%' }}
+                    />
 
-                  {/* Tooltip Overlay */}
-                  {hoveredNode && (
-                    <div
-                      className="absolute px-2 py-1 rounded bg-bg-elevated border border-border/80 text-[10px] font-mono text-text-primary pointer-events-none z-10 shadow-elevated"
-                      style={{
-                        left: `${hoveredNode.x}px`,
-                        top: `${hoveredNode.y}px`,
-                        transform: 'translate(-50%, -100%)',
-                      }}
-                    >
-                      <div className="font-semibold text-accent">{hoveredNode.service}</div>
-                      <div className="text-[9px] text-text-secondary mt-0.5">
-                        {hoveredNode.count} alerts in incident
+                    {/* Tooltip Overlay */}
+                    {hoveredNode && (
+                      <div
+                        className="absolute px-2 py-1 rounded bg-bg-elevated border border-border/80 text-[10px] font-mono text-text-primary pointer-events-none z-10 shadow-elevated"
+                        style={{
+                          left: `${hoveredNode.x}px`,
+                          top: `${hoveredNode.y}px`,
+                          transform: 'translate(-50%, -100%)',
+                        }}
+                      >
+                        <div className="font-semibold text-accent">{hoveredNode.service}</div>
+                        <div className="text-[9px] text-text-secondary mt-0.5">
+                          {hoveredNode.count} alerts in incident
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-muted text-stream">
+                    No topology path loaded
+                  </div>
+                )
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-text-muted text-stream">
-                  No topology path loaded
-                </div>
+                <CorrelationBeams
+                  incident={storeIncident}
+                  alerts={sortedMembers}
+                  topology={topology}
+                />
               )}
             </div>
           </section>

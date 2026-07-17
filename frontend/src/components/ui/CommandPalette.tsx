@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
 import { usePresentationMode } from '@/lib/presentationMode'
@@ -292,88 +293,98 @@ export function CommandPalette() {
     }
   }, [activeIndex])
 
-  if (!isOpen) return null
-
   return (
-    <div
-      onClick={() => setIsOpen(false)}
-      className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[90] flex items-start justify-center pt-[15vh] select-none font-sans"
-    >
-      {/* Centered dialog (Width: 560px) */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[560px] bg-bg-surface border border-border/80 rounded-lg shadow-elevated overflow-hidden flex flex-col z-[100] relative max-h-[380px]"
-        onKeyDown={handleKeyDown}
-      >
-        <CornerBrackets />
-
-        {/* Input area */}
-        <div className="relative border-b border-border/40 px-4 py-3.5 flex items-center gap-3">
-          {/* Tick prefix */}
-          <span className="text-accent font-mono text-[13px] font-bold select-none">▎</span>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Type a command or search active incidents / services..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent text-text-primary text-[13px] outline-none font-sans placeholder-text-muted"
-          />
-        </div>
-
-        {/* List items */}
-        <div
-          ref={listRef}
-          className="flex-1 overflow-y-auto py-1.5 flex flex-col min-h-0 bg-bg-surface"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[90] flex items-start justify-center pt-[15vh] select-none font-sans"
         >
-          {filteredItems.length === 0 ? (
-            <div className="px-4 py-6 text-center text-text-muted font-mono text-[11px]">
-              No matching commands or resources found.
-            </div>
-          ) : (
-            filteredItems.map((item, idx) => {
-              const isActive = idx === activeIndex
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    item.action()
-                    setIsOpen(false)
-                  }}
-                  className={clsx(
-                    "w-full text-left px-4 py-2 flex items-center justify-between text-ui-sm font-sans transition-all duration-120 ease-lens",
-                    isActive
-                      ? "bg-bg-hover text-text-primary pl-5"
-                      : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    {/* Reticle tick prefix */}
-                    <span className={clsx(
-                      "font-mono text-[10px] select-none",
-                      isActive ? "text-accent" : "text-text-muted/40"
-                    )}>
-                      {isActive ? '●' : '○'}
-                    </span>
-                    <span className="truncate">{item.name}</span>
-                  </div>
+          {/* Centered dialog (Width: 560px) */}
+          <motion.div
+            initial={{ scale: 0.96, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.96, opacity: 0 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[560px] bg-bg-surface border border-border/80 rounded-lg shadow-elevated overflow-hidden flex flex-col z-[100] relative max-h-[380px]"
+            onKeyDown={handleKeyDown}
+          >
+            <CornerBrackets />
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-[9px] px-1.5 py-0.2 rounded border border-border text-text-muted font-mono uppercase bg-bg-base/40">
-                      {item.category}
-                    </span>
-                    {item.shortcut && (
-                      <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">
-                        {item.shortcut}
-                      </kbd>
-                    )}
-                  </div>
-                </button>
-              )
-            })
-          )}
-        </div>
-      </div>
-    </div>
+            {/* Input area */}
+            <div className="relative border-b border-border/40 px-4 py-3.5 flex items-center gap-3">
+              {/* Tick prefix */}
+              <span className="text-accent font-mono text-[13px] font-bold select-none">▎</span>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Type a command or search active incidents / services..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent text-text-primary text-[13px] outline-none font-sans placeholder-text-muted"
+              />
+            </div>
+
+            {/* List items */}
+            <div
+              ref={listRef}
+              className="flex-1 overflow-y-auto py-1.5 flex flex-col min-h-0 bg-bg-surface"
+            >
+              {filteredItems.length === 0 ? (
+                <div className="px-4 py-6 text-center text-text-muted font-mono text-[11px]">
+                  No matching commands or resources found.
+                </div>
+              ) : (
+                filteredItems.map((item, idx) => {
+                  const isActive = idx === activeIndex
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        item.action()
+                        setIsOpen(false)
+                      }}
+                      className={clsx(
+                        "w-full text-left px-4 py-2 flex items-center justify-between text-ui-sm font-sans transition-all duration-120 ease-lens",
+                        isActive
+                          ? "bg-bg-hover text-text-primary pl-5"
+                          : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Reticle tick prefix */}
+                        <span className={clsx(
+                          "font-mono text-[10px] select-none",
+                          isActive ? "text-accent" : "text-text-muted/40"
+                        )}>
+                          {isActive ? '●' : '○'}
+                        </span>
+                        <span className="truncate">{item.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-[9px] px-1.5 py-0.2 rounded border border-border text-text-muted font-mono uppercase bg-bg-base/40">
+                          {item.category}
+                        </span>
+                        {item.shortcut && (
+                          <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">
+                            {item.shortcut}
+                          </kbd>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
