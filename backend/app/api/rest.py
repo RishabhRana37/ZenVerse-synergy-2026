@@ -78,6 +78,10 @@ async def replay_reset():
     Maps to keyboard shortcut 'r' in the DemoDriver panel.
     """
     await _replay_engine.reset()
+    # Pipeline-level bookkeeping lives outside AppState — leaving it stale
+    # would feed the reconciler member sets from before the reset.
+    _pipeline._incident_members.clear()
+    _pipeline._resolved_members.clear()
     return {"status": "reset"}
 
 
@@ -95,7 +99,9 @@ async def get_incident(incident_id: str):
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
 
-    member_ids = _pipeline._incident_members.get(incident_id, set())
+    member_ids = _pipeline._incident_members.get(incident_id) or _pipeline._resolved_members.get(
+        incident_id, set()
+    )
     members = [state.alert_index[aid] for aid in member_ids if aid in state.alert_index]
 
     root_svc = inc.root_candidates[0].service if inc.root_candidates else None
@@ -274,8 +280,10 @@ async def eval_results():
         scenarios.append({"name": dataset, "backends": ordered})
 
     # Hero + chart key off the real labeled dataset if present, else the first.
-    primary = "aiops-scn1" if "aiops-scn1" in by_dataset else (
-        sorted(by_dataset)[0] if by_dataset else ""
+    primary = (
+        "aiops-scn1"
+        if "aiops-scn1" in by_dataset
+        else (sorted(by_dataset)[0] if by_dataset else "")
     )
     return {
         "generated_at": newest_ts,

@@ -40,8 +40,21 @@ class AppState:
         self.active_ws: set[Any] = set()
         self._last_bucket_open: datetime = datetime.now(UTC)
         self._recent_ingest_ts: deque[float] = deque(maxlen=2000)
+        # Event clock: max alert.ts seen. Windowing and dedup TTL run on THIS,
+        # not the wall clock — d_time already scores event timestamps, and at
+        # replay speed N a wall-clock window/TTL spans N x its intended event
+        # duration (observed live: 100x replay collapsed every recurrence into
+        # one canonical alert, starving DBSCAN below min_samples -> 0
+        # incidents from 1,478 alerts, while the eval harness clustered the
+        # same stretch). Event-clock semantics are replay-speed-invariant and
+        # identical to live webhook traffic where event ts ~= arrival.
+        self.latest_event_ts: datetime | None = None
 
     # ── Alerts ───────────────────────────────────────────────────────────────
+
+    def advance_event_clock(self, ts: datetime) -> None:
+        if self.latest_event_ts is None or ts > self.latest_event_ts:
+            self.latest_event_ts = ts
 
     def add_alert(self, alert: Alert) -> None:
         """Register a brand-new (non-duplicate) alert. Dup hits are NOT re-added —
@@ -49,11 +62,14 @@ class AppState:
         self.alert_index[alert.id] = alert
         self.total_alert_count += 1
         self._recent_ingest_ts.append(datetime.now(UTC).timestamp())
+        self.advance_event_clock(alert.ts)
 
     def active_window(self, t_max_seconds: float) -> list[Alert]:
-        """Alerts received within the last t_max_seconds (wall-clock, not event ts)."""
-        cutoff = datetime.now(UTC) - timedelta(seconds=t_max_seconds)
-        return [a for a in self.alert_index.values() if a.received_at >= cutoff]
+        """Alerts within the last t_max_seconds of EVENT time (see latest_event_ts)."""
+        if self.latest_event_ts is None:
+            return []
+        cutoff = self.latest_event_ts - timedelta(seconds=t_max_seconds)
+        return [a for a in self.alert_index.values() if a.ts >= cutoff]
 
     def current_alerts_per_sec(self) -> float:
         cutoff = datetime.now(UTC).timestamp() - RATE_WINDOW_SECONDS
@@ -64,7 +80,9 @@ class AppState:
     # ── Dedup ────────────────────────────────────────────────────────────────
 
     def evict_expired_dedup(self) -> int:
-        now = datetime.now(UTC)
+        if self.latest_event_ts is None:
+            return 0
+        now = self.latest_event_ts
         expired = {e for e in self.dedup_expiry if e.expires_at <= now}
         if not expired:
             return 0
@@ -127,6 +145,7 @@ class AppState:
         self.total_alert_count = 0
         self._last_bucket_open = datetime.now(UTC)
         self.replay_status = ReplayStatus()
+        self.latest_event_ts = None
 
 
 # Global singleton — the live server's state. Tests and the eval harness use
