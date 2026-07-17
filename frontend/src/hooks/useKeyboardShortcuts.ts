@@ -34,7 +34,7 @@ export function useKeyboardShortcuts() {
         fetch(`${apiBase}/replay/start`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario: 'db-cascade', speed: 1 }),
+          body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
         }).catch((err) => console.error('[shortcuts] failed to start replay:', err))
         return
       }
@@ -64,7 +64,7 @@ export function useKeyboardShortcuts() {
               fetch(`${apiBase}/replay/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scenario: 'db-cascade', speed: 1 }),
+                body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
               }).catch((err) => console.error('[shortcuts] failed to restart scenario:', err))
             }, 300)
           })
