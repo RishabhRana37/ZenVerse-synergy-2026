@@ -1,0 +1,15 @@
+{
+  "dataset": "db-cascade",
+  "ablation": "denstream",
+  "git_sha": "4f8eaed",
+  "timestamp": "2026-07-17T04:40:25.664355+00:00",
+  "compression_ratio": 0.9821,
+  "cluster_purity": 1.0,
+  "ari": 1.0,
+  "fragmentation": 1.0,
+  "hit_at_1": 1.0,
+  "hit_at_3": 1.0,
+  "hit_breakdown": {},
+  "latency_p50_ms": null,
+  "latency_p95_ms": null
+}
