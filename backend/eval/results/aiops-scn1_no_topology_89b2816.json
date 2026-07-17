@@ -1,0 +1,15 @@
+{
+  "dataset": "aiops-scn1",
+  "ablation": "no_topology",
+  "git_sha": "89b2816",
+  "timestamp": "2026-07-17T03:02:19.041150+00:00",
+  "compression_ratio": 0.9849,
+  "cluster_purity": 1.0,
+  "ari": 1.0,
+  "fragmentation": 1.0,
+  "hit_at_1": 0.75,
+  "hit_at_3": 0.75,
+  "hit_breakdown": {},
+  "latency_p50_ms": null,
+  "latency_p95_ms": null
+}

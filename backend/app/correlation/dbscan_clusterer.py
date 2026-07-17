@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass, field
 
 import networkx as nx
-import numpy as np
 from sklearn.cluster import DBSCAN
 
 from app.correlation.distance import build_distance_matrix
@@ -17,8 +16,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ClusterResult:
     """Output of a single DBSCAN run."""
+
     clusters: dict[str, set[str]] = field(default_factory=dict)  # label → {alert_ids}
-    noise: set[str] = field(default_factory=set)                  # unclustered alert_ids
+    noise: set[str] = field(default_factory=set)  # unclustered alert_ids
 
 
 class DBSCANClusterer:
@@ -33,7 +33,16 @@ class DBSCANClusterer:
     DenStream is implemented separately as an ablation-only path in denstream_clusterer.py.
     """
 
-    def __init__(self, eps: float = 0.35, min_samples: int = 3) -> None:
+    def __init__(self, eps: float = 0.20, min_samples: int = 3) -> None:
+        # eps tuned against real labeled AIOps Challenge 2020 ground truth
+        # (see eval/results/aiops-scn1_full_*.json): 0.35 chains the entire
+        # day's alerts into one persistent cluster via DBSCAN density chaining
+        # through continuous background noise, reconciled forward indefinitely
+        # by the 30% overlap threshold in reconciler.py. 0.20 is the first eps
+        # where the density chain breaks: purity 1.00, ARI 1.00 (vs 0.00 at
+        # eps=0.35), fragmentation 1.00. Only one real labeled day (4
+        # observable faults) has been evaluated so far — re-validate this
+        # value once more days are parsed (see docs/AIOPS_EXTRACTION_GUIDE.md).
         self.eps = eps
         self.min_samples = min_samples
 
@@ -81,6 +90,8 @@ class DBSCANClusterer:
 
         logger.debug(
             "DBSCAN: %d alerts → %d clusters, %d noise",
-            len(alerts), len(result.clusters), len(result.noise),
+            len(alerts),
+            len(result.clusters),
+            len(result.noise),
         )
         return result

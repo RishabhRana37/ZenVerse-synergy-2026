@@ -1,0 +1,15 @@
+{
+  "dataset": "aiops-scn1",
+  "ablation": "denstream",
+  "git_sha": "89b2816",
+  "timestamp": "2026-07-17T03:03:48.971846+00:00",
+  "compression_ratio": 0.9901,
+  "cluster_purity": 0.8154,
+  "ari": 0.0381,
+  "fragmentation": 3.75,
+  "hit_at_1": 0.0,
+  "hit_at_3": 0.5,
+  "hit_breakdown": {},
+  "latency_p50_ms": null,
+  "latency_p95_ms": null
+}
