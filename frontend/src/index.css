@@ -104,22 +104,23 @@ html.presentation-mode {
     position: fixed;
     inset: 0;
     z-index: -10;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 20px 20px;
     pointer-events: none;
   }
 
   body::after {
     content: '';
     position: fixed;
-    bottom: -50vw;
-    right: -50vw;
-    width: 150vw;
-    height: 150vw;
-    border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, 0.018);
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(45, 212, 167, 0.09) 0%, rgba(45, 212, 167, 0.02) 40%, transparent 70%);
     z-index: -9;
     pointer-events: none;
+    filter: blur(50px);
   }
 
   #root {
