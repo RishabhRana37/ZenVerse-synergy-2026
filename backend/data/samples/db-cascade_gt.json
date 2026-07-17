@@ -1,0 +1,46 @@
+{
+  "cluster_labels": {
+    "6a2ee55b-afa1-4adf-bb1e-e94fd0f3f396": "fault-001",
+    "33da12e9-59b1-487c-881c-9e97a75585c3": "fault-001",
+    "cfee5ba0-8bb2-40a0-aabe-e8b58633aad7": "fault-001",
+    "6c36e962-fba9-4df1-a000-8c2312b0b78e": "fault-001",
+    "5dc927a0-8b07-4f6a-a9fd-f1bfbc718601": "fault-001",
+    "8988bf8c-f485-494f-a5d2-10760bbd9f75": "fault-001",
+    "1c9ca10e-eab4-442f-a38c-ba5904f0ecc7": "fault-001",
+    "b42726f8-67fd-45c2-a73c-3d7cb1d684bd": "fault-001",
+    "2e982a32-3c3b-4cf8-aa00-21e4b524af7b": "fault-001",
+    "1fb73cd1-98e6-4a99-ae12-a764fff9f844": "fault-001",
+    "b5cda8e6-e64e-44d3-ae96-5a71924a5485": "fault-001",
+    "5b965e80-3c27-46b0-94b9-a180e913c244": "fault-001",
+    "cee67be7-f808-44f3-8b2a-2084d536bb66": "fault-001",
+    "be384591-a29f-457c-8b0d-694fc0db9b32": "fault-001",
+    "568aac7f-69ad-47c2-ac65-f4f57a0ff104": "fault-001",
+    "17c50efb-e8ce-4e1d-b119-d0794e7acc1c": "fault-001",
+    "525bdad8-6520-4b33-9b75-3ae53f6612f3": "fault-001",
+    "629b98fd-84fb-428f-bbe7-854e5f9faab7": "fault-001",
+    "d630c793-aa6d-4bb2-9c41-fca5ec5faa0d": "fault-001",
+    "067fac51-7754-4547-a3c8-d61ad2ec5de1": "fault-001",
+    "c2f388f4-283a-4921-9562-a5845519b0f7": "fault-001",
+    "7560a94f-041d-4aea-b65a-fd0e1276d7e6": "fault-001",
+    "462ec2f6-c5cf-4905-8727-ef4b35a6461c": "fault-001",
+    "ca575608-acb5-41c3-ab09-9bf548c60714": "fault-001",
+    "6046499d-eaa2-46ed-a3d2-e048be62d3a9": "fault-001",
+    "a0839960-45ab-4b09-bea9-938b02d577c4": "fault-001",
+    "a57e53af-8bb9-47d1-9e63-7a78651747a3": "fault-001",
+    "21239b72-0a62-4b41-a8d2-1d3beaabffd4": "fault-001",
+    "f6b15a0a-978e-465d-9a5e-f887b23db17a": "fault-001",
+    "bf34b8ad-003e-44ce-a430-03c557c2c726": "fault-001",
+    "a3a62e6a-52f2-47f0-9d58-402ec127f4dc": "fault-001",
+    "1a422681-c53b-4f12-859d-2feafd4f39ec": "fault-001",
+    "e29fdb70-5558-4fca-b152-2a9d63895eed": "fault-001",
+    "3d863c9c-1161-4c28-bc83-7964aff4ebd5": "fault-001",
+    "856d8b62-c09a-4e83-9502-51f090e3a4cd": "fault-001",
+    "65e697ca-be8c-461e-a586-acfa15cdbbfd": "fault-001"
+  },
+  "root_causes": {
+    "fault-001": "6a2ee55b-afa1-4adf-bb1e-e94fd0f3f396"
+  },
+  "failure_types": {
+    "fault-001": "db"
+  }
+}
