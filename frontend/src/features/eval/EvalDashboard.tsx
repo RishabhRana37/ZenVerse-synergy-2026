@@ -227,7 +227,14 @@ export function EvalDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base p-6 text-text-primary font-sans select-text">
+    <div className="w-full min-h-full bg-bg-base p-6 text-text-primary font-sans select-text relative overflow-hidden z-10">
+      {/* Background lasers */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
+        <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
+      </div>
+
+      <div className="relative z-10 flex flex-col">
       
       {/* Back Link Row (Top Left under Header, nothing overlapping) */}
       <div className="mb-4">
@@ -557,6 +564,7 @@ export function EvalDashboard() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   )
 }

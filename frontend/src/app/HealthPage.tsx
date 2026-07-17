@@ -98,8 +98,14 @@ export function HealthPage() {
   const allReady = connection === 'open' && apiReachable === 'ok' && fps >= 55
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base text-text-primary font-sans items-center justify-center p-6 select-none">
-      <Card className="w-full max-w-md p-6 flex flex-col gap-5 relative group/bracket bg-bg-surface">
+    <div className="w-full min-h-full bg-bg-base text-text-primary font-sans flex flex-col items-center justify-center py-12 px-6 select-none relative overflow-hidden">
+      {/* Background laser rays */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
+        <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
+      </div>
+
+      <Card className="w-full max-w-md p-6 flex flex-col gap-5 relative group/bracket bg-bg-surface/80 backdrop-blur-md z-10 border border-border/80 shadow-2xl">
         <CornerBrackets />
         
         {/* Header */}

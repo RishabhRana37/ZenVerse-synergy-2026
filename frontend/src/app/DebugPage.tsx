@@ -16,9 +16,15 @@ export function DebugPage() {
     connection === 'connecting' ? 'text-severity-warning' : 'text-severity-critical'
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base text-text-primary font-mono text-[12px] p-6 gap-6 select-text">
+    <div className="w-full min-h-full bg-bg-base text-text-primary font-mono text-[12px] flex flex-col p-6 gap-6 select-text relative overflow-hidden">
+      {/* Background lasers */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
+        <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0">
+      <div className="flex items-center justify-between border-b border-border/40 pb-4 shrink-0 z-10">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-[15px] font-bold text-accent flex items-center gap-1.5 uppercase tracking-wider font-sans">
             <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse-dot" />
@@ -37,7 +43,7 @@ export function DebugPage() {
         {/* Left column: Connection & Stats */}
         <div className="flex flex-col gap-6">
           {/* Connection Card */}
-          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface">
+          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface/80 backdrop-blur-md z-10 border border-border/80 shadow-lg">
             <CornerBrackets />
             <div className="text-[10px] font-bold tracking-wider text-text-muted uppercase">
               ▎WebSocket Channel Status
@@ -53,7 +59,7 @@ export function DebugPage() {
           </Card>
 
           {/* Stats Card */}
-          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface">
+          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface/80 backdrop-blur-md z-10 border border-border/80 shadow-lg">
             <CornerBrackets />
             <div className="text-[10px] font-bold tracking-wider text-text-muted uppercase">
               ▎Latest Telemetry Metrics
@@ -80,7 +86,7 @@ export function DebugPage() {
           </Card>
 
           {/* Buffer Capacity Card */}
-          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface">
+          <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface/80 backdrop-blur-md z-10 border border-border/80 shadow-lg">
             <CornerBrackets />
             <div className="text-[10px] font-bold tracking-wider text-text-muted uppercase">
               ▎Alert Ring Buffer
@@ -93,7 +99,7 @@ export function DebugPage() {
         </div>
 
         {/* Right column: Incidents */}
-        <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface h-full min-h-[400px]">
+        <Card className="p-5 flex flex-col gap-3 relative group/bracket bg-bg-surface/80 backdrop-blur-md h-full min-h-[400px] z-10 border border-border/80 shadow-lg">
           <CornerBrackets />
           <div className="text-[10px] font-bold tracking-wider text-text-muted uppercase border-b border-border/30 pb-2">
             ▎Live Incident Registry ({incidents.length})

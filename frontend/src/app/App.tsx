@@ -553,7 +553,7 @@ function AppInner() {
         </header>
 
         {/* Route views container */}
-        <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+        <div className="flex-1 min-h-0 w-full overflow-y-auto relative">
           <Routes>
             <Route path="/"       element={<WarRoom />} />
             <Route path="/eval"   element={<EvalDashboard />} />

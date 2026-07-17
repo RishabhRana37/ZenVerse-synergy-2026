@@ -189,34 +189,46 @@ export function CommandPalette() {
       {
         id: 'nav-war-room',
         category: 'Navigation',
-        name: 'Navigate: Go to War Room Dashboard',
+        name: 'Navigate: War Room (Dashboard)',
         shortcut: 'W',
         action: () => navigate('/'),
       },
       {
+        id: 'nav-diagnostics',
+        category: 'Navigation',
+        name: 'Navigate: Store (System Diagnostics Checklist)',
+        action: () => navigate('/health'),
+      },
+      {
         id: 'nav-eval',
         category: 'Navigation',
-        name: 'Navigate: Go to Metrics Evaluation',
+        name: 'Navigate: Pro (Metrics Evaluation)',
         shortcut: 'E',
         action: () => navigate('/eval'),
       },
       {
-        id: 'nav-diagnostics',
-        category: 'Navigation',
-        name: 'Navigate: Go to System Diagnostics Checklist',
-        action: () => navigate('/health'),
-      },
-      {
         id: 'nav-debug',
         category: 'Navigation',
-        name: 'Navigate: Go to Live WS debugger state',
+        name: 'Navigate: AI (Live WS Debugger State)',
         action: () => navigate('/debug'),
       },
       {
         id: 'nav-style-guide',
         category: 'Navigation',
-        name: 'Navigate: Go to Visual Style Guide tokens',
+        name: 'Navigate: Style Primitives (Visual Tokens Style Guide)',
         action: () => navigate('/tokens'),
+      },
+      {
+        id: 'nav-github',
+        category: 'Navigation',
+        name: 'Open: GitHub Repository',
+        action: () => window.open('https://github.com/RishabhRana37/ZenVerse-synergy-2026', '_blank'),
+      },
+      {
+        id: 'nav-docs',
+        category: 'Navigation',
+        name: 'Open: Documentation (Docs)',
+        action: () => window.open('#docs', '_self'),
       },
     ]
 
