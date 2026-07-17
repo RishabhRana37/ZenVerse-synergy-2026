@@ -41,6 +41,11 @@ class Pipeline:
         self.topology = TopologyLoader()
         # Tracks current member sets so reconciler can compute diffs
         self._incident_members: dict[str, set[str]] = {}
+        # Final member sets of resolved incidents — kept out of the reconcile
+        # working set (resolved incidents can't be re-matched, and scanning
+        # them every tick turns a long replay quadratic) but still served by
+        # GET /incidents/{id} for drill-down.
+        self._resolved_members: dict[str, set[str]] = {}
         self._broadcast_fn = None
 
     def set_broadcast(self, fn) -> None:
@@ -63,6 +68,9 @@ class Pipeline:
     async def ingest(self, raw: dict, source: str) -> None:
         try:
             alert = self.normalizer.process(raw, source)
+            # Advance the event clock for EVERY occurrence — dup hits never
+            # reach add_alert, but the active window must still slide.
+            state.advance_event_clock(alert.ts)
             alert, is_dup = self.deduplicator.process(alert, state)
 
             if is_dup:
@@ -163,12 +171,17 @@ class Pipeline:
             if aid in state.alert_index:
                 state.alert_index[aid].cluster_id = None
 
-        # 4. Reconcile with existing incidents
+        # 4. Reconcile with existing incidents. Pass the WINDOW's alert index
+        # (not the full history): reconcile() resolves an incident when none
+        # of its members intersect this index, which is exactly "all members
+        # aged out of the active window" — with the full index that condition
+        # could never fire and incidents accumulated as active forever.
+        win_index = {a.id: a for a in active_alerts}
         rec = reconcile(
             old_incidents=state.incidents,
             old_members=self._incident_members,
             new_clusters=cluster_result.clusters,
-            alert_index=state.alert_index,
+            alert_index=win_index,
         )
 
         # 5. Handle created incidents
@@ -217,8 +230,10 @@ class Pipeline:
                     }
                 )
 
-        # 7. Handle resolved incidents
+        # 7. Handle resolved incidents — retire their member sets from the
+        # reconcile working set (kept for drill-down in _resolved_members)
         for inc in rec.resolved:
+            self._resolved_members[inc.id] = self._incident_members.pop(inc.id, set())
             await self.broadcast(
                 {
                     "type": "incident.updated",
