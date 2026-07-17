@@ -82,8 +82,8 @@ class EvalHarness:
     def __init__(
         self,
         scenario: str = "aiops",
-        eps: float = 0.20,
-        min_samples: int = 3,
+        eps: float | None = None,
+        min_samples: int | None = None,
         distance_overrides: dict | None = None,
     ) -> None:
         self.normalizer = Normalizer()
@@ -92,8 +92,16 @@ class EvalHarness:
         self.topology = TopologyLoader()
         self.topology.load(scenario)
         self.ranker = RootCauseRanker()
-        self.eps = eps
-        self.min_samples = min_samples
+        # None -> the scenario's own clustering: block if it declares one
+        # (see data/scenarios/db-cascade.yaml), else DBSCANClusterer's default.
+        scenario_overrides = self.topology.clustering_overrides
+        default = DBSCANClusterer()
+        self.eps = eps if eps is not None else scenario_overrides.get("eps", default.eps)
+        self.min_samples = (
+            min_samples
+            if min_samples is not None
+            else scenario_overrides.get("min_samples", default.min_samples)
+        )
         self.distance_overrides = distance_overrides or {}
 
         self._prepared_dataset: str | None = None
@@ -152,6 +160,7 @@ class EvalHarness:
         clusterer = DBSCANClusterer(eps=self.eps, min_samples=self.min_samples)
         incidents: dict[str, Incident] = {}
         members: dict[str, set[str]] = {}
+        resolved_members: dict[str, set[str]] = {}
 
         alerts = self.canonical
         if not alerts:
@@ -188,8 +197,18 @@ class EvalHarness:
                 members[inc.id] = (current | set(diff.added_alert_ids)) - set(
                     diff.removed_alert_ids
                 )
+            # Resolved incidents can never be reconciled again (reconcile()
+            # only matches active ones) — keep their final member set for the
+            # result, but drop them from the live working set. Over a
+            # multi-day replay, thousands of short-lived incidents
+            # accumulate; reconcile()'s overlap scan is O(len(old_members))
+            # per tick, so leaving dead entries in there turns the whole
+            # replay quadratic in tick count.
+            for inc in rec.resolved:
+                resolved_members[inc.id] = members.pop(inc.id, set())
+                incidents.pop(inc.id, None)
 
-        predicted = {iid: set(m) for iid, m in members.items() if m}
+        predicted = {iid: set(m) for iid, m in {**members, **resolved_members}.items() if m}
         clustered: set[str] = set().union(*predicted.values()) if predicted else set()
         for alert in alerts:
             if alert.id not in clustered:
@@ -339,8 +358,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--scenario", default="aiops", help="topology scenario (data/scenarios/<name>.yaml)"
     )
-    parser.add_argument("--eps", type=float, default=0.20)
-    parser.add_argument("--min-samples", type=int, default=3)
+    parser.add_argument(
+        "--eps", type=float, default=None, help="override the scenario's clustering.eps"
+    )
+    parser.add_argument("--min-samples", type=int, default=None)
     args = parser.parse_args()
 
     harness = EvalHarness(scenario=args.scenario, eps=args.eps, min_samples=args.min_samples)
