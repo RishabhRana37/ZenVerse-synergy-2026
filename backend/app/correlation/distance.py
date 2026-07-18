@@ -6,8 +6,8 @@ from scipy.spatial.distance import cosine
 
 from app.models.schema import Alert
 
-
 # ── Component distance functions ───────────────────────────────────────────────
+
 
 def d_time(a: Alert, b: Alert, t_max: float = 300.0) -> float:
     """Temporal distance normalised to [0, 1]. T_max is tunable."""
@@ -55,6 +55,33 @@ def topology_bonus(
     return 0.0
 
 
+def hop_distance(service_a: str | None, service_b: str | None, graph: nx.DiGraph) -> int | None:
+    """Shortest path length between two services, treating the dependency
+    graph as UNDIRECTED. None = no path (different components) or either
+    side missing/unset. 0 = identical service.
+
+    Directed shortest_path_length (checked in each direction separately, as
+    topology_bonus() below does) misses the common case of two services that
+    share a dependency but have no edge to each other — e.g. auth-svc and
+    order-svc both depend_on postgres-primary, but neither depends on the
+    other, so no directed path exists either way even though they are
+    reasonably "2 hops apart" through their shared parent. A hard topology
+    gate built on the directed check silently excludes exactly these
+    sibling pairs; see eval/results/*_topology_gated_* commit message for
+    the measured effect of getting this wrong.
+    """
+    if not service_a or not service_b:
+        return None
+    if service_a == service_b:
+        return 0
+    if not graph.has_node(service_a) or not graph.has_node(service_b):
+        return None
+    try:
+        return nx.shortest_path_length(graph.to_undirected(as_view=True), service_a, service_b)
+    except (nx.NetworkXNoPath, nx.NodeNotFound):
+        return None
+
+
 def _jaccard(set_a: set, set_b: set) -> float:
     union = set_a | set_b
     if not union:
@@ -73,6 +100,7 @@ def d_attr(a: Alert, b: Alert, graph: nx.DiGraph) -> float:
 
 # ── Combined distance ──────────────────────────────────────────────────────────
 
+
 def combined_distance(
     a: Alert,
     b: Alert,
@@ -83,16 +111,29 @@ def combined_distance(
     w_s: float = 0.4,
     w_a: float = 0.3,
     t_max: float = 300.0,
+    topology_gate_hops: int | None = None,
 ) -> float:
     """
     D(a, b) = w_t·d_time + w_s·d_sem + w_a·d_attr  ∈ [0, 1]
     Starting weights: w_t=0.3, w_s=0.4, w_a=0.3 — tunable via eval harness.
+
+    topology_gate_hops (ablation only, None by default): hard graph-radius
+    filter, evaluated BEFORE any semantic/temporal scoring. If set and the
+    two services are more than this many hops apart (or in different graph
+    components, or a service is outside the graph entirely), returns 1.0
+    unconditionally — the pair can never be density-reachable regardless of
+    text or timing similarity. This is a genuinely different mechanism from
+    the topology_bonus() used by default: bonus is a soft, capped discount
+    inside a blended distance; gating is a hard pre-filter on candidacy, as
+    Moogsoft/BigPanda-style topology-first correlation does it. See
+    eval/results/*_topology_gated_* for the measured comparison before this
+    became (or didn't become) the default.
     """
-    return (
-        w_t * d_time(a, b, t_max=t_max)
-        + w_s * d_sem(emb_a, emb_b)
-        + w_a * d_attr(a, b, graph)
-    )
+    if topology_gate_hops is not None:
+        hops = hop_distance(a.service, b.service, graph)
+        if hops is None or hops > topology_gate_hops:
+            return 1.0
+    return w_t * d_time(a, b, t_max=t_max) + w_s * d_sem(emb_a, emb_b) + w_a * d_attr(a, b, graph)
 
 
 def build_distance_matrix(
