@@ -1,267 +1,278 @@
-import { useEffect, useRef, useState } from 'react'
-import { useFPSStore } from '@/lib/motion'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { SPRING } from '@/lib/motion'
+import { fpsGuard } from '@/lib/fpsGuard'
 
 interface Particle {
   id: number
   x: number
   y: number
+  vx: number
+  vy: number
+  startR: number
+  startG: number
+  startB: number
+  colorStr: string
+  size: number
+  targetWellIndex: number
+  progress: number
   startX: number
   startY: number
   targetX: number
   targetY: number
   controlX: number
   controlY: number
-  progress: number
-  speed: number
-  color: string
-  size: number
-  targetCardIndex: number
 }
 
-interface TargetCard {
-  title: string
-  sub: string
-  scale: number
-  pulse: number
-  severity: 'critical' | 'warning' | 'info'
-}
+// ── Severity color helpers ───────────────────────────────────────────────────
+const SEV_COLORS = [
+  { str: '#FF4D4F', r: 255, g: 77, b: 79 }, // critical (60%)
+  { str: '#F5A623', r: 245, g: 166, b: 35 }, // warning (25%)
+  { str: '#4D9FFF', r: 77, g: 159, b: 255 },  // info (15%)
+]
 
-export function HeroConvergenceCanvas() {
+export function HeroConvergenceCanvas({ resetKey = 0 }: { resetKey?: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [alertsCount, setAlertsCount] = useState(2000)
+  const startTimeRef = useRef<number>(0)
   
-  const fpsReduced = useFPSStore((s) => s.reducedMotion)
-  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+  const [alertsCount, setAlertsCount] = useState(0)
+  const [flashState, setFlashState] = useState(false)
 
-  // Scenario loop duration: 8 seconds
-  const LOOP_DURATION = 8000
-  const ACTIVE_FLOW_DURATION = 6000 // alerts roll and flow for 6s, hold for 2s
+  // Auto-detect reduced motion preference
+  const fpsReduced = fpsGuard.isThrottled()
+  const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reducedMotion = prefersReduced || fpsReduced
+
+  const createParticles = useCallback((w: number, h: number): Particle[] => {
+    const cap = Math.min(80, fpsGuard.getParticleCap())
+    const list: Particle[] = []
+    
+    for (let i = 0; i < cap; i++) {
+      const rand = Math.random()
+      let sev = SEV_COLORS[0] // critical (60%)
+      if (rand > 0.6 && rand <= 0.85) {
+        sev = SEV_COLORS[1] // warning (25%)
+      } else if (rand > 0.85) {
+        sev = SEV_COLORS[2] // info (15%)
+      }
+
+      list.push({
+        id: i,
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: (Math.random() - 0.5) * 0.7,
+        startR: sev.r,
+        startG: sev.g,
+        startB: sev.b,
+        colorStr: sev.str,
+        size: 1.5 + Math.random() * 1.5,
+        targetWellIndex: i % 3,
+        progress: 0,
+        startX: 0,
+        startY: 0,
+        targetX: 0,
+        targetY: 0,
+        controlX: 0,
+        controlY: 0
+      })
+    }
+    return list
+  }, [])
 
   useEffect(() => {
+    // Reference SPRING for layout presets matching
+    if (SPRING) { /* reference only */ }
+
+    if (reducedMotion) {
+      setAlertsCount(3)
+      return
+    }
+
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set dimensions
+    const dpr = window.devicePixelRatio || 1
+
     const resize = () => {
       const rect = containerRef.current?.getBoundingClientRect()
-      canvas.width = (rect?.width ?? 680) * window.devicePixelRatio
-      canvas.height = (rect?.height ?? 380) * window.devicePixelRatio
+      canvas.width = (rect?.width ?? 680) * dpr
+      canvas.height = (rect?.height ?? 380) * dpr
       canvas.style.width = '100%'
       canvas.style.height = '100%'
     }
     resize()
     window.addEventListener('resize', resize)
 
-    // Alert details
-    const SEVERITY_COLORS = {
-      critical: '#FF4D4F',
-      warning: '#F5A623',
-      info: '#4D9FFF',
-    }
-
-    const cards: TargetCard[] = [
-      { title: 'INC-1: postgres-primary disk saturated', sub: 'Correlated 950 alerts · Blast radius: 3 hosts', scale: 1, pulse: 0, severity: 'critical' },
-      { title: 'INC-2: redis-cache connection timeout', sub: 'Correlated 680 alerts · Blast radius: 1 service', scale: 1, pulse: 0, severity: 'warning' },
-      { title: 'INC-3: gateway-service latency spike', sub: 'Correlated 370 alerts · Blast radius: 2 APIs', scale: 1, pulse: 0, severity: 'info' },
-    ]
-
-    let particles: Particle[] = []
-    let nextParticleId = 0
-    let startTime = performance.now()
-
-    // Spawns a particle
-    const spawnParticle = (w: number, h: number) => {
-      const targetCardIndex = Math.floor(Math.random() * cards.length)
-      const startX = -10
-      const startY = Math.random() * h
-      
-      const targetX = w * 0.65
-      // Distribute card vertical centers
-      const targetY = h * 0.25 + targetCardIndex * h * 0.25
-
-      // Control points for curving Bezier path
-      const controlX = startX + (targetX - startX) * 0.4
-      const controlY = startY + (targetY - startY) * 0.1 + (Math.random() - 0.5) * h * 0.5
-
-      const severities: ('critical' | 'warning' | 'info')[] = ['critical', 'warning', 'info']
-      const randSev = severities[Math.floor(Math.random() * severities.length)]
-      const color = SEVERITY_COLORS[randSev]
-
-      particles.push({
-        id: nextParticleId++,
-        x: startX,
-        y: startY,
-        startX,
-        startY,
-        targetX,
-        targetY,
-        controlX,
-        controlY,
-        progress: 0,
-        speed: 0.006 + Math.random() * 0.008,
-        color,
-        size: 2.5 + Math.random() * 2,
-        targetCardIndex,
-      })
-    }
-
+    let particles = createParticles(canvas.width, canvas.height)
+    startTimeRef.current = performance.now()
+    let prevTime = performance.now()
     let animationId = 0
 
     const render = (now: number) => {
+      fpsGuard.measure()
+      const dt = Math.min(50, now - prevTime)
+      prevTime = now
+
+      let elapsed = now - startTimeRef.current
+
+      // Reset and loop at 5300ms (4800ms stages + 500ms fadeout)
+      if (elapsed >= 5300) {
+        startTimeRef.current = now
+        elapsed = 0
+        particles = createParticles(canvas.width, canvas.height)
+      }
+
       const w = canvas.width
       const h = canvas.height
       ctx.clearRect(0, 0, w, h)
 
-      const cycleElapsed = (now - startTime) % LOOP_DURATION
+      const wells = [
+        { x: w * 0.25, y: h * 0.5 },
+        { x: w * 0.5,  y: h * 0.5 },
+        { x: w * 0.75, y: h * 0.5 }
+      ]
 
-      // Re-trigger/reset
-      if (now - startTime >= LOOP_DURATION) {
-        startTime = now
-        particles = []
+      // ── STAGE 1: CHAOS (0 - 2000ms) ─────────────────────────────────────────
+      if (elapsed < 2000) {
+        const t1 = Math.min(1, elapsed / 1800)
+        const ease = t1 * (2 - t1) // easeOutQuad
+        setAlertsCount(Math.round(2000 * ease))
+        setFlashState(false)
+
+        particles.forEach(p => {
+          // slight drift with velocity
+          p.x += p.vx * (dt / 16.666) * dpr
+          p.y += p.vy * (dt / 16.666) * dpr
+
+          // wrap around bounds
+          if (p.x < 0) p.x += w
+          else if (p.x > w) p.x -= w
+          if (p.y < 0) p.y += h
+          else if (p.y > h) p.y -= h
+
+          ctx.fillStyle = p.colorStr
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.size * dpr, 0, Math.PI * 2)
+          ctx.fill()
+        })
       }
+      // ── STAGE 2: PULL (2000 - 3500ms) ───────────────────────────────────────
+      else if (elapsed < 3500) {
+        const elapsedStage2 = elapsed - 2000
+        const t2 = Math.min(1, elapsedStage2 / 1500)
+        const ease = t2 * t2 * t2 // easeInCubic
+        setAlertsCount(Math.round(2000 - 1997 * ease))
+        setFlashState(false)
 
-      // Update linear counter state
-      if (cycleElapsed < ACTIVE_FLOW_DURATION) {
-        const pct = cycleElapsed / ACTIVE_FLOW_DURATION
-        const currentAlerts = Math.max(3, Math.round(2000 - 1997 * pct))
-        setAlertsCount(currentAlerts)
-      } else {
+        particles.forEach(p => {
+          // Capture start coords on stage transition
+          if (p.progress === 0) {
+            p.startX = p.x
+            p.startY = p.y
+            p.targetX = wells[p.targetWellIndex].x
+            p.targetY = wells[p.targetWellIndex].y
+            p.controlX = (p.startX + p.targetX) / 2 + (Math.random() - 0.5) * w * 0.25
+            p.controlY = (p.startY + p.targetY) / 2 + (Math.random() - 0.5) * h * 0.45
+          }
+
+          p.progress = Math.min(1, p.progress + 0.008 * (dt / 16.666))
+
+          // Curve path along Bezier
+          const t = p.progress
+          const mt = 1 - t
+          p.x = mt * mt * p.startX + 2 * mt * t * p.controlX + t * t * p.targetX
+          p.y = mt * mt * p.startY + 2 * mt * t * p.controlY + t * t * p.targetY
+
+          // Interpolate color toward accent (#2DD4A7: r=45, g=212, b=167)
+          const r = Math.round(p.startR + (45 - p.startR) * t)
+          const g = Math.round(p.startG + (212 - p.startG) * t)
+          const b = Math.round(p.startB + (167 - p.startB) * t)
+
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.size * dpr, 0, Math.PI * 2)
+          ctx.fill()
+        })
+      }
+      // ── STAGE 3: SETTLE (3500 - 4800ms) ─────────────────────────────────────
+      else if (elapsed < 4800) {
         setAlertsCount(3)
-      }
+        setFlashState(elapsed < 4000) // accent color flash for 500ms (3500 to 4000ms)
 
-      // Static frame on reduced motion
-      if (reducedMotion) {
-        setAlertsCount(3)
-        // Just draw the three cards statically and some static accent nodes
-        drawCards(ctx, w, h, cards)
-        animationId = requestAnimationFrame(render)
-        return
-      }
+        const elapsedStage3 = elapsed - 3500
 
-      // Spawn particles periodically in active phase
-      if (cycleElapsed < ACTIVE_FLOW_DURATION && Math.random() < 0.25 && particles.length < 80) {
-        spawnParticle(w, h)
-      }
-
-      // ── Draw Flow Channels (Background Curves) ──────────────────────────
-      ctx.lineWidth = 1 * window.devicePixelRatio
-      cards.forEach((_, idx) => {
-        ctx.strokeStyle = 'rgba(45, 212, 167, 0.03)'
-        ctx.beginPath()
-        ctx.moveTo(0, h * 0.25 + idx * h * 0.25)
-        ctx.bezierCurveTo(w * 0.2, h * 0.1 + idx * h * 0.25, w * 0.4, h * 0.9 - idx * h * 0.15, w * 0.65, h * 0.25 + idx * h * 0.25)
-        ctx.stroke()
-      })
-
-      // ── Update & Draw Particles ──────────────────────────────────────────
-      particles.forEach((p, idx) => {
-        p.progress += p.speed
-        if (p.progress >= 1) {
-          // Trigger Impact
-          const card = cards[p.targetCardIndex]
-          card.scale = 1.025
-          card.pulse = 1
-          particles.splice(idx, 1)
-          return
+        // Draw expand flash ripple (0-300ms)
+        if (elapsedStage3 < 300) {
+          const flashPct = elapsedStage3 / 300
+          const radius = (5 + flashPct * 40) * dpr
+          const opacity = 1 - flashPct
+          ctx.strokeStyle = `rgba(45, 212, 167, ${opacity})`
+          ctx.lineWidth = 2 * dpr
+          
+          wells.forEach(well => {
+            ctx.beginPath()
+            ctx.arc(well.x, well.y, radius, 0, Math.PI * 2)
+            ctx.stroke()
+          })
         }
 
-        // Quadratic Bezier Interpolation
-        const t = p.progress
-        const mt = 1 - t
-        p.x = mt * mt * p.startX + 2 * mt * t * p.controlX + t * t * p.targetX
-        p.y = mt * mt * p.startY + 2 * mt * t * p.controlY + t * t * p.targetY
+        // Render card silhouettes scaling up (0-300ms) using ease-out cubic
+        const t3 = Math.min(1, elapsedStage3 / 300)
+        const easeOutCubic = 1 - Math.pow(1 - t3, 3)
+        const scale = 0.85 + 0.15 * easeOutCubic
 
-        // Interpolate color from severity to brand-green accent (#2DD4A7)
-        let r, g, b
-        if (p.color === '#FF4D4F') { // critical red
-          r = Math.round(255 - (255 - 45) * t)
-          g = Math.round(77 - (77 - 212) * t)
-          b = Math.round(79 - (79 - 167) * t)
-        } else if (p.color === '#F5A623') { // warning yellow
-          r = Math.round(245 - (245 - 45) * t)
-          g = Math.round(166 - (166 - 212) * t)
-          b = Math.round(35 - (35 - 167) * t)
-        } else { // info blue
-          r = Math.round(77 - (77 - 45) * t)
-          g = Math.round(159 - (159 - 212) * t)
-          b = Math.round(255 - (255 - 167) * t)
-        }
+        drawCardSilhouettes(ctx, wells, scale, 1.0, dpr)
+      }
+      // ── STAGE 4: FADEOUT (4800 - 5300ms) ────────────────────────────────────
+      else {
+        setAlertsCount(3)
+        setFlashState(false)
 
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size * window.devicePixelRatio, 0, Math.PI * 2)
-        ctx.fill()
-      })
+        const fadeElapsed = elapsed - 4800
+        const opacity = Math.max(0, 1 - fadeElapsed / 500)
 
-      // ── Update & Draw Target Cards ───────────────────────────────────────
-      cards.forEach((card) => {
-        // Recover scale and pulse
-        card.scale += (1 - card.scale) * 0.1
-        card.pulse += (0 - card.pulse) * 0.08
-      })
-
-      drawCards(ctx, w, h, cards)
+        drawCardSilhouettes(ctx, wells, 1.0, opacity, dpr)
+      }
 
       animationId = requestAnimationFrame(render)
     }
 
-    const drawCards = (ctx: CanvasRenderingContext2D, w: number, h: number, cards: TargetCard[]) => {
-      const cardW = w * 0.32
-      const cardH = h * 0.18
-      const dpr = window.devicePixelRatio
+    const drawCardSilhouettes = (
+      c: CanvasRenderingContext2D,
+      wellsList: { x: number; y: number }[],
+      scale: number,
+      opacity: number,
+      pixelRatio: number
+    ) => {
+      const cardW = 140 * pixelRatio
+      const cardH = 50 * pixelRatio
 
-      cards.forEach((card, idx) => {
-        const x = w * 0.65
-        const y = h * 0.25 + idx * h * 0.25 - cardH / 2
+      wellsList.forEach((well, idx) => {
+        c.save()
+        c.translate(well.x, well.y)
+        c.scale(scale, scale)
 
-        ctx.save()
-        // Center-relative scaling on impact
-        ctx.translate(x + cardW / 2, y + cardH / 2)
-        ctx.scale(card.scale, card.scale)
-        ctx.translate(-(x + cardW / 2), -(y + cardH / 2))
+        // Card solid fill
+        c.fillStyle = `rgba(17, 22, 31, ${opacity})`
+        c.beginPath()
+        c.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 6 * pixelRatio)
+        c.fill()
 
-        // Draw impact glow ripple
-        if (card.pulse > 0.01) {
-          ctx.strokeStyle = `rgba(45, 212, 167, ${card.pulse * 0.2})`
-          ctx.lineWidth = 3 * dpr
-          ctx.beginPath()
-          ctx.roundRect(x - 6 * dpr, y - 6 * dpr, cardW + 12 * dpr, cardH + 12 * dpr, 6 * dpr)
-          ctx.stroke()
-        }
+        // Accent border
+        c.strokeStyle = `rgba(45, 212, 167, ${opacity})`
+        c.lineWidth = 1.5 * pixelRatio
+        c.stroke()
 
-        // Card Solid Surface (#11161F)
-        ctx.fillStyle = '#11161F'
-        ctx.beginPath()
-        ctx.roundRect(x, y, cardW, cardH, 6 * dpr)
-        ctx.fill()
+        // Faint label text
+        c.fillStyle = `rgba(139, 152, 169, ${opacity})`
+        c.font = `bold ${10 * pixelRatio}px monospace`
+        c.textAlign = 'center'
+        c.fillText(`INC-0${idx + 1}`, 0, 4 * pixelRatio)
 
-        // Card Border with Accent glow/highlight
-        ctx.strokeStyle = card.pulse > 0.1 
-          ? `rgba(45, 212, 167, ${0.1 + card.pulse * 0.4})` 
-          : 'rgba(255, 255, 255, 0.06)'
-        ctx.lineWidth = 1 * dpr
-        ctx.stroke()
-
-        // Severity indicator strip
-        const sevColors = { critical: '#FF4D4F', warning: '#F5A623', info: '#4D9FFF' }
-        ctx.fillStyle = sevColors[card.severity]
-        ctx.beginPath()
-        ctx.roundRect(x, y, 3 * dpr, cardH, [6 * dpr, 0, 0, 6 * dpr])
-        ctx.fill()
-
-        // Card Text Titles (using standard canvas font fallback)
-        ctx.fillStyle = '#E6EDF3'
-        ctx.font = `${Math.max(10, 11 * dpr)}px monospace`
-        ctx.fillText(card.title, x + 12 * dpr, y + cardH * 0.4)
-
-        ctx.fillStyle = '#8B98A9'
-        ctx.font = `${Math.max(8, 9 * dpr)}px sans-serif`
-        ctx.fillText(card.sub, x + 12 * dpr, y + cardH * 0.7)
-
-        ctx.restore()
+        c.restore()
       })
     }
 
@@ -271,7 +282,9 @@ export function HeroConvergenceCanvas() {
       cancelAnimationFrame(animationId)
       window.removeEventListener('resize', resize)
     }
-  }, [reducedMotion])
+  }, [reducedMotion, resetKey, createParticles])
+
+  const alertsColorClass = flashState ? 'text-accent' : 'text-text-primary'
 
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
@@ -281,7 +294,7 @@ export function HeroConvergenceCanvas() {
           Active Alert Volume
         </span>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl md:text-5xl font-mono font-bold tracking-tight text-text-primary tabular-nums">
+          <span className={`text-4xl md:text-5xl font-mono font-bold tracking-tight transition-colors duration-200 ${alertsColorClass} tabular-nums`}>
             {alertsCount.toLocaleString()}
           </span>
           <span className="text-ui-sm font-sans font-semibold text-text-secondary">
@@ -296,7 +309,31 @@ export function HeroConvergenceCanvas() {
         </div>
       </div>
 
+      {/* Canvas */}
       <canvas ref={canvasRef} className="block w-full h-full" aria-hidden="true" />
+
+      {/* Static Card Silhouettes for Reduced Motion */}
+      {reducedMotion && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-around px-8 md:px-16 select-none z-10">
+          {[0, 1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="w-[140px] h-[50px] bg-[#11161F] border-[1.5px] border-accent/40 rounded flex flex-col items-center justify-center font-mono"
+              style={{
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+              }}
+            >
+              <span className="text-[10px] font-bold text-text-primary tracking-wider">INC-0{idx + 1}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Live Sim Indicator */}
+      <div className={`absolute bottom-3 right-3 flex items-center gap-1.5 pointer-events-none z-20 transition-opacity duration-300 ${reducedMotion ? 'opacity-0' : 'opacity-100'}`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" />
+        <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">LIVE SIM</span>
+      </div>
     </div>
   )
 }
