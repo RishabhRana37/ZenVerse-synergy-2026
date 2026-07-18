@@ -95,9 +95,9 @@ export function CommandPalette() {
       {
         id: 'action-start',
         category: 'Actions',
-        name: 'Start Replay (db-cascade scenario)',
+        name: `Start Replay (${streamState.demoDataset} scenario)`,
         shortcut: 'S',
-        action: () => { startReplay('db-cascade', 1) },
+        action: () => { startReplay(streamState.demoDataset, streamState.demoSpeed) },
       },
       {
         id: 'action-stop',
@@ -111,7 +111,7 @@ export function CommandPalette() {
         category: 'Actions',
         name: 'Reset Scenario and State',
         shortcut: 'R',
-        action: () => { resetReplay('db-cascade', 1) },
+        action: () => { resetReplay(streamState.demoDataset, streamState.demoSpeed) },
       },
       {
         id: 'action-mute',
@@ -200,7 +200,7 @@ export function CommandPalette() {
     })
 
     return baseItems
-  }, [sortedIncidents, navigate, location.pathname, togglePresentation, alerts])
+  }, [sortedIncidents, navigate, location.pathname, togglePresentation, alerts, streamState.demoDataset, streamState.demoSpeed, streamState])
 
   // Fuzzy-filter items
   const filteredItems = useMemo(() => {

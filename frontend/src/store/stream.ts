@@ -102,6 +102,10 @@ export interface StreamState {
   setView: (v: 'stream' | 'lens') => void
   showIntro: boolean
   setShowIntro: (show: boolean) => void
+  demoDataset: string
+  setDemoDataset: (dataset: string) => void
+  demoSpeed: number
+  setDemoSpeed: (speed: number) => void
 }
 
 // ── Helper: Record event in journal ───────────────────────────────────────
@@ -314,6 +318,8 @@ export const useStreamStore = create<StreamState>((set) => ({
       return true
     }
   })(),
+  demoDataset: 'db-cascade',
+  demoSpeed: 1,
 
   // ── snapshot: replace all incidents + stats, refill alerts naturally ──
   applySnapshot: (msg) => {
@@ -390,7 +396,9 @@ export const useStreamStore = create<StreamState>((set) => ({
         newAlertIndex.set(a.id, a)
         return a
       })
-      const newAlerts = [...incoming, ...state.alerts].slice(0, ALERT_CAP)
+      const incomingIds = new Set(incoming.map((a) => a.id))
+      const filteredOld = state.alerts.filter((a) => !incomingIds.has(a.id))
+      const newAlerts = [...incoming, ...filteredOld].slice(0, ALERT_CAP)
       
       return {
         ...journalUpdates,
@@ -437,6 +445,20 @@ export const useStreamStore = create<StreamState>((set) => ({
         at: Date.now(),
       })
 
+      const newAlertIndex = new Map(state.alertIndex)
+      msg.member_alert_ids.forEach((id) => {
+        const a = newAlertIndex.get(id)
+        if (a) {
+          newAlertIndex.set(id, { ...a, cluster_id: msg.incident.id })
+        }
+      })
+      const newAlerts = state.alerts.map((a) => {
+        if (msg.member_alert_ids.includes(a.id)) {
+          return { ...a, cluster_id: msg.incident.id }
+        }
+        return a
+      })
+
       const entry: AuditEntry = {
         id: `audit-${Date.now()}-${Math.random()}`,
         timestamp: new Date().toISOString(),
@@ -450,6 +472,8 @@ export const useStreamStore = create<StreamState>((set) => ({
         ...journalUpdates,
         incidents: newIncidents,
         lastDiff: newDiff,
+        alertIndex: newAlertIndex,
+        alerts: newAlerts,
         auditLog: newAuditLog,
         unreadAuditCount: state.unreadAuditCount + 1,
       }
@@ -489,10 +513,38 @@ export const useStreamStore = create<StreamState>((set) => ({
         removed_alert_ids: msg.removed_alert_ids,
         at: Date.now(),
       })
+
+      const newAlertIndex = new Map(state.alertIndex)
+      msg.added_alert_ids.forEach((id) => {
+        const a = newAlertIndex.get(id)
+        if (a) {
+          newAlertIndex.set(id, { ...a, cluster_id: msg.incident.id })
+        }
+      })
+      msg.removed_alert_ids.forEach((id) => {
+        const a = newAlertIndex.get(id)
+        if (a) {
+          newAlertIndex.set(id, { ...a, cluster_id: null })
+        }
+      })
+
+      const addedSet = new Set(msg.added_alert_ids)
+      const removedSet = new Set(msg.removed_alert_ids)
+      const newAlerts = state.alerts.map((a) => {
+        if (addedSet.has(a.id)) {
+          return { ...a, cluster_id: msg.incident.id }
+        } else if (removedSet.has(a.id)) {
+          return { ...a, cluster_id: null }
+        }
+        return a
+      })
+
       return {
         ...journalUpdates,
         incidents: newIncidents,
         lastDiff: newDiff,
+        alertIndex: newAlertIndex,
+        alerts: newAlerts,
       }
     })
 
@@ -634,6 +686,8 @@ export const useStreamStore = create<StreamState>((set) => ({
 
   setView: (v) => set({ view: v }),
   setShowIntro: (show) => set({ showIntro: show }),
+  setDemoDataset: (dataset) => set({ demoDataset: dataset }),
+  setDemoSpeed: (speed) => set({ demoSpeed: speed }),
 }))
 
 // ── Derived selectors ─────────────────────────────────────────────────────

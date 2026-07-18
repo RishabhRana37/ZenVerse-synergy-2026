@@ -1,0 +1,13 @@
+## Summary
+This PR addresses several frontend UI stability issues, console warnings, and visual bugs.
+
+### Fixes
+* **Lens Particle Physics**: Fixed a state synchronization bug where alerts failed to inherit their `cluster_id` in Live mode. Particles now properly inherit their cluster gravity and orbit their respective incident gravity wells in the Lens view.
+* **React Duplicate Keys Warning**: Added deduplication logic in `applyAlertBatch` so that restarting a scenario doesn't inject identical alert IDs into the ring buffer, which caused React DOM key warnings.
+* **AudioContext Autoplay Warning**: Added a `hasUserInteracted` guard to the audio manager. Ambient hum is now paused until the user interacts with the document to respect modern browser autoplay policies.
+* **React Router Future Flags**: Opted into React Router v7 future flags (`v7_startTransition` and `v7_relativeSplatPath`) on `<BrowserRouter>` to silence console warnings and prepare for future upgrades.
+* **Keyboard Shortcuts & Command Palette State Syncing**: Fixed a bug where keyboard shortcuts and palette actions were using stale, localized state. They now correctly source the active scenario dataset and playback speed directly from the global Zustand store.
+
+### Verification
+- Ran `npm run build` to verify frontend typescript and bundle integrity.
+- Verified keyboard shortcuts, command palette, and UI state remain responsive.

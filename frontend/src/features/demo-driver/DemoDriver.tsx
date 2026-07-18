@@ -26,8 +26,10 @@ export function DemoDriver() {
   const activeSpeed = replay?.speed ?? 1
 
   const [expanded, setExpanded] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [dataset, setDataset] = useState('db-cascade')
+  const speed = useStreamStore((s) => s.demoSpeed)
+  const setSpeed = useStreamStore((s) => s.setDemoSpeed)
+  const dataset = useStreamStore((s) => s.demoDataset)
+  const setDataset = useStreamStore((s) => s.setDemoDataset)
   const [activeKey, setActiveKey] = useState<string | null>(null)
 
   const fpsReduced = useFPSStore((s) => s.reducedMotion)
