@@ -9,11 +9,20 @@ let rumbleGain: GainNode | null = null
 
 let isMuted = false
 let lastWhooshTime = 0
+let hasUserInteracted = false
 
 // Persist mute state in localStorage
 if (typeof window !== 'undefined') {
   const saved = localStorage.getItem('stormlens-mute')
   isMuted = saved === 'true'
+
+  const unlockAudio = () => {
+    hasUserInteracted = true
+    window.removeEventListener('click', unlockAudio)
+    window.removeEventListener('keydown', unlockAudio)
+  }
+  window.addEventListener('click', unlockAudio)
+  window.addEventListener('keydown', unlockAudio)
 }
 
 function initAudio() {
@@ -73,7 +82,7 @@ export const audioManager = {
   },
 
   updateRumble(alertsPerSec: number) {
-    if (isMuted) return
+    if (isMuted || !hasUserInteracted) return
     initAudio()
     if (!ctx || !rumbleGain) return
 
@@ -88,7 +97,7 @@ export const audioManager = {
   },
 
   playWhoosh() {
-    if (isMuted) return
+    if (isMuted || !hasUserInteracted) return
     initAudio()
     if (!ctx || ctx.state === 'suspended') return
 
@@ -129,7 +138,7 @@ export const audioManager = {
   },
 
   playIncidentChime() {
-    if (isMuted) return
+    if (isMuted || !hasUserInteracted) return
     initAudio()
     if (!ctx || ctx.state === 'suspended') return
 

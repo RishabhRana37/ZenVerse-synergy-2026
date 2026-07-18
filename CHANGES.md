@@ -19,6 +19,10 @@ All notable changes to the StormLens project will be documented in this file. Be
 *   Conditional Hook calls and unused eslint-disable comments in frontend code.
 *   Windows console encoding crash in evaluation benchmark prints.
 *   Formatted Python files using ruff to clean up lint issues.
+*   Lens view particle physics syncing bug where particles ignored gravity wells in Live Mode.
+*   Duplicate React Keys warning caused by lack of deduplication during replay restarts.
+*   AudioContext autoplay warning caused by missing user interaction guard.
+*   React Router v7 future flag warnings in App.tsx.
 
 ### Added (Original)
 *   `AI_GUIDE.md` defining strict guidelines for AI agents and human developers working on StormLens.

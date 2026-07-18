@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { audioManager } from '@/lib/audio'
 import { startReplay, stopReplay, resetReplay } from '@/lib/actions'
+import { useStreamStore } from '@/store/stream'
 
 
 export function useKeyboardShortcuts() {
@@ -39,7 +40,8 @@ export function useKeyboardShortcuts() {
       // S — Start Replay
       if (key === 's') {
         e.preventDefault()
-        startReplay('db-cascade', 1)
+        const { demoDataset, demoSpeed } = useStreamStore.getState()
+        startReplay(demoDataset, demoSpeed)
         return
       }
 
@@ -53,7 +55,8 @@ export function useKeyboardShortcuts() {
       // R — Reset (stop + clear store + restart scenario after a beat)
       if (key === 'r') {
         e.preventDefault()
-        resetReplay('db-cascade', 1)
+        const { demoDataset, demoSpeed } = useStreamStore.getState()
+        resetReplay(demoDataset, demoSpeed)
         return
       }
 
