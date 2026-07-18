@@ -139,6 +139,7 @@ export function WarRoom() {
           <section
             className="w-[40%] flex flex-col h-full rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card transition-all duration-150 hover:border-border-hover relative group/bracket"
           >
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-severity-critical rounded-t-card z-10 pointer-events-none" />
             <PanelErrorBoundary label="Storm Stream">
               <RawStreamPanel />
             </PanelErrorBoundary>
@@ -147,6 +148,7 @@ export function WarRoom() {
 
           {/* Right Panel: Incidents (60%) with Corner Brackets */}
           <section className="w-[60%] flex flex-col h-full rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card transition-all duration-150 hover:border-border-hover relative group/bracket">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-accent rounded-t-card z-10 pointer-events-none" />
             <PanelErrorBoundary label="Incidents">
               <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
             </PanelErrorBoundary>

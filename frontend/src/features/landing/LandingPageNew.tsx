@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
-import { LandingStormCanvas } from './LandingStormCanvas'
+import { HeroConvergenceCanvas } from './HeroConvergenceCanvas'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Kbd } from '@/components/ui/Kbd'
 import { SPRING, EASE, DUR_ENTER, entranceVariants, staggerContainerVariants } from '@/lib/motion'
@@ -246,7 +246,7 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
 
       {/* Right — canvas */}
       <div className="flex-1 relative min-h-[calc(100vh-56px)]">
-        <LandingStormCanvas replaySignal={replaySignal} />
+        <HeroConvergenceCanvas key={replaySignal ?? 0} />
       </div>
     </section>
   )
