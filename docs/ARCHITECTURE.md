@@ -137,6 +137,12 @@ services:
     depends_on: [postgres-primary, redis-cache]
   - name: api-gateway
     depends_on: [auth-svc, order-svc]
+
+# Optional — overrides DBSCANClusterer's default eps/min_samples for this
+# scenario only (see §4.2: eps is density-relative, not a global constant).
+clustering:
+  eps: 0.35
+  min_samples: 3
 ```
 
 ---
@@ -170,13 +176,13 @@ Starting weights: w_t = 0.3, w_s = 0.4, w_a = 0.3 — tuned on labeled data.
 **Why DBSCAN, not DenStream:** River's `DenStream` requires raw feature vectors and computes its own internal distance. It **cannot accept a precomputed distance matrix**. Our distance function `D(a,b)` combines three heterogeneous signals (temporal, semantic, attribute). To use DenStream, we would have to discard the temporal and attribute signals and feed only the embedding — degrading quality. DBSCAN with `metric="precomputed"` accepts our full distance matrix directly, making it the correct primary algorithm.
 
 **Operation:**
-- Every 2 s tick: take the active window (all unique alerts with `ts ≥ now − T_max`)
+- Every 2 s tick: take the active window — all unique alerts with `ts ≥ latest_event_ts − T_max`, where `latest_event_ts` is the **event clock** (max `alert.ts` seen so far), not the wall clock. This matters: the correlation math scores event timestamps, but early versions windowed on wall-clock `received_at`. At replay speed N, a wall-clock window spans N×T_max of event time — at 100× that silently widened a 300 s window to ~8 hours, over-merging (or, combined with the wall-clock dedup TTL below, over-collapsing) everything in it. Event-clock windowing makes behavior identical at any replay speed and identical to live webhook traffic (where event ts ≈ arrival time already).
 - Compute the N×N pairwise distance matrix (cheap: dedup + template-cached embeddings keep N small, typically < 500)
-- Run `sklearn.cluster.DBSCAN(eps=0.35, min_samples=3, metric="precomputed")`
+- Run `sklearn.cluster.DBSCAN(eps, min_samples=3, metric="precomputed")`
 - Reconcile output against existing incidents (§4.3)
 - Emit `incident.created` / `incident.updated` WS events for changed incidents
 
-**Parameter guidance:** `eps` is the primary tuning knob. With D in [0, 1]: `eps=0.35` is a good start — tune up if clusters are too fragmented, down if unrelated alerts merge.
+**Parameter guidance — `eps` is tuned per scenario, not global.** Measured against real labeled ground truth (`eval/results/`, `EVALUATION.md`): a single global `eps` cannot serve both regimes well. `eps=0.20` is right for `aiops-scn1` (a day-long, sparse, mostly single-host anomaly stream) — at the naive `eps=0.35`, DBSCAN density-chains through the day's continuous background noise into one persistent cluster (purity 0.30, ARI 0.00); at `eps=0.20` the chain breaks (purity 1.00, ARI 0.349, held-out validated). `eps=0.35` is right for `db-cascade` (a fast, dense, 90 s multi-service cascade) — `eps=0.20` fragments the single incident into ~12 cards. Each scenario YAML carries its own `clustering: {eps, min_samples}` block (§3); `Pipeline.configure_scenario()` reads it and reconfigures the clusterer on every `/replay/start`, so this is not a manual step.
 
 ### 4.3 Reconciliation — Stable Incident IDs
 
@@ -198,7 +204,17 @@ Run DenStream in parallel during eval, feeding it only the embedding vector. Com
 
 Attribute+topology-first correlation: service-connected components within the window, semantics as tiebreaker. Lower ceiling, guaranteed floor.
 
-### 4.6 Noise handling
+### 4.6 Alternatives considered and measured, not adopted
+
+An external architectural review argued the topology signal is under-weighted — that clustering should hard-filter candidates to a graph neighborhood *before* any semantic/temporal scoring (Moogsoft/BigPanda-style topology-first correlation), rather than the soft, capped `topology_bonus` (0.15/0.05) folded into a blended distance — and specifically claimed this would fix `db-cascade`'s cascade fragmentation. It separately proposed ranking root cause by graph centrality (PageRank-style) instead of the weighted formula in §5. Both were built as testable ablations (`topology_gated_1hop`/`_2hop` in `eval/harness.py`; a standalone PageRank comparison) rather than adopted on argument.
+
+**Result — hard topology gating:** at the 2-hop radius (matching `topology_bonus`'s own reach), clustering on `db-cascade` came back bit-for-bit identical to the current default; at 1-hop it was measurably worse (fragmentation 3→8). On `aiops-scn1` (15 days, 26 faults) it was identical to the default on every metric. The mechanism doesn't apply to the actual failure: `db-cascade`'s fragmentation happens *inside* the gate radius already (`postgres-primary` is 1 hop from its own dependents) — the merge fails because the alert text genuinely differs across cascade tiers (`disk_full` vs `connection_timeout`), which a hard candidacy pre-filter has no mechanism to fix; it can only prevent merges, not cause ones that semantic distance is blocking.
+
+**Result — centrality-only root-cause ranking:** 0% Hit@1/Hit@3 on both datasets, vs. 92–100% for the current ranker. 28,012 of 28,012 predicted `aiops-scn1` clusters (and 2 of 4 on `db-cascade`) have fewer than 2 topology nodes present — most real incidents here are single-service, leaving graph centrality nothing to rank on. This is exactly why `topology_depth` in §5 is blended with severity/temporal/co-occurrence signals — and already carries the largest weight (α=0.4) — rather than used alone.
+
+Both are committed as documented ablations (same convention as DenStream/naive_dedup, §10) precisely because a negative result, measured, is evidence — not because either is a candidate default.
+
+### 4.7 Noise handling
 
 Density-based noise points (DBSCAN label = -1) stay unclustered — correct, since singleton alerts aren't incidents. They appear only in the raw stream.
 
@@ -314,9 +330,8 @@ This is computed per-incident from the moment the incident is created. The DBSCA
 The dedup fingerprint index must expire old entries or a service that silences for 5+ minutes and then fires again would silently be collapsed into the same alert.
 
 **Implementation:**
-- Each entry in `dedup_index` stores `{alert_id, expires_at}` where `expires_at = received_at + T_max`.
-- The tick loop (every 2 s) evicts all entries where `expires_at < now`.
-- Use a `sortedcontainers.SortedList` or a simple timestamp-sorted `deque` for O(log n) eviction.
+- Each entry in `dedup_index` stores `{alert_id, expires_at}` where `expires_at = alert.ts + T_max` — the canonical alert's **event** timestamp (first occurrence), not `received_at` (wall-clock ingest time). A same-fingerprint alert whose *own* event ts falls past the entry's expiry starts a new canonical occurrence immediately, in-line, rather than waiting for a background eviction pass.
+- Eviction (the tick loop, every 2 s) compares against the **event clock** (`latest_event_ts`, §4.2), not `datetime.now()`. This is the same correctness fix as the active window: a wall-clock TTL at replay speed N covers N×T_max of event time — at 100× it silently widened a 300 s TTL to ~8 hours, collapsing every recurrence of a template into one alert and starving the clusterer below `min_samples` (observed live: 100× replay produced 0 incidents from 1,478 alerts on a stretch the offline harness clustered correctly). For live webhook traffic, event ts ≈ arrival time, so this changes nothing about production behavior — only about replay-speed invariance.
 - When an entry expires, the fingerprint is removed. The next alert with the same fingerprint starts a fresh dedup chain.
 
 ---
@@ -353,6 +368,7 @@ python -m eval.bench --dataset aiops-scn1 --speed 100
 | − temporal (w_t = 0, redistribute to w_s and w_a) | why timing matters |
 | DenStream instead of DBSCAN | streaming vs. batch clustering trade-off |
 | Naive dedup only (exact-duplicate collapse) | the strawman most teams will ship |
+| `topology_gated_1hop` / `_2hop` (hard graph-radius pre-filter) | topology-first correlation, measured — see §4.6 |
 
 Output: `eval/results/{dataset}_{git_sha}.json` — every reported number traceable to a commit.
 
