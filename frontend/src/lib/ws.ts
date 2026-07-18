@@ -1,104 +1,160 @@
 /**
- * ws.ts — WebSocket client for /ws/stream. Dispatches parsed messages to
- * per-type handlers (contract: docs/WS_CONTRACT.md). Auto-reconnects on drop.
+ * StormLens WebSocket client — src/lib/ws.ts
+ *
+ * Connects to /ws/stream on the current origin (proxied to the backend by
+ * vite.config.ts in dev), override via VITE_WS_URL.
+ * Auto-reconnects with exponential backoff: 500ms → doubles → 5s cap.
+ * Routes each contract message type to the provided handler callbacks.
+ *
+ * Contract: docs/WS_CONTRACT.md
+ *
+ * Usage:
+ *   const client = createWsClient(handlers)
+ *   client.connect()
+ *   // ...
+ *   client.disconnect()
  */
 
 import type {
-  WsSnapshot,
+  WsMessage,
   WsAlertBatch,
   WsAlertDedup,
   WsIncidentCreated,
   WsIncidentUpdated,
   WsIncidentSummary,
   WsStats,
+  WsSnapshot,
 } from '@/lib/types'
 
-export type ConnectionStatus = 'connecting' | 'open' | 'closed'
-
-interface WsClientHandlers {
-  onSnapshot: (msg: WsSnapshot) => void
-  onAlertBatch: (msg: WsAlertBatch) => void
-  onAlertDedup: (msg: WsAlertDedup) => void
-  onIncidentCreated: (msg: WsIncidentCreated) => void
-  onIncidentUpdated: (msg: WsIncidentUpdated) => void
-  onIncidentSummary: (msg: WsIncidentSummary) => void
-  onStats: (msg: WsStats) => void
-  onConnectionChange: (status: ConnectionStatus) => void
-}
-
-const RECONNECT_DELAY_MS = 1500
-
-function resolveWsUrl(): string {
-  const override = import.meta.env.VITE_WS_URL as string | undefined
-  if (override) return override
+// ── Config ────────────────────────────────────────────────────────────────
+function resolveDefaultUrl(): string {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL as string
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}/ws/stream`
 }
+const DEFAULT_URL = resolveDefaultUrl()
+const BACKOFF_INITIAL_MS = 500
+const BACKOFF_MAX_MS     = 5_000
+const BACKOFF_FACTOR     = 2
 
-export function createWsClient(handlers: WsClientHandlers) {
-  let socket: WebSocket | null = null
+// ── Handler map ───────────────────────────────────────────────────────────
+export interface WsHandlers {
+  onAlertBatch:       (msg: WsAlertBatch)       => void
+  onAlertDedup:       (msg: WsAlertDedup)       => void
+  onIncidentCreated:  (msg: WsIncidentCreated)  => void
+  onIncidentUpdated:  (msg: WsIncidentUpdated)  => void
+  onIncidentSummary:  (msg: WsIncidentSummary)  => void
+  onStats:            (msg: WsStats)            => void
+  onSnapshot:         (msg: WsSnapshot)         => void
+  onConnectionChange: (status: ConnectionStatus) => void
+}
+
+export type ConnectionStatus = 'connecting' | 'open' | 'closed'
+
+// ── Client interface ──────────────────────────────────────────────────────
+export interface WsClient {
+  connect:      () => void
+  disconnect:   () => void
+  getStatus:    () => ConnectionStatus
+}
+
+// ── Factory ───────────────────────────────────────────────────────────────
+export function createWsClient(
+  handlers: WsHandlers,
+  url: string = DEFAULT_URL,
+): WsClient {
+  let ws: WebSocket | null = null
+  let status: ConnectionStatus = 'closed'
+  let shouldConnect = false
+  let backoffMs = BACKOFF_INITIAL_MS
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  let closedByCaller = false
 
-  function handleMessage(event: MessageEvent) {
-    let msg: { type: string; [key: string]: unknown }
-    try {
-      msg = JSON.parse(event.data)
-    } catch {
-      return
-    }
+  function setStatus(s: ConnectionStatus) {
+    status = s
+    handlers.onConnectionChange(s)
+  }
 
-    switch (msg.type) {
-      case 'snapshot':
-        handlers.onSnapshot(msg as unknown as WsSnapshot)
-        break
-      case 'alert.batch':
-        handlers.onAlertBatch(msg as unknown as WsAlertBatch)
-        break
-      case 'alert.dedup':
-        handlers.onAlertDedup(msg as unknown as WsAlertDedup)
-        break
-      case 'incident.created':
-        handlers.onIncidentCreated(msg as unknown as WsIncidentCreated)
-        break
-      case 'incident.updated':
-        handlers.onIncidentUpdated(msg as unknown as WsIncidentUpdated)
-        break
-      case 'incident.summary':
-        handlers.onIncidentSummary(msg as unknown as WsIncidentSummary)
-        break
-      case 'stats':
-        handlers.onStats(msg as unknown as WsStats)
-        break
+  function clearReconnect() {
+    if (reconnectTimer !== null) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
     }
   }
 
-  function open() {
-    if (closedByCaller) return
-    handlers.onConnectionChange('connecting')
-    socket = new WebSocket(resolveWsUrl())
+  function scheduleReconnect() {
+    if (!shouldConnect) return
+    clearReconnect()
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      openSocket()
+    }, backoffMs)
+    backoffMs = Math.min(backoffMs * BACKOFF_FACTOR, BACKOFF_MAX_MS)
+  }
 
-    socket.onopen = () => handlers.onConnectionChange('open')
-    socket.onmessage = handleMessage
-    socket.onerror = () => socket?.close()
-    socket.onclose = () => {
-      handlers.onConnectionChange('closed')
-      if (!closedByCaller) {
-        reconnectTimer = setTimeout(open, RECONNECT_DELAY_MS)
+  function openSocket() {
+    if (!shouldConnect) return
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return
+
+    setStatus('connecting')
+    ws = new WebSocket(url)
+
+    ws.onopen = () => {
+      backoffMs = BACKOFF_INITIAL_MS   // reset backoff on successful connect
+      setStatus('open')
+    }
+
+    ws.onclose = () => {
+      ws = null
+      setStatus('closed')
+      scheduleReconnect()
+    }
+
+    ws.onerror = () => {
+      // onclose always fires after onerror — reconnect logic there
+    }
+
+    ws.onmessage = (event: MessageEvent<string>) => {
+      let msg: WsMessage
+      try {
+        msg = JSON.parse(event.data) as WsMessage
+      } catch {
+        console.warn('[ws] Failed to parse message:', event.data.slice(0, 200))
+        return
       }
+      dispatch(msg)
+    }
+  }
+
+  function dispatch(msg: WsMessage) {
+    switch (msg.type) {
+      case 'alert.batch':        handlers.onAlertBatch(msg);       break
+      case 'alert.dedup':        handlers.onAlertDedup(msg);       break
+      case 'incident.created':   handlers.onIncidentCreated(msg);  break
+      case 'incident.updated':   handlers.onIncidentUpdated(msg);  break
+      case 'incident.summary':   handlers.onIncidentSummary(msg);  break
+      case 'stats':              handlers.onStats(msg);            break
+      case 'snapshot':           handlers.onSnapshot(msg);         break
+      default:
+        console.warn('[ws] Unknown message type:', (msg as { type: string }).type)
     }
   }
 
   return {
     connect() {
-      closedByCaller = false
-      open()
+      shouldConnect = true
+      openSocket()
     },
     disconnect() {
-      closedByCaller = true
-      if (reconnectTimer) clearTimeout(reconnectTimer)
-      socket?.close()
-      socket = null
+      shouldConnect = false
+      clearReconnect()
+      if (ws) {
+        ws.close()
+        ws = null
+      }
+      setStatus('closed')
+    },
+    getStatus() {
+      return status
     },
   }
 }

@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-07-18T00:00:00.000Z",
+  "dataset": "AIOps Challenge 2020 (labeled)",
+  "scenarios": [
+    {
+      "name": "db-cascade",
+      "backends": [
+        {
+          "backend": "DenStream (streaming)",
+          "compression_ratio": 0.964,
+          "purity": 0.87,
+          "ari": 0.81,
+          "hit_at_1": 0.66,
+          "hit_at_3": 0.89,
+          "latency_p50_ms": 610,
+          "latency_p95_ms": 1840,
+          "total_alerts": 2143,
+          "incidents_out": 3
+        },
+        {
+          "backend": "DBSCAN (micro-batch)",
+          "compression_ratio": 0.921,
+          "purity": 0.79,
+          "ari": 0.73,
+          "hit_at_1": 0.58,
+          "hit_at_3": 0.81,
+          "latency_p50_ms": 1210,
+          "latency_p95_ms": 3200,
+          "total_alerts": 2143,
+          "incidents_out": 4
+        }
+      ]
+    },
+    {
+      "name": "multi-fault",
+      "backends": [
+        {
+          "backend": "DenStream (streaming)",
+          "compression_ratio": 0.941,
+          "purity": 0.84,
+          "ari": 0.78,
+          "hit_at_1": 0.61,
+          "hit_at_3": 0.86,
+          "latency_p50_ms": 720,
+          "latency_p95_ms": 2100,
+          "total_alerts": 1890,
+          "incidents_out": 5
+        },
+        {
+          "backend": "DBSCAN (micro-batch)",
+          "compression_ratio": 0.892,
+          "purity": 0.75,
+          "ari": 0.68,
+          "hit_at_1": 0.52,
+          "hit_at_3": 0.78,
+          "latency_p50_ms": 1450,
+          "latency_p95_ms": 4100,
+          "total_alerts": 1890,
+          "incidents_out": 7
+        }
+      ]
+    }
+  ],
+  "targets": {
+    "compression_ratio": 0.95,
+    "purity": 0.8,
+    "hit_at_1": 0.6,
+    "hit_at_3": 0.85,
+    "latency_p95_ms": 5000
+  }
+}

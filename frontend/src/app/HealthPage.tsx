@@ -114,7 +114,7 @@ export function HealthPage() {
             <span className="text-[14px] font-bold tracking-tight">StormLens Diagnostics</span>
             <span className="text-[10px] text-text-muted font-mono uppercase mt-0.5">Pre-Demo Checklist</span>
           </div>
-          <Link to="/">
+          <Link to="/war-room">
             <Button
               variant="secondary"
               size="sm"

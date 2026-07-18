@@ -100,7 +100,7 @@ export function ConfidenceBar({
             initial={{ left: prefersReduced ? `${pct}%` : '0%' }}
             animate={{ left: `${pct}%` }}
             transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute -top-4 -translate-x-1/2 font-mono text-[9px] font-bold tabular-nums px-1.5 py-0.2 rounded bg-bg-surface border border-border/80 shadow-card z-20"
+            className="absolute -top-4 -translate-x-1/2 font-mono text-[10px] font-bold tabular-nums px-1.5 py-0.2 rounded bg-bg-surface border border-border/80 shadow-card z-20"
             style={{
               color,
               borderColor: `${color}40`,

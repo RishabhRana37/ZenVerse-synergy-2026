@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
+import { X } from 'lucide-react'
+import { SPRING } from '@/lib/motion'
 
 interface ToastItem {
   id: string
@@ -85,7 +87,8 @@ export function Toast() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[100] flex flex-col items-end pointer-events-none select-none select-none"
+      className="fixed bottom-6 right-6 z-[var(--z-toast)] flex flex-col items-end pointer-events-none select-none"
+      aria-live="polite"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: '360px', height: 'auto' }}
@@ -113,7 +116,7 @@ export function Toast() {
                   pointerEvents: 'auto',
                 }}
                 exit={{ opacity: 0, x: 100, scale: 0.95 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 220 }}
+                transition={SPRING}
                 style={{
                   zIndex: zIndexOffset,
                   position: visualIndex === 0 ? 'relative' : 'absolute',
@@ -152,11 +155,11 @@ export function Toast() {
                 {/* Message Body */}
                 <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                   <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-[9px] font-mono text-text-muted uppercase font-bold tracking-wider">
+                    <span className="text-[10px] font-mono text-text-muted uppercase font-bold tracking-wider">
                       {toast.type === 'alert' ? `${toast.severity} alert` : 'system notification'}
                     </span>
                     {isCritical && (
-                      <span className="text-[8px] font-sans font-semibold text-severity-critical bg-severity-critical/15 px-1 py-0.2 rounded uppercase leading-none">
+                      <span className="text-[10px] font-sans font-semibold text-severity-critical bg-severity-critical/15 px-1 py-0.2 rounded uppercase leading-none">
                         Pinned
                       </span>
                     )}
@@ -172,9 +175,10 @@ export function Toast() {
                     e.stopPropagation()
                     dismissToast(toast.id)
                   }}
+                  aria-label="Dismiss notification"
                   className="flex-shrink-0 text-text-muted hover:text-text-primary transition-colors p-0.5 rounded hover:bg-bg-hover text-[10px] w-4 h-4 flex items-center justify-center cursor-pointer"
                 >
-                  ✕
+                  <X size={16} className="text-current" />
                 </button>
               </motion.div>
             )
@@ -184,3 +188,4 @@ export function Toast() {
     </div>
   )
 }
+

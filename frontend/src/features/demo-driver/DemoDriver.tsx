@@ -3,6 +3,7 @@ import { useStreamStore } from '@/store/stream'
 import { clsx } from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFPSStore } from '@/lib/motion'
+import { X } from 'lucide-react'
 
 // Dataset filename -> topology scenario name. Only aiops-scn1 differs (the
 // dataset is named after the specific labeled run, the topology YAML after
@@ -39,24 +40,17 @@ export function DemoDriver() {
     }
   }, [running])
 
-  // Listen to keystroke register
+  // Monitor physical keystrokes and update visual register
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'select' || tag === 'textarea') {
         return
       }
 
       const key = e.key.toUpperCase()
-      const validKeys = ['S', 'X', 'R', 'V', 'E', 'W', 'M', '1', '2', '3', '?', 'K', 'ESCAPE', 'ENTER']
-      if (validKeys.includes(key) || (e.metaKey && key === 'K') || (e.ctrlKey && key === 'K')) {
-        let displayKey = key
-        if (e.metaKey && key === 'K') displayKey = '⌘K'
-        else if (e.ctrlKey && key === 'K') displayKey = 'Ctrl+K'
-        else if (key === 'ESCAPE') displayKey = 'Esc'
-        else if (key === 'ENTER') displayKey = '↵'
-
-        setActiveKey(displayKey)
+      if (['S', 'X', 'R', 'E', 'W', 'M'].includes(key)) {
+        setActiveKey(key)
         const t = setTimeout(() => setActiveKey(null), 300)
         return () => clearTimeout(t)
       }
@@ -125,8 +119,9 @@ export function DemoDriver() {
               <button
                 onClick={() => setExpanded(false)}
                 className="text-text-muted hover:text-text-primary text-xs cursor-pointer"
+                aria-label="Close replay harness"
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
 
@@ -157,6 +152,7 @@ export function DemoDriver() {
                   <button
                     key={val}
                     onClick={() => setSpeed(val)}
+                    aria-label={`Set speed multiplier to ${val} times`}
                     className={clsx(
                       "py-1 rounded text-[10px] font-mono border transition-all duration-100 active:scale-[0.97] cursor-pointer",
                       speed === val
@@ -206,6 +202,7 @@ export function DemoDriver() {
           // Collapsed mini pill
           <button
             onClick={() => setExpanded(true)}
+            aria-label={running ? "View replay progress" : "Open demo controls"}
             className={clsx(
               "px-3 py-1.5 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 shadow-card transition-all duration-100 active:scale-[0.95] cursor-pointer",
               running

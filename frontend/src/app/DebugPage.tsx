@@ -32,7 +32,7 @@ export function DebugPage() {
           </h1>
           <span className="text-[10px] text-text-muted">Direct read-only buffer inspection</span>
         </div>
-        <Link to="/">
+        <Link to="/war-room">
           <Button variant="secondary" size="sm" className="font-mono text-[10px]">
             ← Return to War Room
           </Button>
@@ -117,7 +117,7 @@ export function DebugPage() {
                 return (
                   <div key={inc.id} className={`pl-4 py-1 flex flex-col gap-1.5 ${statusBorder}`}>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border font-sans uppercase shrink-0 ${badgeColor}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border font-sans uppercase shrink-0 ${badgeColor}`}>
                         {inc.status}
                       </span>
                       <span className="text-text-primary font-bold">{inc.id}</span>

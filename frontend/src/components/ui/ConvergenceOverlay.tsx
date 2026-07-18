@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStreamStore } from '@/store/stream'
 import { fpsGuard } from '@/lib/fpsGuard'
 import { audioManager } from '@/lib/audio'
+import { EASE, DUR_ENTER } from '@/lib/motion'
 
 interface Particle {
   id: string
@@ -109,7 +110,7 @@ export function ConvergenceOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden" aria-hidden="true">
       <AnimatePresence>
         {particles.map((p) => {
           // Slight arc math: lift the midpoint up in Y coordinates
@@ -140,9 +141,9 @@ export function ConvergenceOverlay() {
                 boxShadow: [`0 0 6px ${p.color}`, `0 0 6px ${p.color}`, `0 0 6px #2DD4A7`],
               }}
               transition={{
-                duration: 0.45,
+                duration: DUR_ENTER,
                 delay: p.delay / 1000,
-                ease: [0.4, 0, 0.2, 1], // ease-out
+                ease: EASE,
               }}
               onAnimationComplete={() => {
                 removeParticle(p.id)

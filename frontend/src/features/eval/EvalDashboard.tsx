@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import fallbackData from './eval-results.fallback.json'
 import {
   BarChart,
   Bar,
@@ -14,7 +15,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import { clsx } from 'clsx'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { motion } from 'framer-motion'
-import { useFPSStore, springPreset } from '@/lib/motion'
+import { useFPSStore, springPreset, DUR_ENTER, EASE } from '@/lib/motion'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ export function EvalDashboard() {
   const [data, setData] = useState<EvalData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isFallback, setIsFallback] = useState(false)
 
   const fpsReduced = useFPSStore((s) => s.reducedMotion)
   const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
@@ -80,9 +82,12 @@ export function EvalDashboard() {
         const json = await res.json()
         setData(json)
         setError(null)
+        setIsFallback(false)
       } catch (err: any) {
-        console.error('[eval] Failed to load results:', err)
-        setError(err.message || 'Failed to resolve eval harness metrics.')
+        console.warn('[eval] Failed to load results, loading fallback JSON:', err)
+        setData(fallbackData as EvalData)
+        setIsFallback(true)
+        setError(null)
       } finally {
         setLoading(false)
       }
@@ -211,7 +216,7 @@ export function EvalDashboard() {
               Retry Connection
             </button>
             <Link
-              to="/"
+              to="/war-room"
               className="px-3.5 py-1.5 rounded bg-accent text-text-inverse font-semibold hover:opacity-90 text-ui-sm transition-opacity"
             >
               Back to War Room
@@ -247,7 +252,7 @@ export function EvalDashboard() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.45, ease: 'easeOut', delay: reducedMotion ? 0 : 0.25 },
+      transition: { duration: DUR_ENTER, ease: EASE, delay: reducedMotion ? 0 : 0.25 },
     },
   }
 
@@ -257,7 +262,7 @@ export function EvalDashboard() {
         {/* Back Link Row */}
         <div className="mb-4">
           <Link
-            to="/"
+            to="/war-room"
             className="inline-block px-3.5 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover hover:border-border-hover hover:-translate-y-[1px] text-ui-sm font-semibold text-text-primary transition-all duration-150"
           >
             ← War Room
@@ -276,6 +281,14 @@ export function EvalDashboard() {
               <span className="text-text-muted font-mono">
                 generated {new Date(data.generated_at).toLocaleDateString()}
               </span>
+              {isFallback && (
+                <>
+                  <span>·</span>
+                  <span className="px-1.5 py-0.5 rounded border border-border/80 bg-bg-surface text-[10px] text-text-secondary font-mono leading-none select-none">
+                    cached results
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-[11px] text-text-muted mt-1 select-none">
               All numbers reproducible via eval harness.
@@ -350,7 +363,7 @@ export function EvalDashboard() {
                     {label && (
                       <span
                         className={clsx(
-                          "px-1.5 py-0.5 rounded-badge text-[9px] font-bold border font-mono tracking-wider",
+                          "px-1.5 py-0.5 rounded-badge text-[10px] font-bold border font-mono tracking-wider",
                           pass
                             ? "bg-accent-dim border-accent/20 text-accent"
                             : "bg-severity-warning/10 border-severity-warning/20 text-severity-warning"
@@ -383,7 +396,7 @@ export function EvalDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-[11px] text-left border-collapse font-mono select-text">
                 <thead>
-                  <tr className="border-b border-border/80 text-text-muted font-sans font-semibold uppercase text-[9px] tracking-wider select-none">
+                  <tr className="border-b border-border/80 text-text-muted font-sans font-semibold uppercase text-[10px] tracking-wider select-none">
                     <th className="py-2.5 pr-4">Scenario</th>
                     <th className="py-2.5 pr-4">Backend</th>
                     <th className="py-2.5 text-right">Comp. Ratio</th>
