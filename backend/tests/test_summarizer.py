@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from app.summarize.summarizer import Summarizer
 from app.models.schema import Alert, Incident, RootCandidate
+from app.summarize.summarizer import Summarizer
 
 
 def _make_incident() -> Incident:
@@ -28,7 +28,7 @@ def _make_incident() -> Incident:
 
 
 def _make_alerts() -> list[Alert]:
-    base = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    base = datetime(2024, 1, 1, tzinfo=UTC)
     return [
         Alert(
             ts=base,
@@ -60,7 +60,6 @@ async def test_llm_timeout_fires_template_fallback() -> None:
     When LLM is 'configured' but hangs, the 8 s timeout should fire
     and the template fallback should return immediately.
     """
-    import asyncio
 
     async def _fake_llm_call(*args, **kwargs):
         await asyncio.sleep(999)  # simulate hung LLM
@@ -68,7 +67,7 @@ async def test_llm_timeout_fires_template_fallback() -> None:
     summarizer = Summarizer.__new__(Summarizer)
     summarizer.TIMEOUT_S = 0.1  # short for test speed
     summarizer._llm_available = True
-    summarizer._client = True   # truthy to trigger the LLM branch
+    summarizer._client = True  # truthy to trigger the LLM branch
     summarizer._model = "fake"
     summarizer._llm_summarize = _fake_llm_call  # type: ignore
 

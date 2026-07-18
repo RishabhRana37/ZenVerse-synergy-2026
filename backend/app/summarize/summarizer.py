@@ -4,7 +4,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-from app.models.schema import Alert, Incident, RootCandidate
+from app.models.schema import Alert, Incident
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ class Summarizer:
         if llm_base_url or llm_api_key:
             try:
                 import openai
+
                 self._client = openai.AsyncOpenAI(
                     base_url=llm_base_url,
                     api_key=llm_api_key or "no-key",
@@ -68,7 +69,7 @@ class Summarizer:
                     self._llm_summarize(incident, alerts, topology_path),
                     timeout=self.TIMEOUT_S,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning(
                     "Summarizer: LLM timeout after %.1fs — using template fallback",
                     self.TIMEOUT_S,
@@ -115,6 +116,7 @@ class Summarizer:
             temperature=0.3,
         )
         import json
+
         data = json.loads(response.choices[0].message.content)
         return SummaryResult(
             title=data["title"],
@@ -127,9 +129,7 @@ class Summarizer:
 
     def _template_fallback(self, incident: Incident, alerts: list[Alert]) -> SummaryResult:
         top = incident.root_candidates[0] if incident.root_candidates else None
-        services_str = (
-            ", ".join(incident.services) if incident.services else "unknown services"
-        )
+        services_str = ", ".join(incident.services) if incident.services else "unknown services"
         span = 0
         if alerts:
             ts_sorted = sorted(alerts, key=lambda a: a.ts)

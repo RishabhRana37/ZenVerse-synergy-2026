@@ -6,6 +6,7 @@ The dataset has access restrictions — manual download is required.
 
 Usage: python scripts/fetch_aiops.py
 """
+
 from pathlib import Path
 
 RAW_DIR = Path(__file__).parent.parent / "data" / "raw"
@@ -43,6 +44,7 @@ After downloading:
   python scripts/parse_aiops.py   ← converts KPI anomalies → alert JSONL + GT JSON
 """
 
+
 def main() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     print(INSTRUCTIONS)
@@ -53,6 +55,7 @@ def main() -> None:
     else:
         print(f"  → Target directory: {aiops_dir}")
         print("  Data not found. Please follow the steps above.")
+
 
 if __name__ == "__main__":
     main()

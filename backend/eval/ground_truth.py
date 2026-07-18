@@ -3,9 +3,9 @@ from __future__ import annotations
 import csv
 import json
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 @dataclass
 class GroundTruth:
     """Labeled ground truth for one dataset."""
+
     # alert_id → GT incident label (e.g. "failure-001")
     cluster_labels: dict[str, str] = field(default_factory=dict)
     # GT incident label → root alert_id (or "|"-joined top-3 for hit@3)
@@ -26,9 +27,9 @@ class GroundTruth:
 # AIOps Challenge 2020 uses Chinese column names — mapped here explicitly
 _AIOPS_COL = {
     "fault_start": ["故障时间(开始)", "start_time", "failure_start"],
-    "fault_end":   ["故障时间(结束)", "end_time",   "failure_end"],
-    "cmdb_id":     ["故障机器",       "cmdb_id",    "host"],
-    "fault_type":  ["故障类型",       "type",       "failure_type"],
+    "fault_end": ["故障时间(结束)", "end_time", "failure_end"],
+    "cmdb_id": ["故障机器", "cmdb_id", "host"],
+    "fault_type": ["故障类型", "type", "failure_type"],
 }
 
 

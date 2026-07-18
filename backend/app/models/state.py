@@ -101,7 +101,8 @@ class AppState:
             return 0
         cutoff = self.latest_event_ts - timedelta(seconds=t_max_seconds)
         expired_ids = [
-            aid for aid, alert in self.alert_index.items()
+            aid
+            for aid, alert in self.alert_index.items()
             if alert.ts < cutoff and aid not in active_member_ids
         ]
         for aid in expired_ids:
@@ -140,7 +141,9 @@ class AppState:
 
     @property
     def unclustered_count(self) -> int:
-        return self._evicted_unclustered_count + sum(1 for a in self.alert_index.values() if a.cluster_id is None)
+        return self._evicted_unclustered_count + sum(
+            1 for a in self.alert_index.values() if a.cluster_id is None
+        )
 
     @property
     def compression_ratio(self) -> float:

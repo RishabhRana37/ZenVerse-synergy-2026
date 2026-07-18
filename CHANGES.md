@@ -11,3 +11,4 @@ All notable changes to the StormLens project will be documented in this file. Be
 *   `CHANGES.md` (this file) to document repository modifications.
 *   Git `pre-push` hook under `.githooks/pre-push` to enforce changelog updates and guidelines adherence.
 *   Instructions for running local backend (`uvicorn`) and frontend (`vite`) servers.
+*   Formatted backend Python codebase and cleaned up import styling.

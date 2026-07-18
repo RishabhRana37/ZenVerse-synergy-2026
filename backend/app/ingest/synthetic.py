@@ -4,9 +4,9 @@ import asyncio
 import logging
 import random
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 import yaml
 
@@ -194,7 +194,7 @@ class SyntheticStormGenerator:
         )
         return {
             "id": str(uuid.uuid4()),
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "host": host,
             "service": service,
             "severity": _SEVERITIES.get(event, "info"),

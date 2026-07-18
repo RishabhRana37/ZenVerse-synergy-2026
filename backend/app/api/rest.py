@@ -4,7 +4,7 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 
 from app.models.state import state

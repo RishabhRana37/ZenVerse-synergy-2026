@@ -3,8 +3,6 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-import pytest
-
 from app.correlation.reconciler import reconcile
 from app.models.schema import Alert, Incident
 
@@ -25,7 +23,9 @@ def _make_alert(aid: str | None = None, service: str = "svc") -> Alert:
 
 def test_reconcile_no_clusters_resolves_aged_out() -> None:
     # Set up old incident and member
-    inc = Incident(id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+    inc = Incident(
+        id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
     old_incidents = {"inc-1": inc}
     old_members = {"inc-1": {"a1"}}
     new_clusters: dict[str, set[str]] = {}
@@ -60,7 +60,9 @@ def test_reconcile_updates_existing_incident() -> None:
     a2 = _make_alert("a2", service="svc-a")
     alert_index = {"a1": a1, "a2": a2}
 
-    inc = Incident(id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+    inc = Incident(
+        id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
     old_incidents = {"inc-1": inc}
     old_members = {"inc-1": {"a1"}}
 
@@ -85,7 +87,9 @@ def test_reconcile_split_handling() -> None:
     a3 = _make_alert("a3")
     alert_index = {"a1": a1, "a2": a2, "a3": a3}
 
-    inc = Incident(id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+    inc = Incident(
+        id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
     old_incidents = {"inc-1": inc}
     old_members = {"inc-1": {"a1", "a2", "a3"}}
 
@@ -110,16 +114,19 @@ def test_reconcile_merge_handling() -> None:
     # The one with larger overlap wins; the other is resolved if its alerts are gone.
     a1 = _make_alert("a1")
     a2 = _make_alert("a2")
-    a3 = _make_alert("a3")
     # Exclude a3 from alert_index so it is treated as aged out, causing inc-2 to resolve
     alert_index = {"a1": a1, "a2": a2}
 
-    inc1 = Incident(id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
-    inc2 = Incident(id="inc-2", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+    inc1 = Incident(
+        id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
+    inc2 = Incident(
+        id="inc-2", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
     old_incidents = {"inc-1": inc1, "inc-2": inc2}
     old_members = {
         "inc-1": {"a1", "a2"},  # Overlap 2
-        "inc-2": {"a3"},        # Overlap 0
+        "inc-2": {"a3"},  # Overlap 0
     }
 
     new_clusters = {"cluster-1": {"a1", "a2", "a3"}}
@@ -140,11 +147,12 @@ def test_reconcile_merge_handling() -> None:
 def test_reconcile_unmatched_old_incident_resolves() -> None:
     # An active incident that has no matching new cluster and all member alerts
     # aged out of the active window should be resolved.
-    a1 = _make_alert("a1")
     # alert_index is empty, so a1 has aged out
     alert_index: dict[str, Alert] = {}
 
-    inc = Incident(id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC))
+    inc = Incident(
+        id="inc-1", status="active", created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
     old_incidents = {"inc-1": inc}
     old_members = {"inc-1": {"a1"}}
 

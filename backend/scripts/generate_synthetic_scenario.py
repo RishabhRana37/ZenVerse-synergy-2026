@@ -119,7 +119,9 @@ def generate_scenario(scenario_name: str) -> None:
     }
     gt_path.write_text(json.dumps(gt, indent=2))
 
-    print(f"[{scenario_name}] generated {len(alerts)} alerts ({len(fault_alert_ids)} fault-related) at {out_path}")
+    print(
+        f"[{scenario_name}] generated {len(alerts)} alerts ({len(fault_alert_ids)} fault-related) at {out_path}"
+    )
     print(f"[{scenario_name}] wrote ground truth (root={root_alert_id}) at {gt_path}")
 
 

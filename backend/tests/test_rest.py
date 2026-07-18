@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -9,8 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.api import rest
-from app.models.schema import Alert, Incident, ReplayStatus
-from app.models.state import AppState
+from app.models.schema import Alert, Incident
 
 # Create a test app using the router
 app = FastAPI()
