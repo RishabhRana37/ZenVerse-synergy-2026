@@ -95,7 +95,11 @@ function TypewriterSummary({
 
 // ── IncidentCard component ───────────────────────────────────────────────
 
-const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Incident; onSelect?: (id: string) => void; index: number }) => {
+// AnimatePresence's mode="popLayout" measures exit animations via a ref on
+// each direct child (PopChildMeasure). Without forwardRef here, framer-motion
+// can't attach that ref to our root motion.div and falls into a remeasure
+// loop that never settles — the "Maximum update depth exceeded" flood.
+const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Incident; onSelect?: (id: string) => void; index: number }>(({ incident, onSelect, index }, ref) => {
   const [isPulsing, setIsPulsing] = useState(false)
   const [showFirstAction, setShowFirstAction] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -131,6 +135,11 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   const handleClick = () => {
     if (onSelect) onSelect(incident.id)
   }
+
+  // Stable across re-renders: an inline arrow here would give
+  // TypewriterSummary a new onComplete every render, re-running its typing
+  // effect (and re-registering its rAF loop) on every unrelated store update.
+  const handleTypewriterComplete = React.useCallback(() => setShowFirstAction(true), [])
 
   const topCandidate = incident.root_candidates?.[0]
   const rootService = topCandidate?.service
@@ -190,6 +199,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   if (incident.status === 'resolved') {
     return (
       <motion.div
+        ref={ref}
         layout
         custom={index}
         initial={{ opacity: 0, scale: 0.96 }}
@@ -342,6 +352,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
 
   return (
     <motion.div
+      ref={ref}
       layout
       custom={index}
       initial="hidden"
@@ -448,7 +459,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
                 <div className={clsx("transition-all duration-200 z-10 relative", !isExpanded && "line-clamp-4 overflow-hidden")}>
                   <TypewriterSummary
                     text={incident.summary}
-                    onComplete={() => setShowFirstAction(true)}
+                    onComplete={handleTypewriterComplete}
                   />
                 </div>
 
@@ -568,7 +579,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
       <CornerBrackets />
     </motion.div>
   )
-})
+}))
+IncidentCard.displayName = 'IncidentCard'
 
 // ── IncidentPanel component ─────────────────────────────────────────────
 
@@ -577,7 +589,25 @@ interface IncidentPanelProps {
 }
 
 export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
-  const incidents = useStreamStore(selectIncidentList)
+  // Throttled to ~6/s: selectIncidentList returns a new sorted array on
+  // every WS incident update. At high replay speed that re-rendered this
+  // whole animated tree (framer-motion layout + AnimatePresence + N
+  // typewriter effects) far faster than the browser could paint, which is
+  // what actually froze the panel — not a true infinite loop, just far more
+  // renders than the UI needs. Mirrors the same fix applied to
+  // TopologyHealthMap.
+  const rawIncidentList = useStreamStore(selectIncidentList)
+  const [incidents, setIncidents] = useState(rawIncidentList)
+  const pendingListRef = useRef(rawIncidentList)
+  pendingListRef.current = rawIncidentList
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setIncidents(pendingListRef.current)
+    }, 150)
+    return () => window.clearInterval(id)
+  }, [])
+
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
 
   const activeIncidents = incidents.filter((i) => i.status === 'active')

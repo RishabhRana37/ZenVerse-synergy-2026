@@ -1,0 +1,52 @@
+{"id": "8f592a48-b94c-4f15-8384-3f70cbd2272e", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:12.451823+00:00"}
+{"id": "689120b2-69e9-421d-b22f-744603590561", "service": "checkout-svc", "message": "Error rate spike: 45% 5xx responses on checkout-svc after deploy v128", "severity": "critical", "timestamp": "2026-07-18T09:29:12.451823+00:00"}
+{"id": "617931f7-fbb4-430d-a7c0-f99fa800995c", "service": "checkout-svc", "message": "P99 latency degraded 8x on checkout-svc since rollout v128", "severity": "warning", "timestamp": "2026-07-18T09:29:12.851823+00:00"}
+{"id": "892c3ce7-f91c-4035-8974-adf74e840de5", "service": "checkout-svc", "message": "Canary checkout-svc-v128 failing health checks", "severity": "critical", "timestamp": "2026-07-18T09:29:13.251823+00:00"}
+{"id": "b25a0f52-244f-4bb8-b252-eba20b34e15d", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:13.451823+00:00"}
+{"id": "bf3307e3-9f3a-47b2-b3b0-3d6197359dd3", "service": "checkout-svc", "message": "Canary checkout-svc-v128 failing health checks", "severity": "critical", "timestamp": "2026-07-18T09:29:13.651823+00:00"}
+{"id": "2670d0c5-d895-4215-98be-af482b721d83", "service": "checkout-svc", "message": "P99 latency degraded 8x on checkout-svc since rollout v128", "severity": "warning", "timestamp": "2026-07-18T09:29:14.051823+00:00"}
+{"id": "11e9cdf5-ec8b-46d3-9e8a-be19c0397f4f", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:14.451823+00:00"}
+{"id": "7b276580-d0b3-4117-a07c-d955a2b9b2a2", "service": "checkout-svc", "message": "P99 latency degraded 8x on checkout-svc since rollout v128", "severity": "warning", "timestamp": "2026-07-18T09:29:14.451823+00:00"}
+{"id": "77ffe3cd-faa9-4d28-b411-a18834ee6ea7", "service": "checkout-svc", "message": "Error rate spike: 45% 5xx responses on checkout-svc after deploy v128", "severity": "critical", "timestamp": "2026-07-18T09:29:14.851823+00:00"}
+{"id": "c133ee2a-8912-4c8e-b253-832cccddf50b", "service": "checkout-svc", "message": "Error rate spike: 45% 5xx responses on checkout-svc after deploy v128", "severity": "critical", "timestamp": "2026-07-18T09:29:15.251823+00:00"}
+{"id": "c8839c9d-3f98-455c-a083-1b08e0c930a2", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:15.451823+00:00"}
+{"id": "ca2a70df-bfb8-40f6-84b3-2bc1ed5091bf", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:16.451823+00:00"}
+{"id": "1329bc0b-8ac9-4fd6-9065-118613c724ba", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:17.451823+00:00"}
+{"id": "bc02393d-6f87-4468-9f38-4cc90de5e024", "service": "inventory-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:17.451823+00:00"}
+{"id": "e7da41ad-aae0-4a92-9108-297a2d83890c", "service": "cart-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:17.451823+00:00"}
+{"id": "00b0dda2-1a3a-45ba-b602-0bcb572e404d", "service": "inventory-svc", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:17.851823+00:00"}
+{"id": "ba14b6e2-8637-449a-889e-d77c0de62e7b", "service": "cart-svc", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:17.851823+00:00"}
+{"id": "66102555-9f33-4175-912e-5b31992fcd27", "service": "inventory-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:18.251823+00:00"}
+{"id": "3676d1eb-77ff-4b2e-8c6c-bec123815ef3", "service": "cart-svc", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:18.251823+00:00"}
+{"id": "5586a9d1-1889-4851-8ab0-f6b4dd814b9c", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:18.451823+00:00"}
+{"id": "1e189d7d-b43c-4792-9f8a-5ce9675a61dc", "service": "inventory-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:18.651823+00:00"}
+{"id": "0c9c62da-f127-4494-89ef-3b5d80950d5a", "service": "cart-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:18.651823+00:00"}
+{"id": "d41617c9-5a44-4933-9588-b30a69727521", "service": "inventory-svc", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:19.051823+00:00"}
+{"id": "ee29874b-a0c4-4f65-9e7f-db41a1d2d5d4", "service": "cart-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:19.051823+00:00"}
+{"id": "8a23fecd-3a71-400c-a32d-ed71c0bfe4a4", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:19.451823+00:00"}
+{"id": "17a1658a-570a-4771-ad74-23802974eaf1", "service": "inventory-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:19.451823+00:00"}
+{"id": "97b9ac56-d694-4039-b5cd-3eac170e0a94", "service": "cart-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:19.451823+00:00"}
+{"id": "d10a3bca-ef1f-426d-b926-820c4df7685e", "service": "inventory-svc", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:19.851823+00:00"}
+{"id": "258e1bc3-37ef-433b-984d-aed38671556d", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:20.451823+00:00"}
+{"id": "bda332a3-0a93-4dc8-93dc-20a0645bc278", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:21.451823+00:00"}
+{"id": "f53688e9-df73-4361-97ba-57e743b7f292", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:22.451823+00:00"}
+{"id": "0ae79b70-a589-47c6-8289-b38e039968e2", "service": "api-gateway", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:22.451823+00:00"}
+{"id": "0913e8c1-1b24-49bd-9986-2799fb9dd8e4", "service": "api-gateway", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:22.851823+00:00"}
+{"id": "155b16b2-8299-4e95-92fd-cd40a5fed46f", "service": "api-gateway", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:23.251823+00:00"}
+{"id": "56cc8ce4-b8c7-4268-816d-ab24666a5750", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:23.451823+00:00"}
+{"id": "fcbedee4-6056-4562-a079-714bcd64a31d", "service": "api-gateway", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-18T09:29:23.651823+00:00"}
+{"id": "79f62f99-f681-485a-a515-0a0127cabf99", "service": "api-gateway", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:24.051823+00:00"}
+{"id": "2b523f19-558e-4eed-8d51-7b16f175a3d6", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:24.451823+00:00"}
+{"id": "9579bb76-acbe-4a4f-852b-2b8d77d4ae9b", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:25.451823+00:00"}
+{"id": "0c4231a3-6240-42ed-9328-2b8ca4944b37", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:26.451823+00:00"}
+{"id": "18acf23d-80d3-4a6a-ad35-af30c9f87d68", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:27.451823+00:00"}
+{"id": "8e1a0f2c-f6c6-4206-be4a-43c27138cc3c", "service": "cdn-edge", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:27.451823+00:00"}
+{"id": "7fec79fa-cab2-42db-8912-028bdd5a8d9a", "service": "cdn-edge", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:27.851823+00:00"}
+{"id": "3b2d5a39-8a20-4d9f-bbfa-3cb2865bd424", "service": "cdn-edge", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:28.251823+00:00"}
+{"id": "229cbe42-b4e8-4e1c-b249-77ece8798895", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:28.451823+00:00"}
+{"id": "fb997a6e-b13d-40a9-a0d0-32f04b385b9f", "service": "cdn-edge", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-18T09:29:28.651823+00:00"}
+{"id": "acabb574-4139-4898-8112-d5ad0029f297", "service": "cdn-edge", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:29.051823+00:00"}
+{"id": "56e5d030-48cb-4475-a419-a14f2630e157", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:29.451823+00:00"}
+{"id": "88c7a2a3-4770-4da6-b89e-5a96bb93eb29", "service": "cdn-edge", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-18T09:29:29.451823+00:00"}
+{"id": "56c3ca45-2a9e-4221-9d5f-e14737aa73d9", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:30.451823+00:00"}
+{"id": "ee478832-e95d-4c70-8409-d1d6a0a4628c", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-18T09:29:31.451823+00:00"}

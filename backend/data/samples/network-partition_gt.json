@@ -1,0 +1,38 @@
+{
+  "cluster_labels": {
+    "03135a36-1715-45bc-a2ad-67366bf009cd": "fault-001",
+    "757f9f50-8521-4a93-aad3-bc2a87a2a3c6": "fault-001",
+    "353c5fc6-091d-4db0-af6f-d0b310d5087a": "fault-001",
+    "3787202b-421f-4e92-96f1-9d049a4f28e1": "fault-001",
+    "f091a76b-c14a-41cf-8771-082af8faed02": "fault-001",
+    "ac774f4f-8613-4cbe-8a5e-98812145cbfc": "fault-001",
+    "4b145160-2e95-4af9-9271-138fa183fba7": "fault-001",
+    "f25eaee9-b1d4-4971-a8e4-22cf5d9d0f4d": "fault-001",
+    "5587e8bc-d7f4-46c2-b068-59114564c47a": "fault-001",
+    "10c6134c-192b-4579-813d-28b16f8030a5": "fault-001",
+    "47bc8677-1105-40e1-81ae-52b30ed041f0": "fault-001",
+    "b32b863a-d77b-48e0-a75f-f73ff9e3e9cf": "fault-001",
+    "45b20028-6f22-4408-95cf-3e6c18d5972e": "fault-001",
+    "6beb1b91-cc5b-4815-917a-958a564d1283": "fault-001",
+    "8e8fff28-422e-44c0-aa0e-16455c4437ce": "fault-001",
+    "cc103682-f1e8-4cec-8ef4-251898fc4efc": "fault-001",
+    "b1ff12f4-a866-421f-aab6-7a5d97bcdff3": "fault-001",
+    "4f724c43-7c1b-4455-a914-87203f1d3b95": "fault-001",
+    "242642d1-99c2-4b24-98b5-bf28f0791f33": "fault-001",
+    "0d586d57-e89a-4f82-962a-e75558074a46": "fault-001",
+    "c42b7d56-f012-44fc-b4fd-a9a81ff3f5d0": "fault-001",
+    "b5a8c01e-5548-4ffa-9812-616450845e41": "fault-001",
+    "91e6d0c9-b3e2-47db-bc08-e4466987008c": "fault-001",
+    "77ee6085-054a-4e12-87b6-76b3d1de0036": "fault-001",
+    "d5ee6f6e-ba4d-4481-b51d-0dfd6734e020": "fault-001",
+    "affbcf75-3bec-49de-b298-13618c789877": "fault-001",
+    "878d0b6c-60a0-4712-bc9e-c4ed4e7e9c78": "fault-001",
+    "e5aac7c8-3ff7-4b02-836f-43db27471719": "fault-001"
+  },
+  "root_causes": {
+    "fault-001": "03135a36-1715-45bc-a2ad-67366bf009cd"
+  },
+  "failure_types": {
+    "fault-001": "network"
+  }
+}

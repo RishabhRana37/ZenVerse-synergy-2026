@@ -1,0 +1,11 @@
+{
+  "type": "bench",
+  "dataset": "db-cascade",
+  "speed": 5.0,
+  "duration_s": 20,
+  "git_sha": "36af34f",
+  "timestamp": "2026-07-17T08:28:21.788530+00:00",
+  "latency_p50_ms": 63.0,
+  "latency_p95_ms": 63.0,
+  "n_samples": 5
+}

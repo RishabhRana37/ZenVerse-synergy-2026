@@ -72,7 +72,7 @@ export function EvalDashboard() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         const res = await fetch(`${apiBase}/eval/results`)
         if (!res.ok) {
           throw new Error(`HTTP Error ${res.status}`)
@@ -198,7 +198,7 @@ export function EvalDashboard() {
         <div className="w-full max-w-md p-6 bg-bg-surface rounded border border-severity-critical/20 flex flex-col gap-4 text-center">
           <span className="text-severity-critical text-2xl font-bold">✗ Evaluation Link Failed</span>
           <p className="text-ui-sm text-text-secondary">
-            Could not fetch ablation metrics. Ensure the mock API server is running on port 8788.
+            Could not fetch ablation metrics. Ensure the backend is running (uvicorn app.api.main:app, port 8000).
           </p>
           <code className="text-[11px] bg-bg-base p-2.5 rounded font-mono text-severity-warning text-left">
             {error || 'ENDPOINT_NOT_RESOLVED'}

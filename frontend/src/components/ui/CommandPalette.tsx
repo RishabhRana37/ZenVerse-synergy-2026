@@ -109,11 +109,11 @@ export function CommandPalette() {
         name: 'Start Replay (db-cascade scenario)',
         shortcut: 'S',
         action: () => {
-          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+          const apiBase = import.meta.env.VITE_API_URL || '/api'
           fetch(`${apiBase}/replay/start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scenario: 'db-cascade', speed: 1 }),
+            body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
           }).catch((err) => console.error('[palette] failed to start:', err))
         },
       },
@@ -123,7 +123,7 @@ export function CommandPalette() {
         name: 'Stop Active Replay',
         shortcut: 'X',
         action: () => {
-          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+          const apiBase = import.meta.env.VITE_API_URL || '/api'
           fetch(`${apiBase}/replay/stop`, { method: 'POST' }).catch((err) =>
             console.error('[palette] failed to stop:', err)
           )
@@ -135,7 +135,7 @@ export function CommandPalette() {
         name: 'Reset Scenario and State',
         shortcut: 'R',
         action: () => {
-          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+          const apiBase = import.meta.env.VITE_API_URL || '/api'
           fetch(`${apiBase}/replay/stop`, { method: 'POST' })
             .then(() => {
               streamState.clearAllState()
@@ -143,7 +143,7 @@ export function CommandPalette() {
                 fetch(`${apiBase}/replay/start`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ scenario: 'db-cascade', speed: 1 }),
+                  body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
                 })
               }, 300)
             })

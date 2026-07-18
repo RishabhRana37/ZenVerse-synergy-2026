@@ -461,7 +461,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
 
     const fetchAll = async () => {
       try {
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+        const apiBase = import.meta.env.VITE_API_URL || '/api'
         
         // Fetch static topology if not yet populated
         let topoData = topology

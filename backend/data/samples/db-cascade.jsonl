@@ -1,0 +1,56 @@
+{"id": "6aa9b714-dd5e-439d-a15f-5cc6484f3f82", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:01.688472+00:00"}
+{"id": "6a2ee55b-afa1-4adf-bb1e-e94fd0f3f396", "service": "postgres-primary", "message": "Storage volume /var/lib/postgresql exhausted on pg-host-01", "severity": "critical", "timestamp": "2026-07-17T03:15:01.688472+00:00"}
+{"id": "33da12e9-59b1-487c-881c-9e97a75585c3", "service": "postgres-primary", "message": "No space left on device on pg-host-01", "severity": "critical", "timestamp": "2026-07-17T03:15:02.088472+00:00"}
+{"id": "cfee5ba0-8bb2-40a0-aabe-e8b58633aad7", "service": "postgres-primary", "message": "Storage volume /var/lib/postgresql exhausted on pg-host-01", "severity": "critical", "timestamp": "2026-07-17T03:15:02.488472+00:00"}
+{"id": "b8409f2e-0a3d-4f6f-9121-d0457190af9f", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:02.688472+00:00"}
+{"id": "6c36e962-fba9-4df1-a000-8c2312b0b78e", "service": "postgres-primary", "message": "Storage volume /var/lib/postgresql exhausted on pg-host-01", "severity": "critical", "timestamp": "2026-07-17T03:15:02.888472+00:00"}
+{"id": "5dc927a0-8b07-4f6a-a9fd-f1bfbc718601", "service": "postgres-primary", "message": "Disk usage at 100% on pg-host-01: filesystem full", "severity": "critical", "timestamp": "2026-07-17T03:15:03.288472+00:00"}
+{"id": "cf5a7b73-0605-4e59-bb8f-7281cb5780e7", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:03.688472+00:00"}
+{"id": "8988bf8c-f485-494f-a5d2-10760bbd9f75", "service": "postgres-primary", "message": "No space left on device on pg-host-01", "severity": "critical", "timestamp": "2026-07-17T03:15:03.688472+00:00"}
+{"id": "1c9ca10e-eab4-442f-a38c-ba5904f0ecc7", "service": "postgres-primary", "message": "Disk usage at 100% on pg-host-01: filesystem full", "severity": "critical", "timestamp": "2026-07-17T03:15:04.088472+00:00"}
+{"id": "b42726f8-67fd-45c2-a73c-3d7cb1d684bd", "service": "postgres-primary", "message": "Disk usage at 100% on pg-host-01: filesystem full", "severity": "critical", "timestamp": "2026-07-17T03:15:04.488472+00:00"}
+{"id": "48756c81-f9b4-4f55-8f61-9892af2458c1", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:04.688472+00:00"}
+{"id": "897a3479-45f3-4e72-9a3a-db84aa9be73f", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:05.688472+00:00"}
+{"id": "f290b43c-d23f-4f9a-85b3-400806a14c9d", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:06.688472+00:00"}
+{"id": "2e982a32-3c3b-4cf8-aa00-21e4b524af7b", "service": "order-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:06.688472+00:00"}
+{"id": "1fb73cd1-98e6-4a99-ae12-a764fff9f844", "service": "order-svc", "message": "Failed to connect to postgres-primary after 3 retries", "severity": "warning", "timestamp": "2026-07-17T03:15:07.088472+00:00"}
+{"id": "b5cda8e6-e64e-44d3-ae96-5a71924a5485", "service": "order-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:07.488472+00:00"}
+{"id": "e96a6bc9-8d72-408b-830d-56f1023971cf", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:07.688472+00:00"}
+{"id": "5b965e80-3c27-46b0-94b9-a180e913c244", "service": "order-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:07.888472+00:00"}
+{"id": "adff2b21-f48d-488f-a9c0-61b490955103", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:08.688472+00:00"}
+{"id": "af3b6703-07fc-4009-93a7-98e55c55758a", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:09.688472+00:00"}
+{"id": "cee67be7-f808-44f3-8b2a-2084d536bb66", "service": "auth-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:09.688472+00:00"}
+{"id": "be384591-a29f-457c-8b0d-694fc0db9b32", "service": "auth-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:10.088472+00:00"}
+{"id": "568aac7f-69ad-47c2-ac65-f4f57a0ff104", "service": "auth-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:10.488472+00:00"}
+{"id": "08f83531-7779-4985-b0af-446bd0675e4f", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:10.688472+00:00"}
+{"id": "17c50efb-e8ce-4e1d-b119-d0794e7acc1c", "service": "auth-svc", "message": "Failed to connect to postgres-primary after 3 retries", "severity": "warning", "timestamp": "2026-07-17T03:15:10.888472+00:00"}
+{"id": "525bdad8-6520-4b33-9b75-3ae53f6612f3", "service": "auth-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:11.288472+00:00"}
+{"id": "44582512-4914-4e31-9f32-fdac116a5fa9", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:11.688472+00:00"}
+{"id": "629b98fd-84fb-428f-bbe7-854e5f9faab7", "service": "auth-svc", "message": "Connection timeout to postgres-primary: 30000ms exceeded", "severity": "warning", "timestamp": "2026-07-17T03:15:11.688472+00:00"}
+{"id": "d630c793-aa6d-4bb2-9c41-fca5ec5faa0d", "service": "payment-svc", "message": "Failed to connect to postgres-primary after 3 retries", "severity": "warning", "timestamp": "2026-07-17T03:15:11.688472+00:00"}
+{"id": "067fac51-7754-4547-a3c8-d61ad2ec5de1", "service": "payment-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:12.088472+00:00"}
+{"id": "c2f388f4-283a-4921-9562-a5845519b0f7", "service": "payment-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:12.488472+00:00"}
+{"id": "bdb6a5f4-31d2-4899-a701-3bc16bf4661a", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:12.688472+00:00"}
+{"id": "7560a94f-041d-4aea-b65a-fd0e1276d7e6", "service": "payment-svc", "message": "Connection timeout to postgres-primary: 30000ms exceeded", "severity": "warning", "timestamp": "2026-07-17T03:15:12.888472+00:00"}
+{"id": "462ec2f6-c5cf-4905-8727-ef4b35a6461c", "service": "payment-svc", "message": "TCP connection to postgres-primary:5432 timed out", "severity": "critical", "timestamp": "2026-07-17T03:15:13.288472+00:00"}
+{"id": "9c6459a4-5753-432b-9bd3-d5855876d327", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:13.688472+00:00"}
+{"id": "ca575608-acb5-41c3-ab09-9bf548c60714", "service": "payment-svc", "message": "Connection timeout to postgres-primary: 30000ms exceeded", "severity": "warning", "timestamp": "2026-07-17T03:15:13.688472+00:00"}
+{"id": "6046499d-eaa2-46ed-a3d2-e048be62d3a9", "service": "payment-svc", "message": "Failed to connect to postgres-primary after 3 retries", "severity": "warning", "timestamp": "2026-07-17T03:15:14.088472+00:00"}
+{"id": "f1d28643-efcf-456b-ae2d-9da6d5e6e4f3", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:14.688472+00:00"}
+{"id": "bf728519-72dc-4f32-9dfe-8a9eab36ef80", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:15.688472+00:00"}
+{"id": "a0839960-45ab-4b09-bea9-938b02d577c4", "service": "api-gateway", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:15.688472+00:00"}
+{"id": "a57e53af-8bb9-47d1-9e63-7a78651747a3", "service": "api-gateway", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-17T03:15:16.088472+00:00"}
+{"id": "21239b72-0a62-4b41-a8d2-1d3beaabffd4", "service": "api-gateway", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-17T03:15:16.488472+00:00"}
+{"id": "b9b93e7d-d551-4664-bf34-39e6f08231ee", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:16.688472+00:00"}
+{"id": "f6b15a0a-978e-465d-9a5e-f887b23db17a", "service": "api-gateway", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-17T03:15:16.888472+00:00"}
+{"id": "bf34b8ad-003e-44ce-a430-03c557c2c726", "service": "api-gateway", "message": "Gateway error: upstream unhealthy", "severity": "critical", "timestamp": "2026-07-17T03:15:17.288472+00:00"}
+{"id": "dae49ab2-c2d0-4217-a759-b2f5f405d66e", "service": "metrics-collector", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:17.688472+00:00"}
+{"id": "a3a62e6a-52f2-47f0-9d58-402ec127f4dc", "service": "api-gateway", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:17.688472+00:00"}
+{"id": "c8b0a13d-d6c2-487f-bad9-e14cf3851891", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:18.688472+00:00"}
+{"id": "59c1f18f-ae0d-40fd-a7cd-d1415f3f7435", "service": "user-svc", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:19.688472+00:00"}
+{"id": "1a422681-c53b-4f12-859d-2feafd4f39ec", "service": "notification-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:19.688472+00:00"}
+{"id": "e29fdb70-5558-4fca-b152-2a9d63895eed", "service": "notification-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:20.088472+00:00"}
+{"id": "3d863c9c-1161-4c28-bc83-7964aff4ebd5", "service": "notification-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:20.488472+00:00"}
+{"id": "28237b8b-a4b5-458d-98c5-aabed2f921c2", "service": "log-shipper", "message": "Normal background latency spike", "severity": "info", "timestamp": "2026-07-17T03:15:20.688472+00:00"}
+{"id": "856d8b62-c09a-4e83-9502-51f090e3a4cd", "service": "notification-svc", "message": "HTTP 503 from upstream", "severity": "critical", "timestamp": "2026-07-17T03:15:20.888472+00:00"}
+{"id": "65e697ca-be8c-461e-a586-acfa15cdbbfd", "service": "notification-svc", "message": "Circuit breaker open \u2014 all upstreams marked down", "severity": "critical", "timestamp": "2026-07-17T03:15:21.288472+00:00"}

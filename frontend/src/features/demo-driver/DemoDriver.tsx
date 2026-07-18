@@ -4,6 +4,19 @@ import { clsx } from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFPSStore } from '@/lib/motion'
 
+// Dataset filename -> topology scenario name. Only aiops-scn1 differs (the
+// dataset is named after the specific labeled run, the topology YAML after
+// the general trace-derived scenario); the three synthetic ones share a name.
+// Sending scenario without a matching dataset (or vice versa) loads the
+// wrong topology against the wrong alert data — this caused the aiops
+// alerts / db-cascade incident-titles mismatch seen earlier.
+const SCENARIO_FOR_DATASET: Record<string, string> = {
+  'aiops-scn1': 'aiops',
+  'db-cascade': 'db-cascade',
+  'network-partition': 'network-partition',
+  'rolling-deploy': 'rolling-deploy',
+}
+
 export function DemoDriver() {
   const stats = useStreamStore((s) => s.stats)
   const replay = stats?.replay
@@ -13,7 +26,7 @@ export function DemoDriver() {
 
   const [expanded, setExpanded] = useState(false)
   const [speed, setSpeed] = useState(1)
-  const [scenario, setScenario] = useState('db-cascade')
+  const [dataset, setDataset] = useState('db-cascade')
   const [activeKey, setActiveKey] = useState<string | null>(null)
 
   const fpsReduced = useFPSStore((s) => s.reducedMotion)
@@ -55,11 +68,11 @@ export function DemoDriver() {
 
   const handleStart = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+      const apiBase = import.meta.env.VITE_API_URL || '/api'
       await fetch(`${apiBase}/replay/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario, speed }),
+        body: JSON.stringify({ dataset, scenario: SCENARIO_FOR_DATASET[dataset], speed }),
       })
     } catch (e) {
       console.error('[replay] Failed to start:', e)
@@ -68,7 +81,7 @@ export function DemoDriver() {
 
   const handleStop = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
+      const apiBase = import.meta.env.VITE_API_URL || '/api'
       await fetch(`${apiBase}/replay/stop`, { method: 'POST' })
     } catch (e) {
       console.error('[replay] Failed to stop:', e)
@@ -123,11 +136,14 @@ export function DemoDriver() {
                 Scenario
               </label>
               <select
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
+                value={dataset}
+                onChange={(e) => setDataset(e.target.value)}
                 className="w-full text-xs bg-bg-base border border-border rounded px-2 py-1 focus:outline-none"
               >
+                <option value="aiops-scn1">aiops-scn1 (real, 15-day)</option>
                 <option value="db-cascade">db-cascade (90s DB fault)</option>
+                <option value="network-partition">network-partition (dc-b outage)</option>
+                <option value="rolling-deploy">rolling-deploy (bad canary)</option>
               </select>
             </div>
 
@@ -137,7 +153,7 @@ export function DemoDriver() {
                 Multiplier
               </label>
               <div className="grid grid-cols-4 gap-1">
-                {[0.5, 1, 2, 5].map((val) => (
+                {[1, 5, 50, 200].map((val) => (
                   <button
                     key={val}
                     onClick={() => setSpeed(val)}
