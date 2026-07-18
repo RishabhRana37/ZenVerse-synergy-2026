@@ -138,6 +138,14 @@ function LandingNav() {
           <span>War Room</span>
           <Kbd>W</Kbd>
         </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('stormlens-open-palette'))}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border bg-bg-surface hover:bg-bg-surface/80 transition-colors font-sans text-[11px] text-text-secondary cursor-pointer select-none"
+          title="Search commands (⌘K)"
+        >
+          <span>Search</span>
+          <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">⌘K</kbd>
+        </button>
         <Link
           to="/"
           className="px-3.5 py-1.5 rounded-md bg-accent text-[#0A0E14] text-[12px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150 whitespace-nowrap"

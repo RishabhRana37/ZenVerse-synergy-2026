@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFPSStore } from '@/lib/motion'
 import { X } from 'lucide-react'
+import { startReplay, stopReplay } from '@/lib/actions'
 
 export function DemoDriver() {
   const stats = useStreamStore((s) => s.stats)
@@ -27,24 +28,17 @@ export function DemoDriver() {
     }
   }, [running])
 
-  // Listen to keystroke register
+  // Monitor physical keystrokes and update visual register
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'select' || tag === 'textarea') {
         return
       }
 
       const key = e.key.toUpperCase()
-      const validKeys = ['S', 'X', 'R', 'V', 'E', 'W', 'M', '1', '2', '3', '?', 'K', 'ESCAPE', 'ENTER']
-      if (validKeys.includes(key) || (e.metaKey && key === 'K') || (e.ctrlKey && key === 'K')) {
-        let displayKey = key
-        if (e.metaKey && key === 'K') displayKey = '⌘K'
-        else if (e.ctrlKey && key === 'K') displayKey = 'Ctrl+K'
-        else if (key === 'ESCAPE') displayKey = 'Esc'
-        else if (key === 'ENTER') displayKey = '↵'
-
-        setActiveKey(displayKey)
+      if (['S', 'X', 'R', 'E', 'W', 'M'].includes(key)) {
+        setActiveKey(key)
         const t = setTimeout(() => setActiveKey(null), 300)
         return () => clearTimeout(t)
       }
@@ -55,25 +49,11 @@ export function DemoDriver() {
   }, [])
 
   const handleStart = async () => {
-    try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
-      await fetch(`${apiBase}/replay/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario, speed }),
-      })
-    } catch (e) {
-      console.error('[replay] Failed to start:', e)
-    }
+    await startReplay(scenario, speed)
   }
 
   const handleStop = async () => {
-    try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8788'
-      await fetch(`${apiBase}/replay/stop`, { method: 'POST' })
-    } catch (e) {
-      console.error('[replay] Failed to stop:', e)
-    }
+    await stopReplay()
   }
 
   return (

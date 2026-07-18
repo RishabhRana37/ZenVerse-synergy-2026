@@ -10,7 +10,7 @@ import { LandingPageNew } from '@/features/landing/LandingPageNew'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useStreamStore } from '@/store/stream'
-import { CommandPalette } from '@/components/ui/CommandPalette'
+import { CommandPalette } from '@/features/palette/CommandPalette'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { ReticleLogo } from '@/components/ui/ReticleLogo'
 import { CommandBar } from '@/components/ui/CommandBar'
@@ -348,6 +348,14 @@ export function DashboardLayout() {
                   </div>
                 </div>
 
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('stormlens-open-palette'))}
+                  className="flex items-center justify-center h-7 px-2 rounded border border-border bg-bg-surface/60 hover:bg-bg-surface hover:border-border-hover text-text-muted hover:text-text-secondary transition-colors font-mono text-[10px] font-bold cursor-pointer select-none"
+                  title="Search commands (⌘K)"
+                >
+                  ⌘K
+                </button>
+
                 <Button
                   variant="secondary"
                   size="sm"
@@ -425,7 +433,7 @@ export function DashboardLayout() {
         </div>
       </div>
 
-      <CommandPalette />
+
 
       {/* Keyboard Shortcuts Overlay Modal */}
       {showOverlay && (
@@ -509,17 +517,20 @@ function AppInner() {
   }, [connection])
 
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/landing" element={<LandingPageNew />} />
-      <Route element={<DashboardLayout />}>
-        <Route path="/war-room" element={<WarRoom />} />
-        <Route path="/eval" element={<EvalDashboard />} />
-        <Route path="/tokens" element={<TokensPage />} />
-        <Route path="/debug" element={<DebugPage />} />
-        <Route path="/health" element={<HealthPage />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingPageNew />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/war-room" element={<WarRoom />} />
+          <Route path="/eval" element={<EvalDashboard />} />
+          <Route path="/tokens" element={<TokensPage />} />
+          <Route path="/debug" element={<DebugPage />} />
+          <Route path="/health" element={<HealthPage />} />
+        </Route>
+      </Routes>
+      <CommandPalette />
+    </>
   )
 }
 
