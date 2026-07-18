@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useStreamStore } from '@/store/stream'
 import { Badge } from '@/components/ui/Badge'
@@ -172,24 +172,32 @@ export function RawStreamPanel() {
   const warnCount = alerts.filter((a) => a.severity === 'warning').length
   const infoCount = alerts.filter((a) => a.severity === 'info').length
 
-  // Filter visible stream alerts
-  const filteredAlerts = alerts.filter((a) => {
-    if (a.severity === 'critical' && !critEnabled) return false
-    if (a.severity === 'warning' && !warnEnabled) return false
-    if (a.severity === 'info' && !infoEnabled) return false
-    if (!showClaimed && a.cluster_id !== null) return false
+  // Filter visible stream alerts. Memoized: an inline .filter() here would
+  // return a new array reference every render, and the pin/scroll effect
+  // below depends on this array — so it would re-fire (and re-run
+  // setNewAlertsCount) on every render of this component, not just when the
+  // alerts or filters actually changed.
+  const filteredAlerts = useMemo(
+    () =>
+      alerts.filter((a) => {
+        if (a.severity === 'critical' && !critEnabled) return false
+        if (a.severity === 'warning' && !warnEnabled) return false
+        if (a.severity === 'info' && !infoEnabled) return false
+        if (!showClaimed && a.cluster_id !== null) return false
 
-    if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase()
-      const service = (a.service || '').toLowerCase()
-      const host = (a.host || '').toLowerCase()
-      const message = (a.message || '').toLowerCase()
-      if (!service.includes(q) && !host.includes(q) && !message.includes(q)) {
-        return false
-      }
-    }
-    return true
-  })
+        if (debouncedQuery.trim()) {
+          const q = debouncedQuery.toLowerCase()
+          const service = (a.service || '').toLowerCase()
+          const host = (a.host || '').toLowerCase()
+          const message = (a.message || '').toLowerCase()
+          if (!service.includes(q) && !host.includes(q) && !message.includes(q)) {
+            return false
+          }
+        }
+        return true
+      }),
+    [alerts, critEnabled, warnEnabled, infoEnabled, showClaimed, debouncedQuery],
+  )
 
   const parentRef = useRef<HTMLDivElement>(null)
 

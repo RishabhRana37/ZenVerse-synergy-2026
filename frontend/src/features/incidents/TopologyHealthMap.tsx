@@ -173,8 +173,23 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
   const cyRef = useRef<any>(null)
   const timeoutsRef = useRef<number[]>([])
 
-  // Read incidents from store (reactive)
-  const incidents = useStreamStore(s => s.incidents)
+  // Read incidents from store (reactive), throttled to ~6/s. The raw store
+  // Map gets a new reference on every WS incident update — at replay speeds
+  // of 35-60+ alerts/sec that fired the Cytoscape batch + cascade-timer
+  // effects below dozens of times a second, which froze the tab (repeated
+  // "Maximum update depth exceeded" — not a real infinite loop, just far
+  // more renders than the browser could keep up with).
+  const rawIncidents = useStreamStore(s => s.incidents)
+  const [incidents, setIncidents] = useState(rawIncidents)
+  const pendingIncidentsRef = useRef(rawIncidents)
+  pendingIncidentsRef.current = rawIncidents
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setIncidents(pendingIncidentsRef.current)
+    }, 150)
+    return () => window.clearInterval(id)
+  }, [])
 
   // ── Fetch topology once ──────────────────────────────────────────────────
   useEffect(() => {

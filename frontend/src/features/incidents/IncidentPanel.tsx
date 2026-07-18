@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStreamStore, selectIncidentList } from '@/store/stream'
+import { useStreamStore } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
@@ -93,7 +93,11 @@ function TypewriterSummary({
 
 // ── IncidentCard component ───────────────────────────────────────────────
 
-const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; onSelect?: (id: string) => void }) => {
+// AnimatePresence's mode="popLayout" measures exit animations via a ref on
+// each direct child (PopChildMeasure). Without forwardRef here, framer-motion
+// can't attach that ref to our root motion.div and falls into a remeasure
+// loop that never settles — the "Maximum update depth exceeded" flood.
+const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Incident; onSelect?: (id: string) => void }>(({ incident, onSelect }, ref) => {
   const [isPulsing, setIsPulsing] = useState(false)
   const [showFirstAction, setShowFirstAction] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -130,6 +134,11 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
     if (onSelect) onSelect(incident.id)
   }
 
+  // Stable across re-renders: an inline arrow here would give
+  // TypewriterSummary a new onComplete every render, re-running its typing
+  // effect (and re-registering its rAF loop) on every unrelated store update.
+  const handleTypewriterComplete = React.useCallback(() => setShowFirstAction(true), [])
+
   const topCandidate = incident.root_candidates?.[0]
   const rootService = topCandidate?.service
 
@@ -140,6 +149,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   if (incident.status === 'resolved') {
     return (
       <motion.div
+        ref={ref}
         layout
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -272,6 +282,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial="hidden"
       animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
@@ -374,7 +385,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 <div className={clsx("transition-all duration-200", !isExpanded && "line-clamp-4 overflow-hidden")}>
                   <TypewriterSummary
                     text={incident.summary}
-                    onComplete={() => setShowFirstAction(true)}
+                    onComplete={handleTypewriterComplete}
                   />
                 </div>
 
@@ -493,7 +504,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
       </div>
     </motion.div>
   )
-})
+}))
+IncidentCard.displayName = 'IncidentCard'
 
 // ── IncidentPanel component ─────────────────────────────────────────────
 
@@ -502,7 +514,32 @@ interface IncidentPanelProps {
 }
 
 export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
-  const incidents = useStreamStore(selectIncidentList)
+  // Throttled to ~6/s: the raw incidents Map gets a new reference on every
+  // WS message. At high replay speed that re-renders this whole animated
+  // tree (framer-motion layout + AnimatePresence + N typewriter effects)
+  // far faster than the browser can paint, which is what actually froze
+  // the panel — not a true infinite loop, just far more renders than the
+  // UI needs. Mirrors the same fix applied to TopologyHealthMap.
+  const rawIncidentsMap = useStreamStore((s) => s.incidents)
+  const [incidentsMap, setIncidentsMap] = useState(rawIncidentsMap)
+  const pendingIncidentsMapRef = useRef(rawIncidentsMap)
+  pendingIncidentsMapRef.current = rawIncidentsMap
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setIncidentsMap(pendingIncidentsMapRef.current)
+    }, 150)
+    return () => window.clearInterval(id)
+  }, [])
+
+  const incidents = useMemo(
+    () =>
+      [...incidentsMap.values()].sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'active' ? -1 : 1
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      }),
+    [incidentsMap],
+  )
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
 
   const activeIncidents = incidents.filter((i) => i.status === 'active')
