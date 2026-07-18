@@ -3,6 +3,7 @@ import { useStreamStore } from '@/store/stream'
 import { clsx } from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFPSStore } from '@/lib/motion'
+import { X } from 'lucide-react'
 
 export function DemoDriver() {
   const stats = useStreamStore((s) => s.stats)
@@ -113,7 +114,7 @@ export function DemoDriver() {
                 onClick={() => setExpanded(false)}
                 className="text-text-muted hover:text-text-primary text-xs cursor-pointer"
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
 

@@ -53,6 +53,14 @@
 
   /* Lens Motion Signature Easing */
   --ease-lens: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Stacking Z-Index Scale ────────────────────────────────────────────── */
+  --z-banner:    50;
+  --z-popover:   60;
+  --z-slideover: 70;
+  --z-modal:     80;
+  --z-intro:     90;
+  --z-toast:     95;
 }
 
 /* ── Presentation Mode overrides ─────────────────────────────────────── */

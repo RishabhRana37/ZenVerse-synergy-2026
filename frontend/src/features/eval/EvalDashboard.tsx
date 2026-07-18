@@ -14,7 +14,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import { clsx } from 'clsx'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { motion } from 'framer-motion'
-import { useFPSStore, springPreset } from '@/lib/motion'
+import { useFPSStore, springPreset, DUR_ENTER, EASE } from '@/lib/motion'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -247,7 +247,7 @@ export function EvalDashboard() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.45, ease: 'easeOut', delay: reducedMotion ? 0 : 0.25 },
+      transition: { duration: DUR_ENTER, ease: EASE, delay: reducedMotion ? 0 : 0.25 },
     },
   }
 

@@ -12,7 +12,8 @@ import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
-import { useFPSStore, springPreset } from '@/lib/motion'
+import { useFPSStore, springPreset, DUR_ENTER, EASE } from '@/lib/motion'
+import { X } from 'lucide-react'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
 interface CorrelationBeamsProps {
@@ -121,7 +122,7 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
                 strokeWidth={isHighlighted ? 2.5 : 1.5}
                 initial={{ pathLength: reducedMotion ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.7, ease: 'easeOut', delay: idx * 0.1 }}
+                transition={{ duration: DUR_ENTER, ease: EASE, delay: idx * 0.1 }}
                 style={{ transition: 'stroke 0.15s ease, stroke-width 0.15s ease' }}
               />
               {/* Glowing animated beam overlay (disabled in reduced-motion) */}
@@ -655,7 +656,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
       {/* Dimmed backdrop (War room remains visible and streaming behind) */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-[#0A0E14]/80 z-[60]"
+        className="fixed inset-0 bg-[#0A0E14]/80 z-[var(--z-slideover)]"
       />
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
@@ -664,7 +665,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
         transition={reducedMotion ? { duration: 0.15 } : springPreset}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[var(--z-slideover)] flex flex-col h-full overflow-visible group/bracket"
       >
         <CornerBrackets />
         {/* Header (Instantly populated from store data) */}
@@ -705,7 +706,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
             className="h-8 w-8 p-0 text-text-secondary hover:text-text-primary flex items-center justify-center"
             aria-label="Close details"
           >
-            ✕
+            <X size={16} />
           </Button>
         </div>
 

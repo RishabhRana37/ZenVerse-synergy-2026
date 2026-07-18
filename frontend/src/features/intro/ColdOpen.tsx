@@ -77,7 +77,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
         maskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`,
         WebkitMaskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`
       }}
-      className="fixed inset-0 bg-[#0B0F19] z-[100] flex flex-col items-center justify-center font-sans overflow-hidden select-none"
+      className="fixed inset-0 bg-[#0B0F19] z-[var(--z-intro)] flex flex-col items-center justify-center font-sans overflow-hidden select-none"
     >
       {/* ── Reticle HUD Grid lines (Lens/Optical look) ───────────────────── */}
       <div className="absolute inset-0 pointer-events-none border border-border/10 m-10" />

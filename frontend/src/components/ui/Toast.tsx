@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
+import { X } from 'lucide-react'
+import { SPRING } from '@/lib/motion'
 
 interface ToastItem {
   id: string
@@ -85,7 +87,7 @@ export function Toast() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[100] flex flex-col items-end pointer-events-none select-none select-none"
+      className="fixed bottom-6 right-6 z-[var(--z-toast)] flex flex-col items-end pointer-events-none select-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: '360px', height: 'auto' }}
@@ -113,7 +115,7 @@ export function Toast() {
                   pointerEvents: 'auto',
                 }}
                 exit={{ opacity: 0, x: 100, scale: 0.95 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 220 }}
+                transition={SPRING}
                 style={{
                   zIndex: zIndexOffset,
                   position: visualIndex === 0 ? 'relative' : 'absolute',
@@ -174,7 +176,7 @@ export function Toast() {
                   }}
                   className="flex-shrink-0 text-text-muted hover:text-text-primary transition-colors p-0.5 rounded hover:bg-bg-hover text-[10px] w-4 h-4 flex items-center justify-center cursor-pointer"
                 >
-                  ✕
+                  <X size={16} className="text-current" />
                 </button>
               </motion.div>
             )

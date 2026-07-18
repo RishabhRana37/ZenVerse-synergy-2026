@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { WarRoom } from '@/app/WarRoom'
 import { EvalDashboard } from '@/features/eval/EvalDashboard'
@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
 import { useFPSStore } from '@/lib/motion'
 import { clsx } from 'clsx'
+import { AlertTriangle, Check, Volume2, VolumeX, Menu, X } from 'lucide-react'
 
 function useFPSMonitor() {
   const updateFPS = useFPSStore((s) => s.updateFPS)
@@ -57,6 +58,30 @@ export function DashboardLayout() {
   const [showRecoveryFlash, setShowRecoveryFlash] = useState(false)
   const [muted, setMuted] = useState(() => audioManager.getMuted())
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuTriggerRef = useRef<HTMLButtonElement>(null)
+  const shortcutsTriggerRef = useRef<HTMLButtonElement>(null)
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false)
+    menuTriggerRef.current?.focus()
+  }, [])
+
+  const closeOverlay = useCallback(() => {
+    setShowOverlay(false)
+    shortcutsTriggerRef.current?.focus()
+  }, [setShowOverlay])
+
+  // Escape key closes open popovers/modals and returns focus
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (menuOpen) { closeMenu(); return }
+        if (showOverlay) { closeOverlay(); return }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen, showOverlay, closeMenu, closeOverlay])
 
   const view = useStreamStore((s) => s.view)
   const stats = useStreamStore((s) => s.stats)
@@ -208,13 +233,13 @@ export function DashboardLayout() {
         {/* Connection Banners (thin strips under navbar/header) */}
         <div className="w-full flex-shrink-0 select-none z-[50] relative">
           {connection !== 'open' && !showRecoveryFlash && (
-            <div className="h-6 w-full bg-severity-critical text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center animate-pulse z-[50] relative">
-              ⚠️ CONNECTION LOST — RECONNECTING…
+          <div className="h-6 w-full bg-severity-critical text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5 animate-pulse z-[var(--z-banner)] relative">
+              <AlertTriangle size={12} /> CONNECTION LOST — RECONNECTING…
             </div>
           )}
           {showRecoveryFlash && (
-            <div className="h-6 w-full bg-accent text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center z-[50] relative">
-              ✓ CONNECTION RECOVERED — LIVE
+          <div className="h-6 w-full bg-accent text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5 z-[var(--z-banner)] relative">
+              <Check size={12} /> CONNECTION RECOVERED — LIVE
             </div>
           )}
         </div>
@@ -332,33 +357,26 @@ export function DashboardLayout() {
                   title={muted ? "Unmute ambient storm hum" : "Mute ambient storm hum"}
                   className="h-7 w-7 p-0 flex items-center justify-center"
                 >
-                  {muted ? (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5v6h3l4.5 3.75V5.25z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                    </svg>
-                  )}
+                  {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                 </Button>
 
                 <div className="relative">
                   <Button
+                    ref={menuTriggerRef}
                     variant="secondary"
                     size="sm"
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="h-7 w-7 p-0 flex items-center justify-center"
+                    aria-label="Open settings menu"
+                    aria-expanded={menuOpen}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                    </svg>
+                    <Menu size={14} />
                   </Button>
                   {menuOpen && (
                     <Card
                       variant="elevated"
                       padding="none"
-                      className="absolute right-0 mt-2 w-48 py-1 z-[100] flex flex-col overflow-hidden"
+                      className="absolute right-0 mt-2 w-48 py-1 z-[var(--z-popover)] flex flex-col overflow-hidden"
                     >
                       <button
                         onClick={() => {
@@ -411,8 +429,8 @@ export function DashboardLayout() {
       {/* Keyboard Shortcuts Overlay Modal */}
       {showOverlay && (
         <div
-          onClick={() => setShowOverlay(false)}
-          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[80] flex items-center justify-center select-none font-sans"
+          onClick={() => closeOverlay()}
+          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[var(--z-modal)] flex items-center justify-center select-none font-sans"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -423,10 +441,12 @@ export function DashboardLayout() {
                 Keyboard Shortcuts
               </span>
               <button
-                onClick={() => setShowOverlay(false)}
-                className="text-text-muted hover:text-text-primary text-xs cursor-pointer"
+                ref={shortcutsTriggerRef}
+                onClick={() => closeOverlay()}
+                className="text-text-muted hover:text-text-primary cursor-pointer"
+                aria-label="Close shortcuts overlay"
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
             

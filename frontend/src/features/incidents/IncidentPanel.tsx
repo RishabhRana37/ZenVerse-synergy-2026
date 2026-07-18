@@ -9,7 +9,7 @@ import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
-import { useFPSStore, springPreset } from '@/lib/motion'
+import { useFPSStore, SPRING, springPreset, DUR_MICRO, DUR_ENTER } from '@/lib/motion'
 
 // ── RelativeTime component ───────────────────────────────────────────────
 
@@ -267,9 +267,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
       transition: reducedMotion
         ? { duration: 0 }
         : {
-            type: 'spring',
-            stiffness: 260,
-            damping: 26,
+            ...SPRING,
             delay: index * 0.03,
           }
     }
@@ -469,7 +467,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
                   <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: DUR_ENTER }}
                     className="mt-2.5 pt-2 border-t border-border/20 text-accent font-semibold text-[11px] leading-relaxed uppercase tracking-wide select-text flex flex-col gap-0.5"
                   >
                     <span className="text-text-secondary text-[9px] font-bold tracking-wider">FIRST ACTION:</span>
@@ -656,7 +654,7 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: DUR_MICRO }}
                       className="overflow-hidden flex flex-col gap-2"
                     >
                       {resolvedIncidents.map((inc, index) => (
