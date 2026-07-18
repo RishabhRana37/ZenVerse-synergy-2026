@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     # Background tasks
     asyncio.create_task(pipeline.tick())
     asyncio.create_task(pipeline.ws_flush_loop())
+    asyncio.create_task(pipeline.db_writer_loop())
 
     logger.info("StormLens backend started — http://localhost:8000")
     yield

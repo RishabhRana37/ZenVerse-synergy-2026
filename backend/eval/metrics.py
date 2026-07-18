@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import math
-
-import numpy as np
 from sklearn.metrics import adjusted_rand_score
 
 
@@ -86,9 +83,11 @@ def fragmentation(
 
 
 def hit_at_k(
-    root_predictions: dict[str, str],   # cluster_key → top-1 predicted alert_id (or pipe-separated list)
-    ground_truth_roots: dict[str, str], # GT incident label → GT root alert_id
-    predicted_clusters: dict[str, set[str]], # cluster_key → {alert_ids}
+    root_predictions: dict[
+        str, str
+    ],  # cluster_key → top-1 predicted alert_id (or pipe-separated list)
+    ground_truth_roots: dict[str, str],  # GT incident label → GT root alert_id
+    predicted_clusters: dict[str, set[str]],  # cluster_key → {alert_ids}
 ) -> tuple[float, float, dict]:
     """
     Hit@1: top-1 prediction IS the labeled root.

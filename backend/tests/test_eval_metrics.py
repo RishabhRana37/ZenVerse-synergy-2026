@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 import pytest
+
 from eval.metrics import (
-    adjusted_rand_index,
     compression_ratio,
     fragmentation,
     hit_at_k,
     purity,
 )
 
-
 # ── compression_ratio ─────────────────────────────────────────────────────────
+
 
 def test_compression_ratio_perfect() -> None:
     # 100 raw alerts → 2 incidents, 0 noise  →  (100 - 2) / 100 = 0.98
@@ -27,6 +27,7 @@ def test_compression_ratio_all_noise() -> None:
 
 
 # ── purity ────────────────────────────────────────────────────────────────────
+
 
 def test_purity_perfect() -> None:
     predicted = {"c0": {"a1", "a2"}, "c1": {"a3", "a4"}}
@@ -47,6 +48,7 @@ def test_purity_empty() -> None:
 
 # ── fragmentation ─────────────────────────────────────────────────────────────
 
+
 def test_fragmentation_no_split() -> None:
     # Each GT incident appears in exactly one cluster
     predicted = {"c0": {"a1", "a2"}, "c1": {"a3", "a4"}}
@@ -63,6 +65,7 @@ def test_fragmentation_split() -> None:
 
 
 # ── hit_at_k ──────────────────────────────────────────────────────────────────
+
 
 def test_hit_at_1_perfect() -> None:
     root_preds = {"c0": "a1", "c1": "a3"}

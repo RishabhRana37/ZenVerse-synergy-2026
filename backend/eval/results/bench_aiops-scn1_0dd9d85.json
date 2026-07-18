@@ -1,0 +1,11 @@
+{
+  "type": "bench",
+  "dataset": "aiops-scn1",
+  "speed": 100.0,
+  "duration_s": 5,
+  "git_sha": "0dd9d85",
+  "timestamp": "2026-07-18T12:37:01.333886+00:00",
+  "latency_p50_ms": 625.0,
+  "latency_p95_ms": 625.0,
+  "n_samples": 1
+}

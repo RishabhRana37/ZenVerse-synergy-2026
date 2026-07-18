@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from app.rootcause.topology import TopologyLoader
 
 
@@ -8,6 +9,7 @@ def _loader_with_graph() -> TopologyLoader:
     loader = TopologyLoader()
     # Manually build a graph (no YAML needed)
     import networkx as nx
+
     g = nx.DiGraph()
     g.add_edge("order-svc", "postgres-primary")
     g.add_edge("api-gateway", "order-svc")

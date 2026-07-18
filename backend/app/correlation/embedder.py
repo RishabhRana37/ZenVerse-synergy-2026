@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import numpy as np
 
@@ -33,6 +32,7 @@ class Embedder:
     def _load_model(self) -> None:
         try:
             from model2vec import StaticModel
+
             self._model = StaticModel.from_pretrained(self._model_name)
             logger.info("Embedder: loaded model2vec '%s'", self._model_name)
             return
@@ -41,6 +41,7 @@ class Embedder:
 
         try:
             from sentence_transformers import SentenceTransformer
+
             self._model = SentenceTransformer("all-MiniLM-L6-v2")
             logger.info("Embedder: loaded SentenceTransformer fallback")
         except Exception as exc:

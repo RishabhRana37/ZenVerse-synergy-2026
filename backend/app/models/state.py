@@ -36,6 +36,8 @@ class AppState:
         self.sparkline_buckets: dict[str, deque[int]] = {}
         self.alert_batch_buffer: list[Alert] = []
         self.total_alert_count: int = 0
+        self._unique_alert_count: int = 0
+        self._evicted_unclustered_count: int = 0
         self.replay_status: ReplayStatus = ReplayStatus()
         self.active_ws: set[Any] = set()
         self._last_bucket_open: datetime = datetime.now(UTC)
@@ -61,6 +63,7 @@ class AppState:
         the deduplicator increments total_alert_count itself on a dup hit."""
         self.alert_index[alert.id] = alert
         self.total_alert_count += 1
+        self._unique_alert_count += 1
         self._recent_ingest_ts.append(datetime.now(UTC).timestamp())
         self.advance_event_clock(alert.ts)
 
@@ -93,6 +96,22 @@ class AppState:
             del self.dedup_index[fp]
         return len(expired)
 
+    def evict_expired_alerts(self, t_max_seconds: float, active_member_ids: set[str]) -> int:
+        if self.latest_event_ts is None:
+            return 0
+        cutoff = self.latest_event_ts - timedelta(seconds=t_max_seconds)
+        expired_ids = [
+            aid
+            for aid, alert in self.alert_index.items()
+            if alert.ts < cutoff and aid not in active_member_ids
+        ]
+        for aid in expired_ids:
+            alert = self.alert_index[aid]
+            if alert.cluster_id is None:
+                self._evicted_unclustered_count += 1
+            del self.alert_index[aid]
+        return len(expired_ids)
+
     # ── Sparklines ───────────────────────────────────────────────────────────
 
     def update_sparkline(self, incident_id: str, delta: int) -> list[int]:
@@ -114,7 +133,7 @@ class AppState:
 
     @property
     def unique_alert_count(self) -> int:
-        return len(self.alert_index)
+        return self._unique_alert_count
 
     @property
     def active_incident_count(self) -> int:
@@ -122,7 +141,9 @@ class AppState:
 
     @property
     def unclustered_count(self) -> int:
-        return sum(1 for a in self.alert_index.values() if a.cluster_id is None)
+        return self._evicted_unclustered_count + sum(
+            1 for a in self.alert_index.values() if a.cluster_id is None
+        )
 
     @property
     def compression_ratio(self) -> float:
@@ -143,6 +164,8 @@ class AppState:
         self.alert_batch_buffer.clear()
         self._recent_ingest_ts.clear()
         self.total_alert_count = 0
+        self._unique_alert_count = 0
+        self._evicted_unclustered_count = 0
         self._last_bucket_open = datetime.now(UTC)
         self.replay_status = ReplayStatus()
         self.latest_event_ts = None

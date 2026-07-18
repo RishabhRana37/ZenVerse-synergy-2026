@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 DenStream clusterer — ABLATION ONLY. Do NOT use as primary.
 
@@ -8,6 +6,8 @@ This module feeds only the embedding vector (no temporal or attribute signals).
 It is run by eval/harness.py to compare against DBSCAN and quantify the
 value of the full 3-signal distance function.
 """
+
+from __future__ import annotations
 
 import logging
 
@@ -33,6 +33,7 @@ class DenStreamClusterer:
         self._model = None
         try:
             from river.cluster import DenStream
+
             self._model = DenStream(
                 decaying_factor=decaying_factor,
                 beta=beta,

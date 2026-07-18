@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# StormLens Git Pre-Push Hook
+# Enforces that CHANGES.md is updated before pushing and AI_GUIDE.md is reviewed.
+
+echo "🔍 Running StormLens pre-push verification hook..."
+
+# 1. Check if CHANGES.md has uncommitted or staged changes locally
+UNCOMMITTED_CHANGES=$(git diff --name-only CHANGES.md)
+STAGED_CHANGES=$(git diff --cached --name-only CHANGES.md)
+
+CHANGES_UPDATED=false
+
+if [ -n "$UNCOMMITTED_CHANGES" ] || [ -n "$STAGED_CHANGES" ]; then
+  # The developer has modified CHANGES.md in the working directory/index
+  CHANGES_UPDATED=true
+fi
+
+# 2. Check if CHANGES.md is modified in the commits being pushed
+if [ "$CHANGES_UPDATED" = false ]; then
+  while read local_ref local_sha remote_ref remote_sha
+  do
+    # If the remote sha is all zeros, it means a new branch is being pushed
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+      # New branch: check if CHANGES.md differs from origin/main (or main)
+      BASE_BRANCH="origin/main"
+      if ! git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
+        BASE_BRANCH="main"
+      fi
+      
+      if git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
+        if git diff --name-only "$BASE_BRANCH...$local_sha" | grep -q "CHANGES.md"; then
+          CHANGES_UPDATED=true
+          break
+        fi
+      else
+        # If no main branch exists yet (unlikely), default to true to avoid blocking
+        CHANGES_UPDATED=true
+        break
+      fi
+    else
+      # Existing branch: check if CHANGES.md was changed in the pushed commit range
+      if git diff --name-only "$remote_sha...$local_sha" | grep -q "CHANGES.md"; then
+        CHANGES_UPDATED=true
+        break
+      fi
+    fi
+  done
+fi
+
+# 3. Block push if CHANGES.md has not been updated
+if [ "$CHANGES_UPDATED" = false ]; then
+  echo ""
+  echo "❌ [BLOCK] Git Push Blocked!"
+  echo "------------------------------------------------------------------------"
+  echo "🚨 ERROR: You are pushing changes, but CHANGES.md has not been updated."
+  echo "📖 Whenever someone pushes, they must review the following files:"
+  echo "   - AI_GUIDE.md"
+  echo "   - docs/PRD.md"
+  echo "   - docs/ARCHITECTURE.md"
+  echo "   - all other important documents under docs/"
+  echo "   And update CHANGES.md to describe the changes."
+  echo "------------------------------------------------------------------------"
+  echo "👉 Action Required: Describe your changes in CHANGES.md, commit them, and push again."
+  echo "⚠️  (To bypass in an emergency, use: git push --no-verify)"
+  echo ""
+  exit 1
+fi
+
+echo "✅ CHANGES.md updates verified. Continuing with push..."
+exit 0

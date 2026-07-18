@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.schema import Alert, Incident
 
@@ -27,8 +27,8 @@ class ReconcileResult:
 
 def reconcile(
     old_incidents: dict[str, Incident],
-    old_members: dict[str, set[str]],      # incident_id → {alert_ids}
-    new_clusters: dict[str, set[str]],     # cluster_key → {alert_ids}
+    old_members: dict[str, set[str]],  # incident_id → {alert_ids}
+    new_clusters: dict[str, set[str]],  # cluster_key → {alert_ids}
     alert_index: dict[str, Alert],
     min_overlap_pct: float = 0.30,
 ) -> ReconcileResult:
@@ -58,7 +58,7 @@ def reconcile(
                 old_m = old_members.get(iid, set())
                 if not (old_m & all_windowed):
                     inc.status = "resolved"
-                    inc.resolved_at = datetime.now(timezone.utc)
+                    inc.resolved_at = datetime.now(UTC)
                     result.resolved.append(inc)
         return result
 
@@ -97,14 +97,15 @@ def reconcile(
         added = list(new_m - old_m)
         removed = list(old_m - new_m)
 
-        inc.updated_at = datetime.now(timezone.utc)
+        inc.updated_at = datetime.now(UTC)
         inc.unique_count = len(new_m)
-        inc.alert_count = sum(
-            alert_index[aid].dup_count for aid in new_m if aid in alert_index
-        )
+        inc.alert_count = sum(alert_index[aid].dup_count for aid in new_m if aid in alert_index)
         inc.services = sorted(
-            {alert_index[aid].service for aid in new_m
-             if aid in alert_index and alert_index[aid].service}
+            {
+                alert_index[aid].service
+                for aid in new_m
+                if aid in alert_index and alert_index[aid].service
+            }
         )
 
         diff = IncidentDiff(
@@ -120,8 +121,11 @@ def reconcile(
             continue
 
         services = sorted(
-            {alert_index[aid].service for aid in cluster_alerts
-             if aid in alert_index and alert_index[aid].service}
+            {
+                alert_index[aid].service
+                for aid in cluster_alerts
+                if aid in alert_index and alert_index[aid].service
+            }
         )
         alert_count = sum(
             alert_index[aid].dup_count for aid in cluster_alerts if aid in alert_index
@@ -133,8 +137,8 @@ def reconcile(
         )
         inc = Incident(
             id=str(uuid.uuid4()),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             unique_count=len(cluster_alerts),
             alert_count=alert_count,
             services=services,
@@ -151,7 +155,7 @@ def reconcile(
         if not (old_m & all_windowed_alerts):
             # All member alerts aged out of the active window
             inc.status = "resolved"
-            inc.resolved_at = datetime.now(timezone.utc)
+            inc.resolved_at = datetime.now(UTC)
             result.resolved.append(inc)
 
     return result

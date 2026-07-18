@@ -5,7 +5,6 @@ Run once before starting the server.
 
 Usage: python scripts/fetch_model.py
 """
-from pathlib import Path
 
 MODEL_NAME = "minishlab/potion-base-8M"
 
@@ -14,6 +13,7 @@ def main() -> None:
     print(f"Downloading {MODEL_NAME} ...")
     try:
         from model2vec import StaticModel
+
         model = StaticModel.from_pretrained(MODEL_NAME)
         print(f"✓  Model ready. Embedding dim: {model.dim}")
         print("   Cached by HuggingFace hub — no further action needed.")
