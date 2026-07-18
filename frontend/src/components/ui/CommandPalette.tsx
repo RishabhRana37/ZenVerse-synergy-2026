@@ -6,6 +6,7 @@ import { usePresentationMode } from '@/lib/presentationMode'
 import { audioManager } from '@/lib/audio'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { clsx } from 'clsx'
+import { useFPSStore } from '@/lib/motion'
 
 interface PaletteItem {
   id: string
@@ -59,6 +60,9 @@ export function CommandPalette() {
 
   const streamState = useStreamStore()
   const { toggle: togglePresentation } = usePresentationMode()
+
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   // 1. Listen for Toggle trigger: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -286,7 +290,7 @@ export function CommandPalette() {
     return baseItems
   }, [streamState, navigate, location.pathname, togglePresentation])
 
-  // 3. Fuzzy filtering (Lowercase substring matching)
+  // 3. Fuzzy filtering
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase()
     if (!query) return items
@@ -317,7 +321,7 @@ export function CommandPalette() {
         setIsOpen(false)
       }
     }
-  };
+  }
 
   // Scroll active item into view
   useEffect(() => {
@@ -337,6 +341,20 @@ export function CommandPalette() {
     }
   }, [activeIndex])
 
+  // Item staggered variants config
+  const itemVariants = {
+    hidden: { opacity: 0, x: -4 },
+    visible: (idx: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: {
+        delay: reducedMotion ? 0 : Math.min(0.12, idx * 0.015),
+        duration: 0.12,
+        ease: 'easeOut',
+      },
+    }),
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -344,16 +362,16 @@ export function CommandPalette() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.16, ease: 'easeOut' }}
+          transition={{ duration: 0.12, ease: 'easeOut' }}
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[90] flex items-start justify-center pt-[15vh] select-none font-sans"
+          className="fixed inset-0 bg-[#0A0E14]/80 z-[90] flex items-start justify-center pt-[15vh] select-none font-sans"
         >
-          {/* Centered dialog (Width: 560px) */}
+          {/* Centered dialog (Width: 560px, Fast scale popup) */}
           <motion.div
-            initial={{ scale: 0.96, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.96, opacity: 0 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.08, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-[560px] bg-bg-surface border border-border/80 rounded-lg shadow-elevated overflow-hidden flex flex-col z-[100] relative max-h-[400px]"
             onKeyDown={handleKeyDown}
@@ -362,7 +380,6 @@ export function CommandPalette() {
 
             {/* Input area */}
             <div className="relative border-b border-border/40 px-4 py-3.5 flex items-center gap-3">
-              {/* Search Icon */}
               <svg className="w-4 h-4 text-text-secondary flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -389,25 +406,40 @@ export function CommandPalette() {
                 filteredItems.map((item, idx) => {
                   const isActive = idx === activeIndex
                   return (
-                    <button
+                    <motion.button
                       key={item.id}
+                      custom={idx}
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
                       onClick={() => {
                         item.action()
                         setIsOpen(false)
                       }}
                       className={clsx(
-                        "w-full text-left px-3 py-2 flex items-center justify-between text-ui-sm font-sans rounded-md transition-all duration-80 ease-out select-none",
-                        isActive
-                          ? "bg-bg-hover text-text-primary"
-                          : "text-text-secondary hover:bg-bg-hover/60 hover:text-text-primary"
+                        "w-full text-left px-3 py-2 flex items-center justify-between text-ui-sm font-sans rounded-md select-none relative h-8 overflow-hidden",
+                        isActive ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
                       )}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Selection Glide background */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="palette-selection-highlight"
+                          transition={
+                            reducedMotion
+                              ? { duration: 0 }
+                              : { type: 'spring', stiffness: 420, damping: 33 }
+                          }
+                          className="absolute inset-0 bg-bg-hover z-0"
+                        />
+                      )}
+
+                      <div className="flex items-center gap-2.5 min-w-0 z-10 relative">
                         {getCategoryIcon(item.category)}
                         <span className="truncate">{item.name}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0 select-none">
+                      <div className="flex items-center gap-2 flex-shrink-0 select-none z-10 relative">
                         <span className="text-[9px] px-1.5 py-0.2 rounded border border-border text-text-muted font-mono uppercase bg-bg-base/40">
                           {item.category}
                         </span>
@@ -417,7 +449,7 @@ export function CommandPalette() {
                           </kbd>
                         )}
                       </div>
-                    </button>
+                    </motion.button>
                   )
                 })
               )}

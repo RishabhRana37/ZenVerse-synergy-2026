@@ -14,36 +14,35 @@
 /* ── CSS custom properties (mirrors tailwind config for runtime access) ── */
 :root {
   /* Backgrounds */
-  --bg-base:      #0A0A0B;
-  --bg-surface:   rgba(255, 255, 255, 0.03);
-  --bg-elevated:  #101012;
-  --bg-hover:     rgba(255, 255, 255, 0.06);
+  --bg-base:      #0A0E14;
+  --bg-surface:   #11161F;
+  --bg-elevated:  #161D29;
+  --bg-hover:     #1B2332;
 
   /* Borders */
-  --border:       rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.16);
-  --border-top:   rgba(255, 255, 255, 0.14);
-  --border-subtle:rgba(255, 255, 255, 0.04);
+  --border:       rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.14);
+  --border-subtle:rgba(255, 255, 255, 0.03);
   --border-strong:rgba(255, 255, 255, 0.12);
 
   /* Text */
-  --text-primary:   #EDEDEF;
-  --text-secondary: #A1A1A6;
-  --text-muted:     #6B6B70;
+  --text-primary:   #E6EDF3;
+  --text-secondary: #8B98A9;
+  --text-muted:     #4D5866;
 
   /* Severity */
-  --severity-critical: #FF5A5F;
-  --severity-warning:  #FFB84D;
-  --severity-info:     #3DD68C;
+  --severity-critical: #FF4D4F;
+  --severity-warning:  #F5A623;
+  --severity-info:     #4D9FFF;
 
   /* Accent */
-  --accent:     #FF6363;
-  --accent-dim: rgba(255, 99, 99, 0.15);
+  --accent:     #2DD4A7;
+  --accent-dim: rgba(45, 212, 167, 0.15);
 
   /* Confidence gradient */
-  --conf-high: #3DD68C;
-  --conf-mid:  #FFB84D;
-  --conf-low:  #FF5A5F;
+  --conf-high: #2DD4A7;
+  --conf-mid:  #F5A623;
+  --conf-low:  #FF4D4F;
 
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -436,4 +435,32 @@ html.presentation-mode {
 }
 .animate-drift-3 {
   animation: drift-blob-3 38s ease-in-out infinite;
+}
+
+/* ── Pulse Edge Critical Animation ── */
+@keyframes pulse-edge-critical {
+  0%, 100% { border-color: rgba(255, 77, 79, 0.4); box-shadow: 0 0 4px rgba(255, 77, 79, 0.1); }
+  50% { border-color: rgba(255, 77, 79, 1); box-shadow: 0 0 12px rgba(255, 77, 79, 0.3); }
+}
+.animate-pulse-edge-critical {
+  animation: pulse-edge-critical 2s infinite ease-in-out;
+}
+
+/* ── Pulse Edge Accent Animation ── */
+@keyframes pulse-edge-accent {
+  0%, 100% { border-color: rgba(45, 212, 167, 0.4); box-shadow: 0 0 4px rgba(45, 212, 167, 0.1); }
+  50% { border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 12px rgba(45, 212, 167, 0.3); }
+}
+.animate-pulse-edge-accent {
+  animation: pulse-edge-accent 2s infinite ease-in-out;
+}
+
+/* ── Keycap Press Down Animation ── */
+@keyframes press-down {
+  0% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+  20% { transform: translateY(1px) scale(0.96); border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 8px rgba(45, 212, 167, 0.4); }
+  100% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+}
+.animate-press-down {
+  animation: press-down 0.3s ease-out;
 }

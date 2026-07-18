@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/Input'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
 import { Odometer } from '@/components/ui/Odometer'
+import { motion } from 'framer-motion'
+import { useFPSStore } from '@/lib/motion'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -49,37 +51,79 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 // ── DupBadge component ───────────────────────────────────────────────────
 
 const DupBadge = React.memo(({ count }: { count: number }) => {
-  const [pop, setPop] = useState(false)
-  const prevCount = useRef(count)
+  const textRef = useRef<HTMLSpanElement>(null)
+  const badgeRef = useRef<HTMLSpanElement>(null)
+  const currentCount = useRef(count)
+  const targetCount = useRef(count)
+  const animationFrameId = useRef<number | null>(null)
 
   useEffect(() => {
-    if (count > prevCount.current) {
-      setPop(true)
-      const timer = setTimeout(() => setPop(false), 150)
-      prevCount.current = count
-      return () => clearTimeout(timer)
+    targetCount.current = count
+    
+    const animate = () => {
+      if (currentCount.current < targetCount.current) {
+        if (badgeRef.current) {
+          badgeRef.current.classList.add('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+          badgeRef.current.classList.remove('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
+        }
+
+        // Increment count smoothly
+        currentCount.current = Math.min(
+          currentCount.current + Math.ceil((targetCount.current - currentCount.current) * 0.15),
+          targetCount.current
+        )
+
+        if (textRef.current) {
+          textRef.current.textContent = `×${currentCount.current}`
+        }
+
+        setTimeout(() => {
+          if (badgeRef.current) {
+            badgeRef.current.classList.add('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
+            badgeRef.current.classList.remove('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+          }
+        }, 150)
+
+        animationFrameId.current = requestAnimationFrame(animate)
+      } else {
+        animationFrameId.current = null
+      }
     }
-    prevCount.current = count
+
+    if (animationFrameId.current === null) {
+      animationFrameId.current = requestAnimationFrame(animate)
+    }
+
+    return () => {
+      if (animationFrameId.current !== null) {
+        cancelAnimationFrame(animationFrameId.current)
+      }
+    }
   }, [count])
 
   return (
     <span
-      className={clsx(
-        "px-1.5 py-0.5 rounded font-mono text-[10px] font-bold border leading-none transition-all duration-150 inline-block select-none",
-        pop
-          ? "bg-severity-warning border-severity-warning text-text-inverse scale-110"
-          : "bg-bg-elevated border-border text-text-secondary scale-100"
-      )}
+      ref={badgeRef}
+      className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold border leading-none transition-all duration-150 inline-block select-none bg-bg-elevated border-border text-text-secondary scale-100"
     >
-      ×{count}
+      <span ref={textRef}>×{count}</span>
     </span>
   )
 })
 
 // ── AlertRow component ───────────────────────────────────────────────────
 
+interface AlertRowProps {
+  alert: Alert
+  searchQuery: string
+  isFirehose: boolean
+  reducedMotion: boolean
+  index: number
+  style?: React.CSSProperties
+}
+
 const AlertRow = React.memo(
-  ({ alert, searchQuery, style }: { alert: Alert; searchQuery: string; style?: React.CSSProperties }) => {
+  ({ alert, searchQuery, isFirehose, reducedMotion, index, style }: AlertRowProps) => {
     const isNew = Date.now() - new Date(alert.ts).getTime() < 2500
     const flashClass = isNew && alert.severity === 'critical' ? 'animate-flash-critical' : ''
     const claimedClass = alert.cluster_id ? 'opacity-40' : ''
@@ -89,9 +133,61 @@ const AlertRow = React.memo(
       alert.severity === 'warning'  ? 'border-l-severity-warning' :
       'border-l-severity-info'
 
+    // Bypass entrance animations entirely under high replay rate / reduced motion
+    if (reducedMotion || isFirehose) {
+      return (
+        <div
+          data-alert-id={alert.id}
+          style={{
+            ...style,
+            boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
+          }}
+          className={clsx(
+            "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
+            sevBorderColor,
+            flashClass,
+            claimedClass,
+            isFirehose && "blur-[0.5px] opacity-80"
+          )}
+        >
+          <span className="text-text-muted flex-shrink-0 w-[92px] tabular-nums">
+            {formatTimestamp(alert.ts)}
+          </span>
+          <div className="w-[62px] flex-shrink-0">
+            <Badge variant={alert.severity} className="text-[10px] px-1.5 py-0.5">
+              {alert.severity}
+            </Badge>
+          </div>
+          <span className="text-text-secondary flex-shrink-0 truncate max-w-[140px]">
+            {highlightMatch(alert.service || '—', searchQuery)}{' '}
+            <span className="text-text-muted">·</span>{' '}
+            {highlightMatch(alert.host || '—', searchQuery)}
+          </span>
+          <span className="text-text-primary flex-1 truncate pr-2 text-left">
+            {highlightMatch(alert.message, searchQuery)}
+          </span>
+          {alert.dup_count > 1 && (
+            <div className="flex-shrink-0">
+              <DupBadge count={alert.dup_count} />
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    const staggerDelay = (index % 10) * 0.03
+
     return (
-      <div
+      <motion.div
         data-alert-id={alert.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          type: 'spring',
+          stiffness: 260,
+          damping: 26,
+          delay: staggerDelay,
+        }}
         style={{
           ...style,
           boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
@@ -103,37 +199,28 @@ const AlertRow = React.memo(
           claimedClass
         )}
       >
-        {/* Column 1: HH:MM:SS.mmm */}
         <span className="text-text-muted flex-shrink-0 w-[92px] tabular-nums">
           {formatTimestamp(alert.ts)}
         </span>
-
-        {/* Column 2: Severity Badge */}
         <div className="w-[62px] flex-shrink-0">
           <Badge variant={alert.severity} className="text-[10px] px-1.5 py-0.5">
             {alert.severity}
           </Badge>
         </div>
-
-        {/* Column 3: Service · Host */}
         <span className="text-text-secondary flex-shrink-0 truncate max-w-[140px]">
           {highlightMatch(alert.service || '—', searchQuery)}{' '}
           <span className="text-text-muted">·</span>{' '}
           {highlightMatch(alert.host || '—', searchQuery)}
         </span>
-
-        {/* Column 4: Message */}
         <span className="text-text-primary flex-1 truncate pr-2 text-left">
           {highlightMatch(alert.message, searchQuery)}
         </span>
-
-        {/* Right edge: Dup count */}
         {alert.dup_count > 1 && (
           <div className="flex-shrink-0">
             <DupBadge count={alert.dup_count} />
           </div>
         )}
-      </div>
+      </motion.div>
     )
   },
   (prev, next) => {
@@ -142,6 +229,8 @@ const AlertRow = React.memo(
       prev.alert.dup_count === next.alert.dup_count &&
       prev.alert.cluster_id === next.alert.cluster_id &&
       prev.searchQuery === next.searchQuery &&
+      prev.isFirehose === next.isFirehose &&
+      prev.reducedMotion === next.reducedMotion &&
       prev.style?.transform === next.style?.transform
     )
   }
@@ -152,6 +241,11 @@ const AlertRow = React.memo(
 export function RawStreamPanel() {
   const alerts = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.alerts : s.alerts)
   const alertsPerSec = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.stats?.alerts_per_sec : s.stats?.alerts_per_sec)
+
+  const replaySpeed = useStreamStore((s) => s.stats?.replay?.speed ?? 1)
+  const isFirehose = replaySpeed > 50
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   // Filters State
   const [critEnabled, setCritEnabled] = useState(true)
@@ -298,15 +392,22 @@ export function RawStreamPanel() {
             </span>
           )}
         </div>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono">
-          {alertsPerSec !== undefined ? (
-            <>
-              <Odometer value={alertsPerSec} format="float1" easing="linear" className="text-text-secondary" />
-              <span>/s</span>
-            </>
-          ) : (
-            '—/s'
+        <div className="flex items-center gap-1.5">
+          {isFirehose && (
+            <span className="px-1.5 py-0.5 rounded bg-severity-warning/20 border border-severity-warning/30 text-severity-warning text-[9px] font-mono font-bold animate-pulse">
+              🔥 FIREHOSE ({replaySpeed}x)
+            </span>
           )}
+          <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono">
+            {alertsPerSec !== undefined ? (
+              <>
+                <Odometer value={alertsPerSec} format="float1" easing="linear" className="text-text-secondary" />
+                <span>/s</span>
+              </>
+            ) : (
+              '—/s'
+            )}
+          </div>
         </div>
       </div>
 
@@ -480,6 +581,9 @@ export function RawStreamPanel() {
                     key={alert.id}
                     alert={alert}
                     searchQuery={debouncedQuery}
+                    isFirehose={isFirehose}
+                    reducedMotion={reducedMotion}
+                    index={virtualItem.index}
                     style={{
                       position: 'absolute',
                       top: 0,

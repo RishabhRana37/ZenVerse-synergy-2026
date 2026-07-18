@@ -9,6 +9,7 @@ import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
+import { useFPSStore, springPreset } from '@/lib/motion'
 
 // ── RelativeTime component ───────────────────────────────────────────────
 
@@ -252,23 +253,26 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   const extraServices = incident.services.length - 4
 
   const borderClass = incident.acknowledged
-    ? 'border-accent/30 bg-bg-surface/50'
-    : 'border-border bg-bg-surface/85 backdrop-blur-xl'
+    ? 'border-accent/30 bg-bg-surface'
+    : 'border-border bg-bg-surface'
 
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   const cardVariants = {
-    hidden: { opacity: 0 },
-    visible: prefersReduced 
-      ? { opacity: 1, transition: { duration: 0.1 } }
-      : {
-          opacity: 1,
-          transition: {
-            duration: 0.18,
-            delay: 0.05,
-            ease: 'easeOut'
+    hidden: { opacity: 0, scale: 0.96 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: reducedMotion
+        ? { duration: 0 }
+        : {
+            type: 'spring',
+            stiffness: 260,
+            damping: 26,
+            delay: index * 0.03,
           }
-        }
+    }
   }
 
   const lineVariants = {
@@ -283,8 +287,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   }
 
   const titleVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced 
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion 
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -294,8 +298,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   }
 
   const rootLineVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -305,8 +309,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   }
 
   const chipsVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -316,8 +320,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   }
 
   const summaryVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -327,8 +331,8 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
   }
 
   const footerVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0 },
+    visible: reducedMotion
       ? { opacity: 1 }
       : {
           opacity: 1,
@@ -341,37 +345,22 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
       layout
       custom={index}
       initial="hidden"
-      animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
+      animate={isPulsing && !reducedMotion ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
       exit={{ opacity: 0, scale: 0.96 }}
       variants={cardVariants}
+      transition={springPreset}
       className="w-full text-left cursor-pointer group/bracket relative"
     >
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        style={{
-          borderColor: isHovered ? colors.border : undefined,
-          boxShadow: isHovered ? `0 0 10px ${colors.glow}` : undefined,
-          transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
-        }}
         className={clsx(
-          "rounded-card p-5 flex flex-col relative overflow-hidden select-none shadow-card hover:-translate-y-0.5 transition-all duration-150 ease-out border",
-          borderClass
+          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border shadow-card transition-all duration-150 ease-out",
+          borderClass,
+          !reducedMotion && "hover:-translate-y-[1px] hover:border-border-hover",
+          severity === 'critical' && !incident.acknowledged && "animate-pulse-edge-critical"
         )}
       >
-        {/* Soft radial spotlight follow */}
-        {isHovered && (
-          <div
-            className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
-            style={{
-              background: `radial-gradient(150px circle at ${mousePos.x}px ${mousePos.y}px, rgba(${colors.rgb}, 0.05), transparent 80%)`,
-            }}
-          />
-        )}
-
         {/* Draw Accent Line across where the card will be */}
         {topCandidate && (
           <motion.div

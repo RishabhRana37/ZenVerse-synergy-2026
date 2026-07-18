@@ -7,38 +7,36 @@ export default {
       // ── Colour palette ────────────────────────────────────────────────
       colors: {
         bg: {
-          base:     '#0A0A0B',  // app canvas
-          surface:  'rgba(255,255,255,0.03)', // glass panel fill
-          elevated: '#101012',  // elevated card / tooltip
-          hover:    'rgba(255,255,255,0.06)',  // surface hover state
+          base:     '#0A0E14',  // app canvas
+          surface:  '#11161F',  // solid panel
+          elevated: '#161D29',  // elevated container / tooltips
+          hover:    '#1B2332',  // surface hover state
         },
         border: {
-          DEFAULT: 'rgba(255,255,255,0.08)',
-          hover:   'rgba(255,255,255,0.16)',
-          top:     'rgba(255,255,255,0.14)',
-          subtle:  'rgba(255,255,255,0.04)',
-          strong:  'rgba(255,255,255,0.12)',
+          DEFAULT: 'rgba(255, 255, 255, 0.06)',
+          hover:   'rgba(255, 255, 255, 0.14)',
+          subtle:  'rgba(255, 255, 255, 0.03)',
+          strong:  'rgba(255, 255, 255, 0.12)',
         },
         text: {
-          primary:   '#EDEDEF',
-          secondary: '#A1A1A6',
-          muted:     '#6B6B70',
+          primary:   '#E6EDF3',
+          secondary: '#8B98A9',
+          muted:     '#4D5866',
           inverse:   '#05080E',
         },
         severity: {
-          critical: '#FF5A5F', // --danger
-          warning:  '#FFB84D', // --warning
-          info:     '#3DD68C', // --success
+          critical: '#FF4D4F',
+          warning:  '#F5A623',
+          info:     '#4D9FFF',
         },
         accent: {
-          DEFAULT: '#FF6363', // Raycast red
-          violet:  '#7B61FF', // Violet for gradients
-          dim:     'rgba(255,99,99,0.15)',
+          DEFAULT: '#2DD4A7', // Green brand accent
+          dim:     'rgba(45, 212, 167, 0.15)',
         },
         confidence: {
-          high: '#3DD68C',
-          mid:  '#FFB84D',
-          low:  '#FF5A5F',
+          high: '#2DD4A7',
+          mid:  '#F5A623',
+          low:  '#FF4D4F',
         },
       },
 
@@ -59,18 +57,18 @@ export default {
 
       // ── Spacing & sizing ─────────────────────────────────────────────
       borderRadius: {
-        card:  '14px',
-        badge: '10px',
-        sm: '6px',
-        md: '10px',
-        lg: '14px',
+        card:  '6px',
+        badge: '4px',
+        sm: '4px',
+        md: '6px',
+        lg: '8px',
         pill: '999px',
       },
 
       // ── Box shadows ──────────────────────────────────────────────────
       boxShadow: {
-        card:    'inset 0 1px 0 var(--border-top), 0 8px 24px rgba(0,0,0,0.4)',
-        elevated:'inset 0 1px 0 var(--border-top), 0 12px 32px rgba(0,0,0,0.6)',
+        card:    '0 1px 3px rgba(0,0,0,0.4)',
+        elevated:'0 4px 16px rgba(0,0,0,0.5)',
         none:    'none',
       },
 

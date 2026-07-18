@@ -12,6 +12,7 @@ import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
+import { useFPSStore, springPreset } from '@/lib/motion'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
 
 interface CorrelationBeamsProps {
@@ -21,11 +22,16 @@ interface CorrelationBeamsProps {
 }
 
 function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps) {
-  // 1. Find the root alert (corresponds to the first root candidate, or the oldest alert in the list)
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+
+  // Find the root alert (corresponds to the first root candidate, or the oldest alert in the list)
   const topCandidate = incident.root_candidates?.[0]
   const rootAlert = alerts.find(a => topCandidate && a.service === topCandidate.service) || alerts[0]
 
-  // 2. Affected alerts (excluding rootAlert, cap at 3 items for nice rendering)
+  // Affected alerts (excluding rootAlert, cap at 3 items for nice rendering)
   const affectedAlerts = alerts.filter(a => a.id !== rootAlert?.id).slice(0, 3)
 
   if (!rootAlert) {
@@ -38,6 +44,14 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
 
   return (
     <div className="w-full h-full flex items-center justify-between p-4 relative font-sans text-text-primary overflow-hidden">
+      {/* Expanding Ripple Rings Behind Root cause node */}
+      {!reducedMotion && (
+        <div className="absolute left-[70px] top-[110px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
+          <div className="w-20 h-20 rounded-full border border-accent/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
+          <div className="w-20 h-20 rounded-full border border-accent/10 animate-ping absolute [animation-delay:1.5s]" style={{ animationDuration: '3s' }} />
+        </div>
+      )}
+
       {/* Background SVG Beams */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -94,37 +108,46 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
             targetAlert.severity === 'warning' ? 'url(#beamGradWarning)' :
             'url(#beamGradInfo)'
 
+          // Highlight edge if either connected node is hovered
+          const isHighlighted = hoveredNode === rootAlert.service || hoveredNode === targetAlert.service
+
           return (
             <g key={targetAlert.id}>
-              {/* Background trace edge */}
-              <path
+              {/* Background trace edge - Animates stroke draw */}
+              <motion.path
                 d={pathD}
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.05)"
-                strokeWidth="1.5"
+                stroke={isHighlighted ? 'var(--accent)' : 'rgba(255, 255, 255, 0.05)'}
+                strokeWidth={isHighlighted ? 2.5 : 1.5}
+                initial={{ pathLength: reducedMotion ? 1 : 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.7, ease: 'easeOut', delay: idx * 0.1 }}
+                style={{ transition: 'stroke 0.15s ease, stroke-width 0.15s ease' }}
               />
-              {/* Glowing animated beam overlay */}
-              <path
-                d={pathD}
-                fill="none"
-                stroke={gradId}
-                strokeWidth="2"
-                strokeDasharray="20, 100"
-                className="animate-beam-flow"
-                style={{
-                  animation: 'beam-flow 2.5s linear infinite',
-                  animationDelay: `${idx * 0.6}s`
-                }}
-              />
+              {/* Glowing animated beam overlay (disabled in reduced-motion) */}
+              {!reducedMotion && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={gradId}
+                  strokeWidth="2"
+                  strokeDasharray="20, 100"
+                  className="animate-beam-flow"
+                  style={{
+                    animation: 'beam-flow 2.5s linear infinite',
+                    animationDelay: `${idx * 0.6}s`
+                  }}
+                />
+              )}
               {/* Text label over the beam path */}
               <text
                 x={(startX + endX) / 2}
                 y={(startY + endY) / 2 - 5}
-                fill="rgba(255, 255, 255, 0.35)"
+                fill={isHighlighted ? 'var(--accent)' : 'rgba(255, 255, 255, 0.35)'}
                 fontSize="7"
                 fontFamily="JetBrains Mono"
                 textAnchor="middle"
-                className="select-none"
+                className="select-none transition-colors duration-150"
               >
                 {reason}
               </text>
@@ -134,7 +157,14 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
       </svg>
 
       {/* Root Node card on Left */}
-      <div className="w-[130px] border border-accent/40 bg-[#090E11]/90 rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-accent transition-colors duration-120">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={reducedMotion ? { duration: 0.1 } : springPreset}
+        onMouseEnter={() => setHoveredNode(rootAlert.service)}
+        onMouseLeave={() => setHoveredNode(null)}
+        className="w-[130px] border bg-[#090E11] rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-accent transition-colors duration-150 animate-pulse-edge-accent"
+      >
         <CornerBrackets />
         <div className="flex items-center justify-between">
           <span className="text-[7px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
@@ -149,11 +179,11 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
         <div className="text-[9px] text-text-secondary line-clamp-2 mt-0.5 leading-snug font-sans select-text">
           {rootAlert.message}
         </div>
-      </div>
+      </motion.div>
 
       {/* Affected Nodes cards on Right */}
       <div className="flex flex-col justify-around h-full py-1 z-10 w-[130px]">
-        {affectedAlerts.map((alert) => {
+        {affectedAlerts.map((alert, idx) => {
           const isCritical = alert.severity === 'critical'
           const borderStyle = 
             alert.severity === 'critical' ? 'border-severity-critical/30' :
@@ -161,10 +191,15 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
             'border-severity-info/30'
 
           return (
-            <div
+            <motion.div
               key={alert.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={reducedMotion ? { duration: 0.1 } : { ...springPreset, delay: (idx + 1) * 0.1 }}
+              onMouseEnter={() => setHoveredNode(alert.service)}
+              onMouseLeave={() => setHoveredNode(null)}
               className={clsx(
-                "border bg-[#090E11]/90 rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-120 relative group/bracket",
+                "border bg-[#090E11] rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-150 relative group/bracket cursor-pointer",
                 borderStyle
               )}
             >
@@ -188,7 +223,7 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
               <div className="text-[8px] text-text-secondary line-clamp-1 leading-snug font-sans select-text">
                 {alert.message}
               </div>
-            </div>
+            </motion.div>
           )
         })}
       </div>
@@ -336,6 +371,9 @@ const CYTOSCAPE_STYLES = [
 // ── Main SlideOver Component ──────────────────────────────────────────────
 
 export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverProps) {
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+
   const storeIncident = useStreamStore((s) => {
     const activeIncidents = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
     return activeIncidents.get(incidentId || '')
@@ -497,7 +535,8 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     cy.edges().removeClass('active-prop-edge')
     cy.nodes().removeClass('active-node-blink')
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const fpsReduced = useFPSStore.getState().reducedMotion
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || fpsReduced
     if (prefersReduced) {
       path.forEach((edge) => {
         const src = edge[0]
@@ -616,16 +655,16 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
       {/* Dimmed backdrop (War room remains visible and streaming behind) */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-bg-base/70 backdrop-blur-[10px] z-[60]"
+        className="fixed inset-0 bg-[#0A0E14]/80 z-[60]"
       />
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
       <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface/85 backdrop-blur-xl border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
+        initial={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
+        transition={reducedMotion ? { duration: 0.15 } : springPreset}
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-visible group/bracket"
       >
         <CornerBrackets />
         {/* Header (Instantly populated from store data) */}

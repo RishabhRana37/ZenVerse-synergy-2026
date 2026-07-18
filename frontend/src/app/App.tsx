@@ -12,8 +12,6 @@ import { useStreamStore } from '@/store/stream'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { ReticleLogo } from '@/components/ui/ReticleLogo'
-import { GlowBackdrop } from '@/components/ui/GlowBackdrop'
-import { GrainOverlay } from '@/components/ui/GrainOverlay'
 import { CommandBar } from '@/components/ui/CommandBar'
 import { Kbd } from '@/components/ui/Kbd'
 import { Odometer } from '@/components/ui/Odometer'
@@ -21,10 +19,36 @@ import { Sparkline } from '@/components/ui/Sparkline'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
+import { useFPSStore } from '@/lib/motion'
 import { clsx } from 'clsx'
+
+function useFPSMonitor() {
+  const updateFPS = useFPSStore((s) => s.updateFPS)
+
+  useEffect(() => {
+    let lastTime = performance.now()
+    let frames = 0
+    let rafId = 0
+
+    const check = (time: number) => {
+      frames++
+      if (time - lastTime >= 1000) {
+        const fps = Math.round((frames * 1000) / (time - lastTime))
+        updateFPS(fps)
+        frames = 0
+        lastTime = time
+      }
+      rafId = requestAnimationFrame(check)
+    }
+
+    rafId = requestAnimationFrame(check)
+    return () => cancelAnimationFrame(rafId)
+  }, [updateFPS])
+}
 
 function AppInner() {
   useWsConnection()
+  useFPSMonitor()
   
   // Wire global keyboard shortcuts
   const { showOverlay, setShowOverlay } = useKeyboardShortcuts()
@@ -287,11 +311,9 @@ function AppInner() {
 
   return (
     <div className="flex h-screen w-screen bg-bg-base overflow-hidden font-sans select-none text-text-primary relative">
-      <GlowBackdrop />
-      <GrainOverlay />
       
       {/* ── Left Sidebar Navigation (Linear / Notion dashboard density) ── */}
-      <aside className="w-56 border-r border-border bg-bg-surface/85 backdrop-blur-xl flex flex-col h-full flex-shrink-0 z-40 relative group/bracket transition-all duration-240 ease-lens">
+      <aside className="w-56 border-r border-border bg-bg-surface flex flex-col h-full flex-shrink-0 z-40 relative group/bracket transition-all duration-240 ease-lens">
         <CornerBrackets />
         
         {/* Workspace Switcher (Visual Dropdown UI) */}
@@ -384,7 +406,7 @@ function AppInner() {
         </div>
 
         {/* Global Page Header */}
-        <header className="h-16 border-b border-border/60 bg-bg-surface/60 backdrop-blur-md flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
+        <header className="h-16 border-b border-border bg-bg-surface flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
           {/* Severity Heatmap Strip from Stripe */}
           <div
             className="absolute top-0 left-0 right-0 h-[3px] animate-mesh-gradient"

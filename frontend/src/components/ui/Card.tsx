@@ -1,10 +1,11 @@
 import { forwardRef } from 'react'
 import { clsx } from 'clsx'
+import { useFPSStore } from '@/lib/motion'
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Use 'elevated' for modals/popovers, 'surface' (default) for panels */
   variant?: 'surface' | 'elevated'
-  /** Adds hover ring, translation, and cursor-pointer */
+  /** Adds hover border brightening and optional lift */
   interactive?: boolean
   /** Adds a left accent border in the given color */
   accent?: string
@@ -20,8 +21,10 @@ const paddingMap = {
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ variant = 'surface', interactive = false, accent, padding = 'md', className, style, children, ...props }, ref) => {
-    const bg = variant === 'elevated' ? 'bg-bg-elevated' : 'bg-bg-surface/80 backdrop-blur-xl'
+    const bg = variant === 'elevated' ? 'bg-bg-elevated' : 'bg-bg-surface'
     const shadowClass = variant === 'elevated' ? 'shadow-elevated' : 'shadow-card'
+    const reducedMotion = useFPSStore((s) => s.reducedMotion)
+
     return (
       <div
         ref={ref}
@@ -30,7 +33,10 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           bg,
           shadowClass,
           paddingMap[padding],
-          interactive && 'cursor-pointer hover:bg-bg-hover hover:border-border-hover hover:-translate-y-0.5',
+          interactive && clsx(
+            'cursor-pointer hover:bg-bg-hover hover:border-border-hover',
+            !reducedMotion && 'hover:-translate-y-[1px]'
+          ),
           className,
         )}
         style={{

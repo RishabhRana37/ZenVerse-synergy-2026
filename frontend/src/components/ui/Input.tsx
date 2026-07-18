@@ -19,13 +19,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={clsx(
             // Base
-            'w-full bg-bg-surface/80 border font-sans text-ui-sm text-text-primary outline-none transition-all duration-150 ease-out placeholder-text-muted rounded-[10px] backdrop-blur-md',
+            'w-full bg-bg-surface border font-sans text-ui-sm text-text-primary outline-none transition-all duration-150 ease-out placeholder-text-muted rounded-card',
             // Spacing
             icon ? 'pl-9 pr-3.5 py-1.8' : 'px-3.5 py-1.8',
             // States & errors
             error
               ? 'border-severity-critical focus:border-severity-critical focus:ring-2 focus:ring-severity-critical/40'
-              : 'border-border hover:border-border-hover focus:border-accent/80 focus:ring-2 focus:ring-accent/40',
+              : 'border-border hover:border-border-hover focus:border-accent focus:ring-2 focus:ring-accent/40 focus:shadow-[0_0_8px_rgba(45,212,167,0.25)]',
             className
           )}
           {...props}
