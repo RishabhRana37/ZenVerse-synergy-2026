@@ -69,6 +69,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
 
     tick_task = asyncio.create_task(pipeline.tick())
     flush_task = asyncio.create_task(pipeline.ws_flush_loop())
+    db_task = asyncio.create_task(pipeline.db_writer_loop())
 
     replay = ReplayEngine()
     await replay.start(
@@ -84,8 +85,9 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
 
     tick_task.cancel()
     flush_task.cancel()
+    db_task.cancel()
     try:
-        await asyncio.gather(tick_task, flush_task, return_exceptions=True)
+        await asyncio.gather(tick_task, flush_task, db_task, return_exceptions=True)
     except Exception:
         pass
 
@@ -100,7 +102,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
     print(f"\nLatency results (n={len(latencies)}):")
     print(f"  p50: {p50:.1f} ms")
     print(f"  p95: {p95:.1f} ms")
-    print(f"  Target p95 < 5000 ms: {'✓ PASS' if p95 < 5000 else '✗ FAIL'}")
+    print(f"  Target p95 < 5000 ms: {'PASS' if p95 < 5000 else 'FAIL'}")
 
     try:
         sha = (

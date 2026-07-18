@@ -4,7 +4,7 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 
 from app.models.state import state
@@ -29,7 +29,7 @@ def init_router(pipeline, replay_engine, topology_loader) -> None:
 
 
 @router.post("/alerts", status_code=202)
-async def ingest_alerts(body: dict | list):
+async def ingest_alerts(body: dict | list = Body(...)):
     """Webhook ingest. Accepts a single alert dict or a JSON array."""
     alerts = body if isinstance(body, list) else [body]
     for raw in alerts:
@@ -54,18 +54,19 @@ async def replay_start(req: ReplayStartRequest):
     # never resolve, since a differently-timestamped dataset may never
     # advance latest_event_ts past them (see /replay/reset for the same
     # bookkeeping — this mirrors it exactly).
-    await _replay_engine.stop()
-    state.reset()
-    _pipeline._incident_members.clear()
-    _pipeline._resolved_members.clear()
-    # Reload topology + scenario-specific clustering config before starting replay
-    _pipeline.configure_scenario(req.scenario)
-    await _replay_engine.start(
-        dataset=req.dataset,
-        speed=req.speed,
-        scenario=req.scenario,
-        pipeline_ingest_fn=_pipeline.ingest,
-    )
+    async with _pipeline._lock:
+        await _replay_engine.stop()
+        state.reset()
+        _pipeline._incident_members.clear()
+        _pipeline._resolved_members.clear()
+        # Reload topology + scenario-specific clustering config before starting replay
+        _pipeline.configure_scenario(req.scenario)
+        await _replay_engine.start(
+            dataset=req.dataset,
+            speed=req.speed,
+            scenario=req.scenario,
+            pipeline_ingest_fn=_pipeline.ingest,
+        )
     return {
         "status": "started",
         "dataset": req.dataset,
@@ -86,11 +87,12 @@ async def replay_reset():
     Clears all in-memory state (incidents, alerts, dedup index, sparklines) and stops replay.
     Maps to keyboard shortcut 'r' in the DemoDriver panel.
     """
-    await _replay_engine.reset()
-    # Pipeline-level bookkeeping lives outside AppState — leaving it stale
-    # would feed the reconciler member sets from before the reset.
-    _pipeline._incident_members.clear()
-    _pipeline._resolved_members.clear()
+    async with _pipeline._lock:
+        await _replay_engine.reset()
+        # Pipeline-level bookkeeping lives outside AppState — leaving it stale
+        # would feed the reconciler member sets from before the reset.
+        _pipeline._incident_members.clear()
+        _pipeline._resolved_members.clear()
     return {"status": "reset"}
 
 

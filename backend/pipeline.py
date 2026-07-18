@@ -47,6 +47,8 @@ class Pipeline:
         # GET /incidents/{id} for drill-down.
         self._resolved_members: dict[str, set[str]] = {}
         self._broadcast_fn = None
+        self._lock = asyncio.Lock()
+        self._db_queue: asyncio.Queue[Alert] = asyncio.Queue()
 
     def set_broadcast(self, fn) -> None:
         self._broadcast_fn = fn
@@ -90,37 +92,84 @@ class Pipeline:
             state.add_alert(alert)
             state.alert_batch_buffer.append(alert)
 
-            # Async persist to SQLite (non-blocking)
-            asyncio.create_task(self._persist_alert(alert))
+            # Queue persist to SQLite (non-blocking, batched)
+            self._db_queue.put_nowait(alert)
 
         except Exception:
             logger.exception("Pipeline.ingest error")
 
-    async def _persist_alert(self, alert: Alert) -> None:
+    async def db_writer_loop(self) -> None:
+        """Background task: batch-write queued alerts to SQLite."""
+        while True:
+            try:
+                alert = await self._db_queue.get()
+                batch = [alert]
+                while not self._db_queue.empty() and len(batch) < 100:
+                    batch.append(self._db_queue.get_nowait())
+
+                await asyncio.to_thread(self._persist_alerts_batch, batch)
+
+                for _ in range(len(batch)):
+                    self._db_queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Error in db_writer_loop")
+                await asyncio.sleep(1)
+
+    def _persist_alerts_batch(self, batch: list[Alert]) -> None:
+        if not batch:
+            return
+        session = get_session()
         try:
-            session = get_session()
-            session.add(
-                AlertORM(
-                    id=alert.id,
-                    ts=alert.ts,
-                    received_at=alert.received_at,
-                    source=alert.source,
-                    host=alert.host,
-                    service=alert.service,
-                    severity=alert.severity,
-                    message=alert.message,
-                    template=alert.template,
-                    template_id=alert.template_id,
-                    dup_count=alert.dup_count,
-                    cluster_id=alert.cluster_id,
+            for alert in batch:
+                session.add(
+                    AlertORM(
+                        id=alert.id,
+                        ts=alert.ts,
+                        received_at=alert.received_at,
+                        source=alert.source,
+                        host=alert.host,
+                        service=alert.service,
+                        severity=alert.severity,
+                        message=alert.message,
+                        template=alert.template,
+                        template_id=alert.template_id,
+                        dup_count=alert.dup_count,
+                        cluster_id=alert.cluster_id,
+                    )
                 )
-            )
             session.commit()
-            session.close()
         except Exception:
             session.rollback()
+            logger.debug("Batch insert failed, retrying individually")
+            for alert in batch:
+                sub_session = get_session()
+                try:
+                    sub_session.add(
+                        AlertORM(
+                            id=alert.id,
+                            ts=alert.ts,
+                            received_at=alert.received_at,
+                            source=alert.source,
+                            host=alert.host,
+                            service=alert.service,
+                            severity=alert.severity,
+                            message=alert.message,
+                            template=alert.template,
+                            template_id=alert.template_id,
+                            dup_count=alert.dup_count,
+                            cluster_id=alert.cluster_id,
+                        )
+                    )
+                    sub_session.commit()
+                except Exception:
+                    sub_session.rollback()
+                    logger.debug("SQLite persist skip (dup) for alert %s", alert.id)
+                finally:
+                    sub_session.close()
+        finally:
             session.close()
-            logger.debug("SQLite persist skip (dup) for alert %s", alert.id)
 
     # ── WS flush loop ─────────────────────────────────────────────────────────
 
@@ -152,16 +201,25 @@ class Pipeline:
                 logger.exception("Pipeline tick error")
 
     async def _run_tick(self) -> None:
-        # 1. Evict expired dedup entries
-        evicted = state.evict_expired_dedup()
-        if evicted:
-            logger.debug("Dedup: evicted %d expired entries", evicted)
+        async with self._lock:
+            # 1. Evict expired dedup entries and alerts
+            evicted = state.evict_expired_dedup()
+            if evicted:
+                logger.debug("Dedup: evicted %d expired entries", evicted)
 
-        # 2. Get active window
-        active_alerts = state.active_window(self.T_MAX_SECONDS)
-        if not active_alerts:
-            await self._push_stats()
-            return
+            # Collect active member alert IDs to avoid evicting them
+            active_member_ids = set()
+            for members in self._incident_members.values():
+                active_member_ids.update(members)
+            evicted_alerts = state.evict_expired_alerts(self.T_MAX_SECONDS * 2, active_member_ids)
+            if evicted_alerts:
+                logger.debug("State: evicted %d expired alerts from memory", evicted_alerts)
+
+            # 2. Get active window
+            active_alerts = state.active_window(self.T_MAX_SECONDS)
+            if not active_alerts:
+                await self._push_stats()
+                return
 
         # 3. Run DBSCAN on active window
         cluster_result = self.clusterer.cluster(active_alerts, self.embedder, self.topology.graph)
