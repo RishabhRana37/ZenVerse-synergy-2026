@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
-import { BrowserRouter, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { BrowserRouter, Routes, Route, NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { WarRoom } from '@/app/WarRoom'
 import { EvalDashboard } from '@/features/eval/EvalDashboard'
 import { TokensPage } from '@/app/TokensPage'
 import { DebugPage } from '@/app/DebugPage'
 import { HealthPage } from '@/app/HealthPage'
+import { LandingPage } from '@/features/landing/LandingPage'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useStreamStore } from '@/store/stream'
@@ -46,9 +46,8 @@ function useFPSMonitor() {
   }, [updateFPS])
 }
 
-function AppInner() {
+export function DashboardLayout() {
   useWsConnection()
-  useFPSMonitor()
   
   // Wire global keyboard shortcuts
   const { showOverlay, setShowOverlay } = useKeyboardShortcuts()
@@ -58,13 +57,6 @@ function AppInner() {
   const [showRecoveryFlash, setShowRecoveryFlash] = useState(false)
   const [muted, setMuted] = useState(() => audioManager.getMuted())
   const [menuOpen, setMenuOpen] = useState(false)
-  const [entered, setEntered] = useState(() => {
-    try {
-      return sessionStorage.getItem('stormlens_entered') === 'true'
-    } catch {
-      return false
-    }
-  })
 
   const view = useStreamStore((s) => s.view)
   const stats = useStreamStore((s) => s.stats)
@@ -119,30 +111,6 @@ function AppInner() {
     }
   }, [alertsPerSec])
 
-  // Title and Dynamic SVG Favicon configuration
-  useEffect(() => {
-    document.title = 'StormLens — War Room'
-  }, [])
-
-  useEffect(() => {
-    const dotColor =
-      connection === 'open'
-        ? '%232DD4A7'
-        : connection === 'connecting'
-        ? '%23F5A623'
-        : '%23FF4D4F'
-
-    const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32"><circle cx="10" cy="10" r="7" fill="none" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="0" x2="10" y2="2" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="18" x2="10" y2="20" stroke="%23E6EDF3" stroke-width="1"/><line x1="0" y1="10" x2="2" y2="10" stroke="%23E6EDF3" stroke-width="1"/><line x1="18" y1="10" x2="20" y2="10" stroke="%23E6EDF3" stroke-width="1"/><circle cx="16.5" cy="4.5" r="2" fill="${dotColor}"/></svg>`
-
-    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']")
-    if (!link) {
-      link = document.createElement('link')
-      link.rel = 'icon'
-      document.getElementsByTagName('head')[0].appendChild(link)
-    }
-    link.href = svgFavicon
-  }, [connection])
-
   // Reconnection recovery flash banner logic
   useEffect(() => {
     if (connection === 'open' && (lastConnection === 'closed' || lastConnection === 'connecting')) {
@@ -155,159 +123,6 @@ function AppInner() {
 
   const location = useLocation()
   const navigate = useNavigate()
-
-  if (location.pathname === '/' && !entered) {
-    return (
-      <div className="w-full min-h-screen bg-[#05080E] text-[#F8FAFC] font-sans overflow-y-auto select-none relative z-50 flex flex-col items-center">
-        {/* Diagonal Red Ray Glows in Background (Raycast lasers) */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
-          <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
-          <div className="absolute -top-[20%] left-[65%] w-[90px] h-[130%] bg-gradient-to-b from-[#F5A623]/0 via-[#F5A623]/10 to-[#F5A623]/0 rotate-[35deg] blur-[70px]" />
-        </div>
-
-        {/* Raycast-style Landing Header Navigation */}
-        <header className="w-full max-w-7xl h-20 px-8 flex items-center justify-between z-10 shrink-0 border-b border-white/[0.02] bg-transparent">
-          {/* Left: Logo */}
-          <div className="flex items-center gap-3">
-            <ReticleLogo connection={connection} />
-            <span className="font-sans text-[15px] font-bold tracking-tight text-[#F8FAFC]">StormLens</span>
-          </div>
-
-          {/* Center Links */}
-          <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-[#94A3B8]">
-            <button onClick={() => navigate('/health')} className="hover:text-[#F8FAFC] transition-colors cursor-pointer bg-transparent border-0 outline-none">Store</button>
-            <button onClick={() => navigate('/eval')} className="hover:text-[#F8FAFC] transition-colors cursor-pointer bg-transparent border-0 outline-none">Pro</button>
-            <button onClick={() => navigate('/debug')} className="hover:text-[#F8FAFC] transition-colors cursor-pointer bg-transparent border-0 outline-none">AI</button>
-            <button onClick={() => navigate('/tokens')} className="hover:text-[#F8FAFC] transition-colors cursor-pointer bg-transparent border-0 outline-none">Style Primitives</button>
-            <span className="text-white/10 select-none">|</span>
-            <a href="https://github.com/RishabhRana37/ZenVerse-synergy-2026" target="_blank" rel="noopener noreferrer" className="hover:text-[#F8FAFC] transition-colors">GitHub</a>
-            <a href="#docs" className="hover:text-[#F8FAFC] transition-colors bg-transparent border-0 outline-none">Docs</a>
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-6 text-[13px] font-medium">
-            <button onClick={() => navigate('/debug')} className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer bg-transparent border-0 outline-none">Log in</button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                sessionStorage.setItem('stormlens_entered', 'true')
-                setEntered(true)
-              }}
-              className="bg-[#F8FAFC] text-[#05080E] font-semibold hover:opacity-90 px-4 py-2 text-ui-sm rounded-md"
-            >
-              Enter War Room
-            </Button>
-          </div>
-        </header>
-
-        {/* Hero Main Content */}
-        <div className="w-full max-w-4xl px-8 pt-20 pb-12 flex flex-col items-center text-center z-10 shrink-0">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
-            className="text-[52px] md:text-[68px] font-bold tracking-tight text-[#F8FAFC] leading-[1.05]"
-          >
-            Your shortcut to <br />
-            <span className="bg-gradient-to-r from-accent via-[#FF4D4F] to-[#F5A623] bg-clip-text text-transparent">resolution.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.25, ease: 'easeOut' }}
-            className="text-[15px] md:text-[18px] text-[#94A3B8] max-w-2xl mt-6 leading-relaxed"
-          >
-            A collection of powerful alert correlation tools all within a high-signal, extendable launcher. Fast, ergonomic and reliable.
-          </motion.p>
-
-          {/* Hero Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-            className="flex items-center gap-3.5 mt-10"
-          >
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => {
-                sessionStorage.setItem('stormlens_entered', 'true')
-                setEntered(true)
-              }}
-              className="bg-[#F8FAFC] text-[#05080E] hover:opacity-90 font-semibold px-6 py-3 rounded-lg flex items-center gap-2 shadow-xl shadow-accent/5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-10.84 0M10.22 8.22a3 3 0 11-4.22 0 3 3 0 014.22 0z" />
-              </svg>
-              Enter War Room Dashboard
-            </Button>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => navigate('/health')}
-              className="px-6 py-3 rounded-lg border border-border/80 text-[#F8FAFC]"
-            >
-              Run Diagnostics
-            </Button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="text-[10px] font-mono text-text-muted mt-5"
-          >
-            Install via npm or cargo | Try the new StormLens CLI v1.2
-          </motion.div>
-
-          {/* Pill Link Banner */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="mt-8"
-          >
-            <button
-              onClick={() => navigate('/tokens')}
-              className="px-4 py-1.5 rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/20 hover:border-accent/30 text-[10px] font-mono text-accent transition-all flex items-center gap-1.5 cursor-pointer bg-transparent outline-none"
-            >
-              <span>Meet Glaze UI Tokens</span>
-              <span className="text-[#94A3B8]">·</span>
-              <span className="text-[#94A3B8] hover:text-accent flex items-center gap-0.5">Learn more →</span>
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Floating App Preview Dashboard Frame */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 120, delay: 0.5 }}
-          className="w-full max-w-5xl px-8 pb-20 z-10 flex flex-col items-center"
-        >
-          <div className="w-full aspect-[16/10] bg-bg-surface border border-border rounded-xl shadow-2xl relative overflow-hidden flex flex-col group/mockup">
-            {/* Top Window Header Chrome */}
-            <div className="h-10 border-b border-border/40 bg-bg-surface flex items-center justify-between px-4 select-none flex-shrink-0">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/20" />
-                <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/20" />
-                <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/20" />
-              </div>
-              <span className="text-[10px] font-mono text-text-muted">StormLens Live Dashboard (Preview Mode)</span>
-              <div className="w-16" /> {/* spacer */}
-            </div>
-
-            {/* Live Dashboard Body Content */}
-            <div className="flex-1 min-h-0 pointer-events-none relative scale-[0.98] origin-center opacity-85 group-hover/mockup:opacity-95 transition-opacity duration-240">
-              <WarRoom />
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex h-screen w-screen bg-bg-base overflow-hidden font-sans select-none text-text-primary relative">
@@ -335,7 +150,7 @@ function AppInner() {
         {/* Navigation Links */}
         <nav className="flex-1 py-4 px-2.5 flex flex-col gap-1.5 min-h-0 overflow-y-auto">
           {[
-            { to: '/', label: 'War Room', badge: '01' },
+            { to: '/war-room', label: 'War Room', badge: '01' },
             { to: '/eval', label: 'Metrics Eval', badge: '02' },
             { to: '/health', label: 'Diagnostics', badge: '03' },
             { to: '/debug', label: 'WS Debugger', badge: '04' },
@@ -378,8 +193,7 @@ function AppInner() {
             <span>Exit Dashboard</span>
             <button
               onClick={() => {
-                sessionStorage.removeItem('stormlens_entered')
-                setEntered(false)
+                navigate('/')
               }}
               className="text-[9px] hover:text-text-primary px-1.5 py-0.5 rounded border border-border hover:bg-bg-hover transition-colors font-sans cursor-pointer font-bold"
             >
@@ -421,7 +235,7 @@ function AppInner() {
             }}
           />
 
-          {location.pathname === '/' ? (
+          {location.pathname === '/war-room' ? (
             <>
               {/* Left Side: Socket status indicator */}
               <div className="flex items-center gap-3 w-[30%]">
@@ -508,7 +322,6 @@ function AppInner() {
                   </div>
                 </div>
 
-                {/* Sound speaker toggle button */}
                 <Button
                   variant="secondary"
                   size="sm"
@@ -530,7 +343,6 @@ function AppInner() {
                   )}
                 </Button>
 
-                {/* Dropdown Menu */}
                 <div className="relative">
                   <Button
                     variant="secondary"
@@ -554,7 +366,7 @@ function AppInner() {
                           useStreamStore.getState().setShowIntro(true)
                           setMenuOpen(false)
                         }}
-                        className="px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
+                        className="px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
                       >
                         Replay Cinematic Intro
                       </button>
@@ -563,7 +375,7 @@ function AppInner() {
                           window.dispatchEvent(new CustomEvent('stormlens-open-palette'))
                           setMenuOpen(false)
                         }}
-                        className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer border-t border-border/20 text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer"
+                        className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer border-t border-border/20"
                       >
                         <span>Command Palette</span>
                         <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
@@ -590,13 +402,7 @@ function AppInner() {
 
         {/* Route views container */}
         <div className="flex-1 min-h-0 w-full overflow-y-auto relative">
-          <Routes>
-            <Route path="/"       element={<WarRoom />} />
-            <Route path="/eval"   element={<EvalDashboard />} />
-            <Route path="/tokens" element={<TokensPage />} />
-            <Route path="/debug"  element={<DebugPage />} />
-            <Route path="/health" element={<HealthPage />} />
-          </Routes>
+          <Outlet />
         </div>
       </div>
 
@@ -652,6 +458,49 @@ function AppInner() {
     </div>
   )
 }
+
+function AppInner() {
+  useFPSMonitor()
+  
+  // Title and Dynamic Favicon set at root level
+  const connection = useStreamStore((s) => s.connection)
+  useEffect(() => {
+    document.title = 'StormLens — War Room'
+  }, [])
+
+  useEffect(() => {
+    const dotColor =
+      connection === 'open'
+        ? '%232DD4A7'
+        : connection === 'connecting'
+        ? '%23F5A623'
+        : '%23FF4D4F'
+
+    const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32"><circle cx="10" cy="10" r="7" fill="none" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="0" x2="10" y2="2" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="18" x2="10" y2="20" stroke="%23E6EDF3" stroke-width="1"/><line x1="0" y1="10" x2="2" y2="10" stroke="%23E6EDF3" stroke-width="1"/><line x1="18" y1="10" x2="20" y2="10" stroke="%23E6EDF3" stroke-width="1"/><circle cx="16.5" cy="4.5" r="2" fill="${dotColor}"/></svg>`
+
+    let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']")
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.getElementsByTagName('head')[0].appendChild(link)
+    }
+    link.href = svgFavicon
+  }, [connection])
+
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route element={<DashboardLayout />}>
+        <Route path="/war-room" element={<WarRoom />} />
+        <Route path="/eval" element={<EvalDashboard />} />
+        <Route path="/tokens" element={<TokensPage />} />
+        <Route path="/debug" element={<DebugPage />} />
+        <Route path="/health" element={<HealthPage />} />
+      </Route>
+    </Routes>
+  )
+}
+
 
 export function App() {
   return (

@@ -32,7 +32,7 @@ export function DebugPage() {
           </h1>
           <span className="text-[10px] text-text-muted">Direct read-only buffer inspection</span>
         </div>
-        <Link to="/">
+        <Link to="/war-room">
           <Button variant="secondary" size="sm" className="font-mono text-[10px]">
             ← Return to War Room
           </Button>

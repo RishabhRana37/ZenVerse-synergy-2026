@@ -62,7 +62,7 @@ export function TokensPage() {
 
       {/* Back button row */}
       <div className="mb-4 text-left">
-        <Link to="/">
+        <Link to="/war-room">
           <Button variant="secondary" size="sm" className="font-mono text-[11px] font-semibold text-text-secondary">
             ← Return to War Room
           </Button>

@@ -76,7 +76,7 @@ export function useKeyboardShortcuts() {
       if (key === 'e') {
         e.preventDefault()
         if (location.pathname === '/eval') {
-          navigate('/')
+          navigate('/war-room')
         } else {
           navigate('/eval')
         }
@@ -86,7 +86,7 @@ export function useKeyboardShortcuts() {
       // W — Go to War Room
       if (key === 'w') {
         e.preventDefault()
-        navigate('/')
+        navigate('/war-room')
         return
       }
 
@@ -97,8 +97,8 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // 1 / 2 / 3 — Open incident cards (only in War Room '/')
-      if (location.pathname === '/') {
+      // 1 / 2 / 3 — Open incident cards (only in War Room '/war-room')
+      if (location.pathname === '/war-room') {
         if (key === '1' || key === '2' || key === '3') {
           e.preventDefault()
           const index = parseInt(key, 10) - 1

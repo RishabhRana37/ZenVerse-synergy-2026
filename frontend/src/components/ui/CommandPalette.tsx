@@ -195,6 +195,12 @@ export function CommandPalette() {
         category: 'Navigation',
         name: 'Navigate: War Room (Dashboard)',
         shortcut: 'W',
+        action: () => navigate('/war-room'),
+      },
+      {
+        id: 'nav-landing',
+        category: 'Navigation',
+        name: 'Navigate: Marketing Landing Page',
         action: () => navigate('/'),
       },
       {
@@ -245,8 +251,8 @@ export function CommandPalette() {
         name: `Open Incident: ${inc.title}`,
         action: () => {
           window.dispatchEvent(new CustomEvent('stormlens-open-incident', { detail: inc.id }))
-          if (location.pathname !== '/') {
-            navigate('/')
+          if (location.pathname !== '/war-room') {
+            navigate('/war-room')
           }
         },
       })
@@ -273,8 +279,8 @@ export function CommandPalette() {
           const match = activeIncs.find((inc) => inc.services.includes(svc))
           if (match) {
             window.dispatchEvent(new CustomEvent('stormlens-open-incident', { detail: match.id }))
-            if (location.pathname !== '/') {
-              navigate('/')
+            if (location.pathname !== '/war-room') {
+              navigate('/war-room')
             }
           } else {
             window.dispatchEvent(

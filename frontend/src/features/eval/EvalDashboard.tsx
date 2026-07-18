@@ -211,7 +211,7 @@ export function EvalDashboard() {
               Retry Connection
             </button>
             <Link
-              to="/"
+              to="/war-room"
               className="px-3.5 py-1.5 rounded bg-accent text-text-inverse font-semibold hover:opacity-90 text-ui-sm transition-opacity"
             >
               Back to War Room
@@ -257,7 +257,7 @@ export function EvalDashboard() {
         {/* Back Link Row */}
         <div className="mb-4">
           <Link
-            to="/"
+            to="/war-room"
             className="inline-block px-3.5 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover hover:border-border-hover hover:-translate-y-[1px] text-ui-sm font-semibold text-text-primary transition-all duration-150"
           >
             ← War Room
