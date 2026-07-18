@@ -65,8 +65,9 @@ Use conventional commits that state what works:
 ### Push Rules (Non-Negotiable)
 Whenever someone pushes to remote:
 1.  **They MUST read/review this AI Guide.**
-2.  **They MUST update `CHANGES.md`** in the root of the project to document the new changes.
-3.  We enforce this via a git `pre-push` hook.
+2.  **They MUST read/review `docs/PRD.md`, `docs/ARCHITECTURE.md`, and all other important documents under `docs/`.**
+3.  **They MUST update `CHANGES.md`** in the root of the project to document the new changes.
+4.  We enforce this via a git `pre-push` hook.
 
 ---
 

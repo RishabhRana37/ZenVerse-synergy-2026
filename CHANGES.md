@@ -1,6 +1,6 @@
 # StormLens — Changelog (CHANGES.md)
 
-All notable changes to the StormLens project will be documented in this file. Before pushing any changes, ensure this file is updated and that you have reviewed `AI_GUIDE.md`.
+All notable changes to the StormLens project will be documented in this file. Before pushing any changes, ensure this file is updated and that you have reviewed `AI_GUIDE.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, and all other important documents under `docs/`.
 
 ---
 
