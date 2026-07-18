@@ -1,0 +1,15 @@
+{
+  "dataset": "db-cascade",
+  "ablation": null,
+  "git_sha": "2f65680",
+  "timestamp": "2026-07-18T03:42:09.120872+00:00",
+  "compression_ratio": 0.9286,
+  "cluster_purity": 1.0,
+  "ari": 0.0,
+  "fragmentation": 3.0,
+  "hit_at_1": 1.0,
+  "hit_at_3": 1.0,
+  "hit_breakdown": {},
+  "latency_p50_ms": null,
+  "latency_p95_ms": null
+}

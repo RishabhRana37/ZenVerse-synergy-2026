@@ -6,7 +6,14 @@ import networkx as nx
 import numpy as np
 import pytest
 
-from app.correlation.distance import combined_distance, d_attr, d_sem, d_time, topology_bonus
+from app.correlation.distance import (
+    combined_distance,
+    d_attr,
+    d_sem,
+    d_time,
+    hop_distance,
+    topology_bonus,
+)
 from app.models.schema import Alert
 
 
@@ -121,3 +128,48 @@ def test_combined_distance_same_alert() -> None:
     emb = np.ones(3, dtype=np.float32)
     d = combined_distance(a, a, emb, emb, g)
     assert 0.0 <= d <= 1.0
+
+
+# ── hop_distance / topology_gate_hops ──────────────────────────────────────────
+
+
+def test_hop_distance_same_service() -> None:
+    g = _graph()
+    assert hop_distance("order-svc", "order-svc", g) == 0
+
+
+def test_hop_distance_direct_edge() -> None:
+    g = _graph()
+    assert hop_distance("order-svc", "postgres-primary", g) == 1
+
+
+def test_hop_distance_two_hop() -> None:
+    g = _graph()
+    assert hop_distance("api-gateway", "postgres-primary", g) == 2
+
+
+def test_hop_distance_no_path_or_missing() -> None:
+    g = _graph()
+    assert hop_distance("redis-cache", "unknown-svc", g) is None
+    assert hop_distance(None, "postgres-primary", g) is None
+
+
+def test_topology_gate_excludes_out_of_radius_regardless_of_similarity() -> None:
+    """Gated distance is 1.0 (max) beyond the radius even for identical
+    templates at the same instant — the whole point of a hard pre-filter."""
+    g = _graph()
+    a = _make_alert(service="api-gateway", ts_offset=0)
+    b = _make_alert(service="redis-cache", ts_offset=0)  # no path to api-gateway
+    emb = np.ones(3, dtype=np.float32)
+    d = combined_distance(a, b, emb, emb, g, topology_gate_hops=2)
+    assert d == pytest.approx(1.0)
+
+
+def test_topology_gate_within_radius_scores_normally() -> None:
+    g = _graph()
+    a = _make_alert(service="order-svc", ts_offset=0)
+    b = _make_alert(service="postgres-primary", ts_offset=0)
+    emb = np.ones(3, dtype=np.float32)
+    gated = combined_distance(a, b, emb, emb, g, topology_gate_hops=1)
+    ungated = combined_distance(a, b, emb, emb, g)
+    assert gated == pytest.approx(ungated)

@@ -59,12 +59,19 @@ class EvalHarness:
     divergences from what the live system actually does.
 
     Ablation modes — each disables one signal to prove the layered design:
-      None          — full system (baseline numbers)
-      no_semantic   — w_s=0, redistribute to w_t + w_a
-      no_topology   — empty graph for clustering AND ranking
-      no_temporal   — w_t=0, redistribute to w_s + w_a
-      denstream     — use DenStream instead of DBSCAN (embedding-only distance)
-      naive_dedup   — one cluster per unique template+service (strawman baseline)
+      None                  — full system (baseline numbers)
+      no_semantic           — w_s=0, redistribute to w_t + w_a
+      no_topology           — empty graph for clustering AND ranking
+      no_temporal           — w_t=0, redistribute to w_s + w_a
+      denstream             — use DenStream instead of DBSCAN (embedding-only distance)
+      naive_dedup           — one cluster per unique template+service (strawman baseline)
+      topology_gated_1hop   — hard graph-radius pre-filter (direct dependency only):
+                               candidates outside the radius can NEVER be density-
+                               reachable, vs. the default's soft capped bonus inside
+                               a blended distance. Tests the topology-first design
+                               used by Moogsoft/BigPanda-style correlation, per
+                               external review — see distance.py's topology_gate_hops.
+      topology_gated_2hop   — same, 2-hop radius (matches topology_bonus's reach)
     """
 
     TICK_S = 30  # virtual-clock reconcile interval (prod ticks 2 s wall)
@@ -77,6 +84,8 @@ class EvalHarness:
         "no_topology": {},  # handled via empty graph
         "denstream": {},  # handled via DenStream path
         "naive_dedup": {},  # handled before clustering
+        "topology_gated_1hop": {"topology_gate_hops": 1},
+        "topology_gated_2hop": {"topology_gate_hops": 2},
     }
 
     def __init__(
@@ -352,7 +361,15 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default="aiops-scn1")
     parser.add_argument(
         "--ablation",
-        choices=["no_semantic", "no_topology", "no_temporal", "denstream", "naive_dedup"],
+        choices=[
+            "no_semantic",
+            "no_topology",
+            "no_temporal",
+            "denstream",
+            "naive_dedup",
+            "topology_gated_1hop",
+            "topology_gated_2hop",
+        ],
         default=None,
     )
     parser.add_argument(
