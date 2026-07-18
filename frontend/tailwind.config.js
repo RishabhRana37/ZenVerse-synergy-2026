@@ -6,38 +6,33 @@ export default {
     extend: {
       // ── Colour palette ────────────────────────────────────────────────
       colors: {
-        // Backgrounds / surfaces
         bg: {
-          base:     '#0A0E14',  // page background
-          surface:  '#11161F',  // panel / card surface
-          elevated: '#161D29',  // elevated card / tooltip
-          hover:    '#1C2535',  // hover state on surfaces
+          base:     '#0A0E14',  // app canvas
+          surface:  '#11161F',  // solid panel
+          elevated: '#161D29',  // elevated container / tooltips
+          hover:    '#1B2332',  // surface hover state
         },
-        // Borders
         border: {
-          DEFAULT: 'rgba(255,255,255,0.10)',
-          subtle:  'rgba(255,255,255,0.05)',
-          strong:  'rgba(255,255,255,0.18)',
+          DEFAULT: 'rgba(255, 255, 255, 0.06)',
+          hover:   'rgba(255, 255, 255, 0.14)',
+          subtle:  'rgba(255, 255, 255, 0.03)',
+          strong:  'rgba(255, 255, 255, 0.12)',
         },
-        // Text
         text: {
           primary:   '#E6EDF3',
           secondary: '#8B98A9',
-          muted:     '#5D6B7D',
-          inverse:   '#0A0E14',
+          muted:     '#4D5866',
+          inverse:   '#05080E',
         },
-        // Severity
         severity: {
           critical: '#FF4D4F',
           warning:  '#F5A623',
           info:     '#4D9FFF',
         },
-        // Accent / success / correlated
         accent: {
-          DEFAULT: '#2DD4A7',
-          dim:     'rgba(45,212,167,0.15)',
+          DEFAULT: '#2DD4A7', // Green brand accent
+          dim:     'rgba(45, 212, 167, 0.15)',
         },
-        // Confidence gradient anchors (use in inline styles for gradient)
         confidence: {
           high: '#2DD4A7',
           mid:  '#F5A623',
@@ -62,15 +57,15 @@ export default {
 
       // ── Spacing & sizing ─────────────────────────────────────────────
       borderRadius: {
-        card:  '8px',
+        card:  '6px',
         badge: '4px',
         sm: '4px',
-        md: '8px',
-        lg: '12px',
+        md: '6px',
+        lg: '8px',
+        pill: '999px',
       },
 
       // ── Box shadows ──────────────────────────────────────────────────
-      // Depth from surface steps, minimal shadows
       boxShadow: {
         card:    '0 1px 3px rgba(0,0,0,0.4)',
         elevated:'0 4px 16px rgba(0,0,0,0.5)',
@@ -116,6 +111,14 @@ export default {
         'pulse-dot':      'pulse-dot 2s ease-in-out infinite',
         'stream-row':     'stream-row 0.35s ease-out forwards',
         shimmer:          'shimmer 2s linear infinite',
+      },
+      transitionTimingFunction: {
+        'lens': 'var(--ease-lens)',
+      },
+      transitionDuration: {
+        '120': '120ms',
+        '240': '240ms',
+        '400': '400ms',
       },
 
       // ── Grid / layout ────────────────────────────────────────────────

@@ -1,8 +1,5 @@
-/**
- * Stat — hero numeric display with label.
- * Uses tabular numerals and JetBrains Mono to prevent counter jitter.
- */
-
+import { Card } from '@/components/ui/Card'
+import { Eyebrow } from '@/components/ui/Eyebrow'
 import { clsx } from 'clsx'
 
 interface StatProps {
@@ -15,14 +12,17 @@ interface StatProps {
   /** Semantic color for the value */
   color?: 'primary' | 'accent' | 'critical' | 'warning' | 'muted'
   className?: string
-  /** Show a subtle animated pulse when value changes */
-  animate?: boolean
+  /** Optional trend pill metadata */
+  trend?: {
+    value: string | number
+    direction: 'up' | 'down' | 'neutral'
+  }
 }
 
 const sizeMap = {
-  sm: 'text-hero-sm',
-  md: 'text-hero',
-  lg: 'text-hero-lg',
+  sm: 'text-[22px]',
+  md: 'text-[28px]',
+  lg: 'text-[36px]',
 } as const
 
 const colorMap = {
@@ -33,26 +33,39 @@ const colorMap = {
   muted:    'text-text-muted',
 } as const
 
-export function Stat({ label, value, unit, size = 'md', color = 'primary', className, animate: _animate }: StatProps) {
+export function Stat({ label, value, unit, size = 'md', color = 'primary', className, trend }: StatProps) {
   return (
-    <div className={clsx('flex flex-col gap-0.5', className)}>
-      <span className="text-[11px] font-medium uppercase tracking-widest text-text-muted">
-        {label}
-      </span>
-      <span
-        className={clsx(
-          'font-mono font-semibold tabular leading-none',
-          sizeMap[size],
-          colorMap[color],
-        )}
-      >
-        {value}
-        {unit && (
-          <span className="text-text-muted text-ui ml-1 font-sans font-normal">
-            {unit}
+    <Card className={clsx("flex flex-col gap-1.5 min-w-[120px]", className)}>
+      <Eyebrow>{label}</Eyebrow>
+      <div className="flex items-baseline justify-between gap-2 select-text">
+        <span
+          className={clsx(
+            'font-mono font-semibold tabular leading-none tracking-tight',
+            sizeMap[size],
+            colorMap[color],
+          )}
+        >
+          {value}
+          {unit && (
+            <span className="text-text-muted text-[13px] ml-1 font-sans font-normal">
+              {unit}
+            </span>
+          )}
+        </span>
+        {trend && (
+          <span
+            className={clsx(
+              "text-[9.5px] px-1.5 py-0.5 rounded-full font-mono font-bold select-none leading-none tracking-wider uppercase flex items-center gap-0.5",
+              trend.direction === 'up' && "bg-severity-critical/10 text-severity-critical border border-severity-critical/20",
+              trend.direction === 'down' && "bg-severity-info/10 text-severity-info border border-severity-info/20",
+              trend.direction === 'neutral' && "bg-bg-elevated text-text-secondary border border-border"
+            )}
+          >
+            <span>{trend.direction === 'up' ? '▲' : trend.direction === 'down' ? '▼' : '■'}</span>
+            <span>{trend.value}</span>
           </span>
         )}
-      </span>
-    </div>
+      </div>
+    </Card>
   )
 }

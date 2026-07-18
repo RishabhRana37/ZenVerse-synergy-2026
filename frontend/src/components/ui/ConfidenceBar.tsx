@@ -8,6 +8,8 @@
  */
 
 import { clsx } from 'clsx'
+import { motion } from 'framer-motion'
+import { useFPSStore } from '@/lib/motion'
 
 interface ConfidenceBarProps {
   /** 0 – 1 */
@@ -17,7 +19,6 @@ interface ConfidenceBarProps {
   /** Bar height */
   height?: 'xs' | 'sm' | 'md'
   className?: string
-  animated?: boolean
   greenThreshold?: number
   amberThreshold?: number
 }
@@ -45,7 +46,6 @@ export function ConfidenceBar({
   showLabel = true,
   height = 'sm',
   className,
-  animated = true,
   greenThreshold = 0.6,
   amberThreshold = 0.3,
 }: ConfidenceBarProps) {
@@ -54,8 +54,10 @@ export function ConfidenceBar({
   const glow = confidenceGlow(confidence, greenThreshold, amberThreshold)
   const isShimmering = confidence < 0.4
 
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const prefersReduced = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+
   return (
-    // relative + pt-4 ensures room for the floating text bubble above the bar
     <div className={clsx('relative w-full pt-4 flex items-center', className)}>
       {/* Track */}
       <div
@@ -69,7 +71,7 @@ export function ConfidenceBar({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        {/* Fine tick marks at 25/50/75% behind the fill (1px, low alpha) */}
+        {/* Tick marks behind the fill */}
         <div className="absolute inset-0 pointer-events-none flex justify-between z-0">
           <div className="absolute left-[25%] top-0 bottom-0 w-px bg-white/5" />
           <div className="absolute left-[50%] top-0 bottom-0 w-px bg-white/5" />
@@ -77,38 +79,35 @@ export function ConfidenceBar({
         </div>
 
         {/* Fill */}
-        <div
-          className={clsx(
-            'h-full rounded-full relative overflow-hidden z-10',
-            animated && 'transition-[width] duration-700 ease-out',
-          )}
+        <motion.div
+          initial={{ width: prefersReduced ? `${pct}%` : 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+          className="h-full rounded-full relative overflow-hidden z-10"
           style={{
-            width: `${pct}%`,
-            minWidth: 0,
             backgroundColor: color,
             boxShadow: glow,
           }}
         >
-          {/* Subtle animated shimmer for low confidence */}
           {isShimmering && (
             <div className="absolute inset-0 animate-conf-shimmer pointer-events-none" />
           )}
-        </div>
+        </motion.div>
 
-        {/* Floating Indicator Label (Leading Edge) */}
+        {/* Floating Indicator Label */}
         {showLabel && (
-          <div
-            className={clsx(
-              'absolute -top-4 -translate-x-1/2 font-mono text-[9px] font-bold tabular-nums px-1.5 py-0.2 rounded bg-bg-surface border border-border/80 shadow-card z-20 transition-[left] duration-700 ease-out',
-            )}
+          <motion.div
+            initial={{ left: prefersReduced ? `${pct}%` : '0%' }}
+            animate={{ left: `${pct}%` }}
+            transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+            className="absolute -top-4 -translate-x-1/2 font-mono text-[10px] font-bold tabular-nums px-1.5 py-0.2 rounded bg-bg-surface border border-border/80 shadow-card z-20"
             style={{
-              left: `${pct}%`,
               color,
               borderColor: `${color}40`,
             }}
           >
             {pct}%
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

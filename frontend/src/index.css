@@ -17,17 +17,18 @@
   --bg-base:      #0A0E14;
   --bg-surface:   #11161F;
   --bg-elevated:  #161D29;
-  --bg-hover:     #1C2535;
+  --bg-hover:     #1B2332;
 
-  /* Borders — raised from 0.06→0.10 for projector legibility */
-  --border:       rgba(255,255,255,0.10);
-  --border-subtle:rgba(255,255,255,0.05);
-  --border-strong:rgba(255,255,255,0.18);
+  /* Borders */
+  --border:       rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.14);
+  --border-subtle:rgba(255, 255, 255, 0.03);
+  --border-strong:rgba(255, 255, 255, 0.12);
 
-  /* Text — muted bumped from #4D5866 → #5D6B7D (projector legible) */
+  /* Text */
   --text-primary:   #E6EDF3;
   --text-secondary: #8B98A9;
-  --text-muted:     #5D6B7D;
+  --text-muted:     #4D5866;
 
   /* Severity */
   --severity-critical: #FF4D4F;
@@ -36,7 +37,7 @@
 
   /* Accent */
   --accent:     #2DD4A7;
-  --accent-dim: rgba(45,212,167,0.15);
+  --accent-dim: rgba(45, 212, 167, 0.15);
 
   /* Confidence gradient */
   --conf-high: #2DD4A7;
@@ -49,6 +50,17 @@
 
   /* Timeline stroke width (bumped in presentation mode) */
   --timeline-stroke: 1.5;
+
+  /* Lens Motion Signature Easing */
+  --ease-lens: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Stacking Z-Index Scale ────────────────────────────────────────────── */
+  --z-banner:    50;
+  --z-popover:   60;
+  --z-slideover: 70;
+  --z-modal:     80;
+  --z-intro:     90;
+  --z-toast:     95;
 }
 
 /* ── Presentation Mode overrides ─────────────────────────────────────── */
@@ -57,6 +69,8 @@ html.presentation-mode {
   font-size: 110%;
 
   --border:        rgba(255,255,255,0.18);
+  --border-hover:  rgba(255,255,255,0.28);
+  --border-top:    rgba(255,255,255,0.24);
   --border-subtle: rgba(255,255,255,0.10);
   --border-strong: rgba(255,255,255,0.28);
 
@@ -66,7 +80,7 @@ html.presentation-mode {
   --severity-info:     #2E87FF;
 
   /* Even lighter muted for high-ambient conditions */
-  --text-muted: #6B7D90;
+  --text-muted: #8E8E93;
 
   /* Thicker timeline stroke */
   --timeline-stroke: 2.5;
@@ -94,6 +108,30 @@ html.presentation-mode {
     background-color: var(--bg-base);
     color: var(--text-primary);
     overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(45, 212, 167, 0.09) 0%, rgba(45, 212, 167, 0.02) 40%, transparent 70%);
+    z-index: -9;
+    pointer-events: none;
+    filter: blur(50px);
   }
 
   #root {
@@ -348,4 +386,89 @@ html.presentation-mode {
   :focus-visible {
     transition: none;
   }
+}
+
+/* ── Reticle logo drawing animation ───────────────────────────────────── */
+@keyframes draw-circle {
+  from { stroke-dashoffset: 44; }
+  to   { stroke-dashoffset: 0; }
+}
+.animate-draw-circle {
+  stroke-dasharray: 44;
+  animation: draw-circle 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Stripe-inspired Mesh Gradient ────────────────────────────────────── */
+@keyframes mesh-gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-mesh-gradient {
+  background-size: 200% 200%;
+  animation: mesh-gradient 8s ease infinite;
+}
+
+/* ── Aceternity animated beam flow animation ─────────────────────────── */
+@keyframes beam-flow {
+  0% {
+    stroke-dashoffset: 120;
+  }
+  100% {
+    stroke-dashoffset: -120;
+  }
+}
+.animate-beam-flow {
+  animation: beam-flow 2.5s linear infinite;
+}
+
+/* ── Raycast Drifting Accent Blobs ───────────────────────────────────── */
+@keyframes drift-blob-1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(120px, 80px) scale(1.15); }
+}
+@keyframes drift-blob-2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1.1); }
+  50% { transform: translate(-140px, -100px) scale(0.95); }
+}
+@keyframes drift-blob-3 {
+  0%, 100% { transform: translate(0px, 0px) scale(0.9); }
+  50% { transform: translate(90px, -120px) scale(1.1); }
+}
+.animate-drift-1 {
+  animation: drift-blob-1 25s ease-in-out infinite;
+}
+.animate-drift-2 {
+  animation: drift-blob-2 32s ease-in-out infinite;
+}
+.animate-drift-3 {
+  animation: drift-blob-3 38s ease-in-out infinite;
+}
+
+/* ── Pulse Edge Critical Animation ── */
+@keyframes pulse-edge-critical {
+  0%, 100% { border-color: rgba(255, 77, 79, 0.4); box-shadow: 0 0 4px rgba(255, 77, 79, 0.1); }
+  50% { border-color: rgba(255, 77, 79, 1); box-shadow: 0 0 12px rgba(255, 77, 79, 0.3); }
+}
+.animate-pulse-edge-critical {
+  animation: pulse-edge-critical 2s infinite ease-in-out;
+}
+
+/* ── Pulse Edge Accent Animation ── */
+@keyframes pulse-edge-accent {
+  0%, 100% { border-color: rgba(45, 212, 167, 0.4); box-shadow: 0 0 4px rgba(45, 212, 167, 0.1); }
+  50% { border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 12px rgba(45, 212, 167, 0.3); }
+}
+.animate-pulse-edge-accent {
+  animation: pulse-edge-accent 2s infinite ease-in-out;
+}
+
+/* ── Keycap Press Down Animation ── */
+@keyframes press-down {
+  0% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+  20% { transform: translateY(1px) scale(0.96); border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 8px rgba(45, 212, 167, 0.4); }
+  100% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+}
+.animate-press-down {
+  animation: press-down 0.3s ease-out;
 }

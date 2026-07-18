@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { clsx } from 'clsx'
+import { useFPSStore } from '@/lib/motion'
 
 type OdometerFormat = 'integer' | 'percent2' | 'percent1' | 'float1'
 type OdometerEasing = 'spring' | 'linear' | 'default'
@@ -52,7 +53,8 @@ function Digit({
   digitClassName?: string
   easing?: OdometerEasing
 }) {
-  const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const prefersReduced = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   let transition = prefersReduced
     ? { duration: 0 }
@@ -62,8 +64,8 @@ function Digit({
     if (easing === 'spring') {
       transition = {
         type: 'spring',
-        stiffness: 450,
-        damping: 25, // very fast, settles within ~250ms, minor overshoot
+        stiffness: 260,
+        damping: 26,
         mass: 0.7,
       } as any
     } else if (easing === 'linear') {

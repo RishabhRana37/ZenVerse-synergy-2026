@@ -49,6 +49,15 @@ class ReplayStartRequest(BaseModel):
 
 @router.post("/replay/start")
 async def replay_start(req: ReplayStartRequest):
+    # Every new replay starts from a clean slate: without this, incidents
+    # (and the event clock) from a previous dataset/scenario survive and
+    # never resolve, since a differently-timestamped dataset may never
+    # advance latest_event_ts past them (see /replay/reset for the same
+    # bookkeeping — this mirrors it exactly).
+    await _replay_engine.stop()
+    state.reset()
+    _pipeline._incident_members.clear()
+    _pipeline._resolved_members.clear()
     # Reload topology + scenario-specific clustering config before starting replay
     _pipeline.configure_scenario(req.scenario)
     await _replay_engine.start(

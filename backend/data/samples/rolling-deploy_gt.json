@@ -1,0 +1,42 @@
+{
+  "cluster_labels": {
+    "689120b2-69e9-421d-b22f-744603590561": "fault-001",
+    "617931f7-fbb4-430d-a7c0-f99fa800995c": "fault-001",
+    "892c3ce7-f91c-4035-8974-adf74e840de5": "fault-001",
+    "bf3307e3-9f3a-47b2-b3b0-3d6197359dd3": "fault-001",
+    "2670d0c5-d895-4215-98be-af482b721d83": "fault-001",
+    "7b276580-d0b3-4117-a07c-d955a2b9b2a2": "fault-001",
+    "77ffe3cd-faa9-4d28-b411-a18834ee6ea7": "fault-001",
+    "c133ee2a-8912-4c8e-b253-832cccddf50b": "fault-001",
+    "bc02393d-6f87-4468-9f38-4cc90de5e024": "fault-001",
+    "00b0dda2-1a3a-45ba-b602-0bcb572e404d": "fault-001",
+    "66102555-9f33-4175-912e-5b31992fcd27": "fault-001",
+    "1e189d7d-b43c-4792-9f8a-5ce9675a61dc": "fault-001",
+    "d41617c9-5a44-4933-9588-b30a69727521": "fault-001",
+    "17a1658a-570a-4771-ad74-23802974eaf1": "fault-001",
+    "d10a3bca-ef1f-426d-b926-820c4df7685e": "fault-001",
+    "e7da41ad-aae0-4a92-9108-297a2d83890c": "fault-001",
+    "ba14b6e2-8637-449a-889e-d77c0de62e7b": "fault-001",
+    "3676d1eb-77ff-4b2e-8c6c-bec123815ef3": "fault-001",
+    "0c9c62da-f127-4494-89ef-3b5d80950d5a": "fault-001",
+    "ee29874b-a0c4-4f65-9e7f-db41a1d2d5d4": "fault-001",
+    "97b9ac56-d694-4039-b5cd-3eac170e0a94": "fault-001",
+    "0ae79b70-a589-47c6-8289-b38e039968e2": "fault-001",
+    "0913e8c1-1b24-49bd-9986-2799fb9dd8e4": "fault-001",
+    "155b16b2-8299-4e95-92fd-cd40a5fed46f": "fault-001",
+    "fcbedee4-6056-4562-a079-714bcd64a31d": "fault-001",
+    "79f62f99-f681-485a-a515-0a0127cabf99": "fault-001",
+    "8e1a0f2c-f6c6-4206-be4a-43c27138cc3c": "fault-001",
+    "7fec79fa-cab2-42db-8912-028bdd5a8d9a": "fault-001",
+    "3b2d5a39-8a20-4d9f-bbfa-3cb2865bd424": "fault-001",
+    "fb997a6e-b13d-40a9-a0d0-32f04b385b9f": "fault-001",
+    "acabb574-4139-4898-8112-d5ad0029f297": "fault-001",
+    "88c7a2a3-4770-4da6-b89e-5a96bb93eb29": "fault-001"
+  },
+  "root_causes": {
+    "fault-001": "689120b2-69e9-421d-b22f-744603590561"
+  },
+  "failure_types": {
+    "fault-001": "deploy"
+  }
+}

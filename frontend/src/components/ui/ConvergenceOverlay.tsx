@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStreamStore } from '@/store/stream'
 import { fpsGuard } from '@/lib/fpsGuard'
 import { audioManager } from '@/lib/audio'
+import { EASE, DUR_ENTER } from '@/lib/motion'
 
 interface Particle {
   id: string
@@ -109,7 +110,7 @@ export function ConvergenceOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden" aria-hidden="true">
       <AnimatePresence>
         {particles.map((p) => {
           // Slight arc math: lift the midpoint up in Y coordinates
@@ -126,17 +127,23 @@ export function ConvergenceOverlay() {
                 y: p.startY,
                 scale: 1,
                 opacity: 0.8,
+                backgroundColor: p.color,
+                borderColor: p.color,
+                boxShadow: `0 0 6px ${p.color}`,
               }}
               animate={{
                 x: [p.startX, midX, p.endX],
                 y: [p.startY, midY, p.endY],
-                scale: isThrottled ? [1, 0.8, 0.5] : [1, 0.7, 0.3],
-                opacity: [0.8, 0.6, 0],
+                scale: isThrottled ? [1, 0.8, 0.4] : [1, 0.7, 0.3],
+                opacity: [0.8, 0.7, 0],
+                backgroundColor: [p.color, p.color, '#2DD4A7'],
+                borderColor: [p.color, p.color, '#2DD4A7'],
+                boxShadow: [`0 0 6px ${p.color}`, `0 0 6px ${p.color}`, `0 0 6px #2DD4A7`],
               }}
               transition={{
-                duration: 0.45,
+                duration: DUR_ENTER,
                 delay: p.delay / 1000,
-                ease: [0.5, 0, 0.75, 0], // ease-in cubic-bezier
+                ease: EASE,
               }}
               onAnimationComplete={() => {
                 removeParticle(p.id)
@@ -145,25 +152,7 @@ export function ConvergenceOverlay() {
                 // Play whoosh on arrival
                 audioManager.playWhoosh()
               }}
-              className="absolute rounded-full border pointer-events-none"
-              style={
-                isThrottled
-                  ? {
-                      backgroundColor: p.color,
-                      borderColor: p.color,
-                      boxShadow: `0 0 4px ${p.color}`,
-                      width: '6px',
-                      height: '6px',
-                    }
-                  : {
-                      background: `linear-gradient(90deg, transparent 0%, ${p.color}15 50%, ${p.color}90 100%)`,
-                      borderColor: `${p.color}aa`,
-                      borderLeftColor: 'transparent',
-                      boxShadow: `0 0 8px ${p.color}30`,
-                      width: '45px',
-                      height: '8px',
-                    }
-              }
+              className="absolute w-2.5 h-2.5 rounded-full border pointer-events-none"
             />
           )
         })}

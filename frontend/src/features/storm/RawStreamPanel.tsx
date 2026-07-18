@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useStreamStore } from '@/store/stream'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import type { Alert } from '@/lib/types'
 import { clsx } from 'clsx'
 import { Odometer } from '@/components/ui/Odometer'
+import { motion } from 'framer-motion'
+import { useFPSStore } from '@/lib/motion'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -47,37 +51,79 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 // ── DupBadge component ───────────────────────────────────────────────────
 
 const DupBadge = React.memo(({ count }: { count: number }) => {
-  const [pop, setPop] = useState(false)
-  const prevCount = useRef(count)
+  const textRef = useRef<HTMLSpanElement>(null)
+  const badgeRef = useRef<HTMLSpanElement>(null)
+  const currentCount = useRef(count)
+  const targetCount = useRef(count)
+  const animationFrameId = useRef<number | null>(null)
 
   useEffect(() => {
-    if (count > prevCount.current) {
-      setPop(true)
-      const timer = setTimeout(() => setPop(false), 150)
-      prevCount.current = count
-      return () => clearTimeout(timer)
+    targetCount.current = count
+    
+    const animate = () => {
+      if (currentCount.current < targetCount.current) {
+        if (badgeRef.current) {
+          badgeRef.current.classList.add('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+          badgeRef.current.classList.remove('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
+        }
+
+        // Increment count smoothly
+        currentCount.current = Math.min(
+          currentCount.current + Math.ceil((targetCount.current - currentCount.current) * 0.15),
+          targetCount.current
+        )
+
+        if (textRef.current) {
+          textRef.current.textContent = `×${currentCount.current}`
+        }
+
+        setTimeout(() => {
+          if (badgeRef.current) {
+            badgeRef.current.classList.add('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
+            badgeRef.current.classList.remove('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+          }
+        }, 150)
+
+        animationFrameId.current = requestAnimationFrame(animate)
+      } else {
+        animationFrameId.current = null
+      }
     }
-    prevCount.current = count
+
+    if (animationFrameId.current === null) {
+      animationFrameId.current = requestAnimationFrame(animate)
+    }
+
+    return () => {
+      if (animationFrameId.current !== null) {
+        cancelAnimationFrame(animationFrameId.current)
+      }
+    }
   }, [count])
 
   return (
     <span
-      className={clsx(
-        "px-1.5 py-0.5 rounded font-mono text-[10px] font-bold border leading-none transition-all duration-150 inline-block select-none",
-        pop
-          ? "bg-severity-warning border-severity-warning text-text-inverse scale-110"
-          : "bg-bg-elevated border-border text-text-secondary scale-100"
-      )}
+      ref={badgeRef}
+      className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold border leading-none transition-all duration-150 inline-block select-none bg-bg-elevated border-border text-text-secondary scale-100"
     >
-      ×{count}
+      <span ref={textRef}>×{count}</span>
     </span>
   )
 })
 
 // ── AlertRow component ───────────────────────────────────────────────────
 
+interface AlertRowProps {
+  alert: Alert
+  searchQuery: string
+  isFirehose: boolean
+  reducedMotion: boolean
+  index: number
+  style?: React.CSSProperties
+}
+
 const AlertRow = React.memo(
-  ({ alert, searchQuery, style }: { alert: Alert; searchQuery: string; style?: React.CSSProperties }) => {
+  ({ alert, searchQuery, isFirehose, reducedMotion, index, style }: AlertRowProps) => {
     const isNew = Date.now() - new Date(alert.ts).getTime() < 2500
     const flashClass = isNew && alert.severity === 'critical' ? 'animate-flash-critical' : ''
     const claimedClass = alert.cluster_id ? 'opacity-40' : ''
@@ -87,51 +133,94 @@ const AlertRow = React.memo(
       alert.severity === 'warning'  ? 'border-l-severity-warning' :
       'border-l-severity-info'
 
+    // Bypass entrance animations entirely under high replay rate / reduced motion
+    if (reducedMotion || isFirehose) {
+      return (
+        <div
+          data-alert-id={alert.id}
+          style={{
+            ...style,
+            boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
+          }}
+          className={clsx(
+            "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
+            sevBorderColor,
+            flashClass,
+            claimedClass,
+            isFirehose && "blur-[0.5px] opacity-80"
+          )}
+        >
+          <span className="text-text-muted flex-shrink-0 w-[92px] tabular-nums">
+            {formatTimestamp(alert.ts)}
+          </span>
+          <div className="w-[62px] flex-shrink-0">
+            <Badge variant={alert.severity} className="text-[10px] px-1.5 py-0.5">
+              {alert.severity}
+            </Badge>
+          </div>
+          <span className="text-text-secondary flex-shrink-0 truncate max-w-[140px]">
+            {highlightMatch(alert.service || '—', searchQuery)}{' '}
+            <span className="text-text-muted">·</span>{' '}
+            {highlightMatch(alert.host || '—', searchQuery)}
+          </span>
+          <span className="text-text-primary flex-1 truncate pr-2 text-left">
+            {highlightMatch(alert.message, searchQuery)}
+          </span>
+          {alert.dup_count > 1 && (
+            <div className="flex-shrink-0">
+              <DupBadge count={alert.dup_count} />
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    const staggerDelay = (index % 10) * 0.03
+
     return (
-      <div
+      <motion.div
         data-alert-id={alert.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          type: 'spring',
+          stiffness: 260,
+          damping: 26,
+          delay: staggerDelay,
+        }}
         style={{
           ...style,
           boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
         }}
         className={clsx(
-          "flex items-center gap-3 px-4 border-l-[3px] border-b border-b-border/40 font-mono text-[12px] h-[44px] select-none",
+          "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
           sevBorderColor,
           flashClass,
           claimedClass
         )}
       >
-        {/* Column 1: HH:MM:SS.mmm */}
         <span className="text-text-muted flex-shrink-0 w-[92px] tabular-nums">
           {formatTimestamp(alert.ts)}
         </span>
-
-        {/* Column 2: Severity Badge */}
         <div className="w-[62px] flex-shrink-0">
           <Badge variant={alert.severity} className="text-[10px] px-1.5 py-0.5">
             {alert.severity}
           </Badge>
         </div>
-
-        {/* Column 3: Service · Host */}
         <span className="text-text-secondary flex-shrink-0 truncate max-w-[140px]">
           {highlightMatch(alert.service || '—', searchQuery)}{' '}
           <span className="text-text-muted">·</span>{' '}
           {highlightMatch(alert.host || '—', searchQuery)}
         </span>
-
-        {/* Column 4: Message */}
         <span className="text-text-primary flex-1 truncate pr-2 text-left">
           {highlightMatch(alert.message, searchQuery)}
         </span>
-
-        {/* Right edge: Dup count */}
         {alert.dup_count > 1 && (
           <div className="flex-shrink-0">
             <DupBadge count={alert.dup_count} />
           </div>
         )}
-      </div>
+      </motion.div>
     )
   },
   (prev, next) => {
@@ -140,6 +229,8 @@ const AlertRow = React.memo(
       prev.alert.dup_count === next.alert.dup_count &&
       prev.alert.cluster_id === next.alert.cluster_id &&
       prev.searchQuery === next.searchQuery &&
+      prev.isFirehose === next.isFirehose &&
+      prev.reducedMotion === next.reducedMotion &&
       prev.style?.transform === next.style?.transform
     )
   }
@@ -148,8 +239,13 @@ const AlertRow = React.memo(
 // ── RawStreamPanel component ─────────────────────────────────────────────
 
 export function RawStreamPanel() {
-  const alerts = useStreamStore((s) => s.alerts)
-  const alertsPerSec = useStreamStore((s) => s.stats?.alerts_per_sec)
+  const alerts = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.alerts : s.alerts)
+  const alertsPerSec = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.stats?.alerts_per_sec : s.stats?.alerts_per_sec)
+
+  const replaySpeed = useStreamStore((s) => s.stats?.replay?.speed ?? 1)
+  const isFirehose = replaySpeed > 50
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   // Filters State
   const [critEnabled, setCritEnabled] = useState(true)
@@ -172,24 +268,32 @@ export function RawStreamPanel() {
   const warnCount = alerts.filter((a) => a.severity === 'warning').length
   const infoCount = alerts.filter((a) => a.severity === 'info').length
 
-  // Filter visible stream alerts
-  const filteredAlerts = alerts.filter((a) => {
-    if (a.severity === 'critical' && !critEnabled) return false
-    if (a.severity === 'warning' && !warnEnabled) return false
-    if (a.severity === 'info' && !infoEnabled) return false
-    if (!showClaimed && a.cluster_id !== null) return false
+  // Filter visible stream alerts. Memoized: an inline .filter() here would
+  // return a new array reference every render, and the pin/scroll effect
+  // below depends on this array — so it would re-fire (and re-run
+  // setNewAlertsCount) on every render of this component, not just when the
+  // alerts or filters actually changed.
+  const filteredAlerts = useMemo(
+    () =>
+      alerts.filter((a) => {
+        if (a.severity === 'critical' && !critEnabled) return false
+        if (a.severity === 'warning' && !warnEnabled) return false
+        if (a.severity === 'info' && !infoEnabled) return false
+        if (!showClaimed && a.cluster_id !== null) return false
 
-    if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase()
-      const service = (a.service || '').toLowerCase()
-      const host = (a.host || '').toLowerCase()
-      const message = (a.message || '').toLowerCase()
-      if (!service.includes(q) && !host.includes(q) && !message.includes(q)) {
-        return false
-      }
-    }
-    return true
-  })
+        if (debouncedQuery.trim()) {
+          const q = debouncedQuery.toLowerCase()
+          const service = (a.service || '').toLowerCase()
+          const host = (a.host || '').toLowerCase()
+          const message = (a.message || '').toLowerCase()
+          if (!service.includes(q) && !host.includes(q) && !message.includes(q)) {
+            return false
+          }
+        }
+        return true
+      }),
+    [alerts, critEnabled, warnEnabled, infoEnabled, showClaimed, debouncedQuery],
+  )
 
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -268,8 +372,8 @@ export function RawStreamPanel() {
     }
   }
 
-  const totalAlerts = useStreamStore((s) => s.stats?.total_alerts ?? 0)
-  const incidentCount = useStreamStore((s) => s.incidents.size)
+  const totalAlerts = useStreamStore((s) => (s.scrubMode && s.scrubState ? s.scrubState.stats?.total_alerts : s.stats?.total_alerts) ?? 0)
+  const incidentCount = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.incidents.size : s.incidents.size)
 
   const isFilterActive =
     !critEnabled || !warnEnabled || !infoEnabled || !showClaimed || searchQuery.trim() !== ''
@@ -283,26 +387,35 @@ export function RawStreamPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-ui font-semibold text-text-primary font-sans">Raw Stream</span>
+          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+            <span className="text-accent mr-1">▎01</span> Raw Stream
+          </span>
           {alerts.length > 0 && (
             <span className="text-[11px] text-text-muted font-mono inline-flex items-baseline gap-1 select-none">
               (<Odometer value={alerts.length} easing="spring" className="text-text-muted" /> buffered)
             </span>
           )}
         </div>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono">
-          {alertsPerSec !== undefined ? (
-            <>
-              <Odometer value={alertsPerSec} format="float1" easing="linear" className="text-text-secondary" />
-              <span>/s</span>
-            </>
-          ) : (
-            '—/s'
+        <div className="flex items-center gap-1.5">
+          {isFirehose && (
+            <span className="px-1.5 py-0.5 rounded bg-severity-warning/20 border border-severity-warning/30 text-severity-warning text-[10px] font-mono font-bold animate-pulse">
+              🔥 FIREHOSE ({replaySpeed}x)
+            </span>
           )}
+          <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono">
+            {alertsPerSec !== undefined ? (
+              <>
+                <Odometer value={alertsPerSec} format="float1" easing="linear" className="text-text-secondary" />
+                <span>/s</span>
+              </>
+            ) : (
+              '—/s'
+            )}
+          </div>
         </div>
       </div>
 
@@ -316,66 +429,67 @@ export function RawStreamPanel() {
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Severity filter chips */}
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              size="sm"
               onClick={() => setCritEnabled(!critEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 critEnabled
-                  ? "bg-severity-critical/20 border-severity-critical text-severity-critical"
+                  ? "bg-severity-critical/15 border-severity-critical/30 text-severity-critical hover:bg-severity-critical/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               CRIT <span className="font-mono font-medium opacity-80">(<Odometer value={critCount} easing="spring" className="text-severity-critical" />)</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setWarnEnabled(!warnEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 warnEnabled
-                  ? "bg-severity-warning/20 border-severity-warning text-severity-warning"
+                  ? "bg-severity-warning/15 border-severity-warning/30 text-severity-warning hover:bg-severity-warning/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               WARN <span className="font-mono font-medium opacity-80">(<Odometer value={warnCount} easing="spring" className="text-severity-warning" />)</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setInfoEnabled(!infoEnabled)}
               className={clsx(
-                "px-1.5 py-0.5 rounded-[4px] border text-[9px] font-bold font-sans transition-all flex items-center gap-1",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 infoEnabled
-                  ? "bg-severity-info/20 border-severity-info text-severity-info"
+                  ? "bg-severity-info/15 border-severity-info/30 text-severity-info hover:bg-severity-info/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
               INFO <span className="font-mono font-medium opacity-80">(<Odometer value={infoCount} easing="spring" className="text-severity-info" />)</span>
-            </button>
+            </Button>
           </div>
 
           <div className="h-4 w-px bg-border/40 shrink-0" />
 
           {/* Search input */}
           <div className="relative flex-1 min-w-0 max-w-[200px]">
-            <input
+            <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="filter by service, host, text…"
-              className="w-full bg-bg-elevated border border-border/60 hover:border-border focus:border-accent text-[11px] font-mono text-text-primary placeholder:text-text-muted px-2 py-0.5 rounded-[4px] outline-none transition-colors"
+              placeholder="filter stream..."
+              className="h-6 py-0 px-2.5 text-[11px] font-mono"
             />
           </div>
 
           <div className="h-4 w-px bg-border/40 shrink-0" />
 
           {/* Claimed eye toggle */}
-          <button
+          <Button
+            size="sm"
+            variant={showClaimed ? "secondary" : "accent"}
             onClick={() => setShowClaimed(!showClaimed)}
             title={showClaimed ? "Hide claimed alerts" : "Show claimed alerts"}
-            className={clsx(
-              "p-1 rounded-[4px] border transition-all flex items-center justify-center shrink-0",
-              showClaimed
-                ? "bg-bg-elevated border-border text-text-secondary hover:text-text-primary"
-                : "bg-accent/15 border-accent text-accent"
-            )}
+            aria-label={showClaimed ? "Hide claimed alerts" : "Show claimed alerts"}
+            className="h-6 w-6 p-0 flex items-center justify-center shrink-0"
           >
             {showClaimed ? (
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -387,24 +501,27 @@ export function RawStreamPanel() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
               </svg>
             )}
-          </button>
+          </Button>
         </div>
 
         {/* Info tally and Clear button */}
         {isFilterActive && (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 select-none">
             <span className="text-[10px] font-mono text-text-muted tabular-nums">
               {filteredAlerts.length} of {alerts.length} shown
             </span>
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
               onClick={handleClearFilters}
               title="Clear all filters"
-              className="p-0.5 rounded-[4px] border border-border/40 bg-bg-elevated hover:bg-border/20 text-text-muted hover:text-text-primary transition-colors flex items-center justify-center"
+              aria-label="Clear all filters"
+              className="h-6 w-6 p-0 flex items-center justify-center"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -474,6 +591,9 @@ export function RawStreamPanel() {
                     key={alert.id}
                     alert={alert}
                     searchQuery={debouncedQuery}
+                    isFirehose={isFirehose}
+                    reducedMotion={reducedMotion}
+                    index={virtualItem.index}
                     style={{
                       position: 'absolute',
                       top: 0,

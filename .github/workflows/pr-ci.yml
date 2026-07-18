@@ -1,0 +1,184 @@
+# ──────────────────────────────────────────────────────────────
+# StormLens — Pull Request CI Pipeline
+# Runs on every PR targeting main. Ensures code quality,
+# test health, and branch freshness before merge.
+# ──────────────────────────────────────────────────────────────
+
+name: PR CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# Cancel redundant runs when a PR is updated
+concurrency:
+  group: pr-ci-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write          # needed for the divergence comment
+
+# ──────────────────────────────────────────────────────────────
+# Job 1: Branch divergence guard
+# Fails if the PR branch is more than 50 commits behind main
+# ──────────────────────────────────────────────────────────────
+jobs:
+  branch-health:
+    name: 🌿 Branch Health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # need full history to count divergence
+
+      - name: Check divergence from main
+        id: divergence
+        run: |
+          git fetch origin main
+          BEHIND=$(git rev-list --count HEAD..origin/main)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "Branch is $BEHIND commit(s) behind main"
+
+          if [ "$BEHIND" -gt 50 ]; then
+            echo "::error::Branch is $BEHIND commits behind main (threshold: 50). Please rebase onto main."
+            exit 1
+          fi
+
+      - name: Post divergence warning (if > 20 commits behind)
+        if: ${{ always() && steps.divergence.outputs.behind > 20 }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const behind = ${{ steps.divergence.outputs.behind }};
+            const failed = behind > 50;
+            const emoji = failed ? '🚨' : '⚠️';
+            const body = [
+              `${emoji} **Branch Divergence ${failed ? 'FAILED' : 'Warning'}**`,
+              '',
+              `This branch is **${behind} commits behind \`main\`**${failed ? ' (limit: 50)' : ''}.`,
+              '',
+              failed
+                ? '> Please rebase your branch onto `main` before this PR can be merged:\n> ```\n> git fetch origin main && git rebase origin/main\n> ```'
+                : '> Consider rebasing soon to avoid merge conflicts:\n> ```\n> git fetch origin main && git rebase origin/main\n> ```',
+            ].join('\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 2: Backend lint — Ruff check + format verification
+  # ──────────────────────────────────────────────────────────────
+  backend-lint:
+    name: 🐍 Backend Lint
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: pip install "ruff>=0.4.0"
+
+      - name: Ruff check
+        working-directory: backend
+        run: ruff check .
+
+      - name: Ruff format check
+        working-directory: backend
+        run: ruff format --check .
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 3: Backend tests — Pytest
+  # ──────────────────────────────────────────────────────────────
+  backend-tests:
+    name: 🧪 Backend Tests
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: backend-lint            # lint first, then test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: pip-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        working-directory: backend
+        run: pytest tests/ -v --tb=short
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 4: Frontend lint & type-check — ESLint + TypeScript
+  # ──────────────────────────────────────────────────────────────
+  frontend-lint-typecheck:
+    name: 🔍 Frontend Lint & Types
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: TypeScript type-check
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 5: Frontend build — Ensure production bundle compiles
+  # ──────────────────────────────────────────────────────────────
+  frontend-build:
+    name: 📦 Frontend Build
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: frontend-lint-typecheck  # lint first, then build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build production bundle
+        working-directory: frontend
+        run: npm run build

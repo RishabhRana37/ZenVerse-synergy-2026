@@ -8,6 +8,8 @@ import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
 import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
+import { useFPSStore, SPRING, springPreset, DUR_MICRO, DUR_ENTER } from '@/lib/motion'
 
 // ── RelativeTime component ───────────────────────────────────────────────
 
@@ -93,7 +95,11 @@ function TypewriterSummary({
 
 // ── IncidentCard component ───────────────────────────────────────────────
 
-const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; onSelect?: (id: string) => void }) => {
+// AnimatePresence's mode="popLayout" measures exit animations via a ref on
+// each direct child (PopChildMeasure). Without forwardRef here, framer-motion
+// can't attach that ref to our root motion.div and falls into a remeasure
+// loop that never settles — the "Maximum update depth exceeded" flood.
+const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Incident; onSelect?: (id: string) => void; index: number }>(({ incident, onSelect, index }, ref) => {
   const [isPulsing, setIsPulsing] = useState(false)
   const [showFirstAction, setShowFirstAction] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -130,17 +136,72 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
     if (onSelect) onSelect(incident.id)
   }
 
+  // Stable across re-renders: an inline arrow here would give
+  // TypewriterSummary a new onComplete every render, re-running its typing
+  // effect (and re-registering its rAF loop) on every unrelated store update.
+  const handleTypewriterComplete = React.useCallback(() => setShowFirstAction(true), [])
+
   const topCandidate = incident.root_candidates?.[0]
   const rootService = topCandidate?.service
 
   // Sparkline data mapping
   const sparklineData = (incident.sparkline || []).map((val, idx) => ({ idx, val }))
 
+  // Mouse Spotlight Tracking
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [isHovered, setIsHovered] = useState(false)
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+  }
+
+  // Compute live severity from alerts
+  const alerts = useStreamStore((s) => s.alerts)
+  const severity = React.useMemo(() => {
+    const myAlerts = alerts.filter(a => a.cluster_id === incident.id)
+    if (myAlerts.some(a => a.severity === 'critical')) return 'critical'
+    if (myAlerts.some(a => a.severity === 'warning')) return 'warning'
+    if (incident.title.toLowerCase().includes('critical') || incident.title.toLowerCase().includes('error') || incident.title.toLowerCase().includes('fail')) return 'critical'
+    if (incident.title.toLowerCase().includes('warn')) return 'warning'
+    return 'info'
+  }, [alerts, incident.id, incident.title])
+
+  // Spotlight and border colors based on severity
+  const colors = React.useMemo(() => {
+    switch (severity) {
+      case 'critical':
+        return {
+          border: 'rgba(239, 68, 68, 0.4)',
+          glow: 'rgba(239, 68, 68, 0.12)',
+          rgb: '239, 68, 68',
+        }
+      case 'warning':
+        return {
+          border: 'rgba(245, 158, 11, 0.4)',
+          glow: 'rgba(245, 158, 11, 0.12)',
+          rgb: '245, 158, 11',
+        }
+      case 'info':
+      default:
+        return {
+          border: 'rgba(59, 130, 246, 0.4)',
+          glow: 'rgba(59, 130, 246, 0.12)',
+          rgb: '59, 130, 246',
+        }
+    }
+  }, [severity])
+
   // Render resolved cards in single-row compression format
   if (incident.status === 'resolved') {
     return (
       <motion.div
+        ref={ref}
         layout
+        custom={index}
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.96 }}
@@ -148,14 +209,30 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
         <div
           data-incident-id={incident.id}
           onClick={handleClick}
-          className="bg-bg-elevated/40 border border-text-muted/20 hover:border-border hover:bg-bg-hover rounded-card px-3 py-2 transition-colors duration-200 flex items-center justify-between gap-3 text-text-secondary select-none text-[11px]"
+          onMouseMove={handleMouseMove}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            borderColor: isHovered ? colors.border : undefined,
+            boxShadow: isHovered ? `0 0 10px ${colors.glow}` : undefined,
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s',
+          }}
+          className="bg-bg-surface/50 border border-border/40 hover:bg-bg-hover/80 hover:border-border-hover rounded-[10px] px-3.5 py-2.5 flex items-center justify-between gap-3 text-text-secondary select-none text-[11.5px] relative overflow-hidden transition-all duration-150 shadow-sm"
         >
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          {isHovered && (
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-0"
+              style={{
+                background: `radial-gradient(150px circle at ${mousePos.x}px ${mousePos.y}px, rgba(${colors.rgb}, 0.04), transparent 80%)`,
+              }}
+            />
+          )}
+          <div className="flex items-center gap-2 min-w-0 flex-1 z-10 relative">
             <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
             <span className="font-semibold text-text-muted truncate max-w-[200px] font-sans">
               {incident.title}
             </span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-muted font-mono leading-none flex-shrink-0 uppercase font-bold">
+            <span className="text-[10px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-muted font-mono leading-none flex-shrink-0 uppercase font-bold">
               Resolved
             </span>
             {topCandidate && (
@@ -165,7 +242,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted">
+          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted z-10 relative">
             <span className="inline-flex items-baseline gap-0.5">
               <Odometer value={incident.alert_count} easing="spring" className="text-text-muted" />
               <span>alerts</span>
@@ -186,23 +263,24 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   const extraServices = incident.services.length - 4
 
   const borderClass = incident.acknowledged
-    ? 'border border-accent/25 bg-bg-elevated' // acknowledged = accent-dim
-    : 'border border-border bg-bg-elevated' // active = hairline
+    ? 'border-accent/30 bg-bg-surface'
+    : 'border-border bg-bg-surface'
 
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   const cardVariants = {
-    hidden: { opacity: 0 },
-    visible: prefersReduced 
-      ? { opacity: 1, transition: { duration: 0.1 } }
-      : {
-          opacity: 1,
-          transition: {
-            duration: 0.18,
-            delay: 0.05, // surface fades up after 50ms (giving time for the line draw)
-            ease: 'easeOut'
+    hidden: { opacity: 0, scale: 0.96 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: reducedMotion
+        ? { duration: 0 }
+        : {
+            ...SPRING,
+            delay: index * 0.03,
           }
-        }
+    }
   }
 
   const lineVariants = {
@@ -217,8 +295,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   }
 
   const titleVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced 
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion 
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -228,8 +306,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   }
 
   const rootLineVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -239,8 +317,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   }
 
   const chipsVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -250,8 +328,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   }
 
   const summaryVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 4 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0, y: 4 },
+    visible: reducedMotion
       ? { opacity: 1, y: 0 }
       : {
           opacity: 1,
@@ -261,8 +339,8 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
   }
 
   const footerVariants = {
-    hidden: prefersReduced ? { opacity: 1 } : { opacity: 0 },
-    visible: prefersReduced
+    hidden: reducedMotion ? { opacity: 1 } : { opacity: 0 },
+    visible: reducedMotion
       ? { opacity: 1 }
       : {
           opacity: 1,
@@ -272,19 +350,31 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
 
   return (
     <motion.div
+      ref={ref}
       layout
+      custom={index}
       initial="hidden"
-      animate={isPulsing ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
+      animate={isPulsing && !reducedMotion ? { opacity: 1, scale: [1, 1.015, 1] } : "visible"}
       exit={{ opacity: 0, scale: 0.96 }}
       variants={cardVariants}
-      className="w-full text-left cursor-pointer group"
+      transition={springPreset}
+      className="w-full text-left cursor-pointer group/bracket relative"
     >
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+          }
+        }}
+        tabIndex={0}
         className={clsx(
-          "rounded-card p-4 transition-colors duration-200 hover:border-border-strong hover:bg-bg-hover flex flex-col relative overflow-hidden select-none animate-border-pulse-entrance",
-          borderClass
+          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border shadow-card transition-all duration-150 ease-out focus-visible:outline-offset-[-2px]",
+          borderClass,
+          !reducedMotion && "hover:-translate-y-[1px] hover:border-border-hover",
+          severity === 'critical' && !incident.acknowledged && "animate-pulse-edge-critical"
         )}
       >
         {/* Draw Accent Line across where the card will be */}
@@ -292,13 +382,13 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           <motion.div
             variants={lineVariants}
             style={{ originX: 0 }}
-            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200"
+            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200 z-10"
             animate={{ opacity: isPulsing ? 1.0 : topCandidate.confidence }}
           />
         )}
 
         {/* Cap inner content at max-width 720px, left-aligned */}
-        <div className="w-full max-w-[720px] text-left flex flex-col h-full">
+        <div className="w-full max-w-[720px] text-left flex flex-col h-full z-10 relative">
           {/* Header */}
           <motion.div variants={titleVariants} className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
             <h3 className="text-[13px] font-semibold text-text-primary leading-tight font-sans select-text line-clamp-2">
@@ -306,7 +396,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
             </h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {incident.acknowledged ? (
-                <span className="text-[9px] font-mono font-bold text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded uppercase leading-none">
+                <span className="text-[10px] font-mono font-bold text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded uppercase leading-none">
                   Ack
                 </span>
               ) : (
@@ -320,12 +410,12 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           {topCandidate && (
             <motion.div variants={rootLineVariants} className="flex flex-col gap-1.5 my-1.5 pb-2.5 border-b border-border/40 flex-shrink-0">
               <div className="flex items-baseline gap-1 text-[11px] font-mono text-text-secondary truncate select-text">
-                <span className="text-text-muted font-semibold uppercase text-[9px] tracking-wider">Root cause:</span>
+                <span className="text-text-muted font-semibold uppercase text-[10px] tracking-wider">Root cause:</span>
                 <span className={clsx("font-bold", topCandidate.is_confirmed ? "text-accent" : "text-severity-critical")}>
                   {topCandidate.service}
                 </span>
                 {topCandidate.is_confirmed && (
-                  <span className="text-[8px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                  <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
                     Confirmed
                   </span>
                 )}
@@ -350,10 +440,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 <span
                   key={svc}
                   className={clsx(
-                    "px-2 py-0.5 rounded text-[10px] font-mono leading-none border transition-all duration-200 select-text",
+                    "text-[10px] font-mono px-2 py-0.5 rounded border leading-none transition-colors",
                     isRoot
-                      ? "bg-accent-dim text-accent ring-1 ring-accent border-accent/40 font-semibold"
-                      : "bg-bg-base border-border text-text-secondary"
+                      ? "bg-severity-critical/10 border-severity-critical/30 text-severity-critical font-bold"
+                      : "bg-bg-base/60 border-border text-text-secondary"
                   )}
                 >
                   {svc}
@@ -361,20 +451,20 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
               )
             })}
             {extraServices > 0 && (
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono leading-none bg-bg-base border border-border text-text-muted">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-border bg-bg-base/30 text-text-muted font-bold leading-none">
                 +{extraServices} more
               </span>
             )}
           </motion.div>
 
-          {/* Summary Zone */}
-          <motion.div variants={summaryVariants} className="mb-3.5 flex-1 min-h-0">
+          {/* Summary / Diagnosis Brief */}
+          <motion.div variants={summaryVariants} className="flex flex-col gap-1 my-1.5 flex-1 select-text">
             {incident.summary ? (
-              <div className="text-[12px] text-text-primary leading-[1.5] font-sans select-text">
-                <div className={clsx("transition-all duration-200", !isExpanded && "line-clamp-4 overflow-hidden")}>
+              <div className="flex flex-col h-full justify-between">
+                <div className={clsx("transition-all duration-200 z-10 relative", !isExpanded && "line-clamp-4 overflow-hidden")}>
                   <TypewriterSummary
                     text={incident.summary}
-                    onComplete={() => setShowFirstAction(true)}
+                    onComplete={handleTypewriterComplete}
                   />
                 </div>
 
@@ -385,7 +475,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                       e.stopPropagation()
                       setIsExpanded(!isExpanded)
                     }}
-                    className="text-accent hover:underline text-[10px] font-mono mt-1.5 block select-none"
+                    className="text-accent hover:underline text-[10px] font-mono mt-1.5 block select-none z-10 relative cursor-pointer"
                   >
                     {isExpanded ? 'Show less' : 'Show more'}
                   </button>
@@ -395,10 +485,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                   <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: DUR_ENTER }}
                     className="mt-2.5 pt-2 border-t border-border/20 text-accent font-semibold text-[11px] leading-relaxed uppercase tracking-wide select-text flex flex-col gap-0.5"
                   >
-                    <span className="text-text-secondary text-[9px] font-bold tracking-wider">FIRST ACTION:</span>
+                    <span className="text-text-secondary text-[10px] font-bold tracking-wider">FIRST ACTION:</span>
                     <span className="normal-case font-medium">{incident.first_action}</span>
                   </motion.div>
                 )}
@@ -419,10 +509,10 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           </motion.div>
 
           {/* Footer / Actions */}
-          <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px]">
+          <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px] z-10">
             {confirmResolve ? (
               <div className="flex items-center gap-2 text-[11px] font-mono" onClick={(e) => e.stopPropagation()}>
-                <span className="text-severity-warning font-bold uppercase text-[9px] tracking-wider">Resolve incident?</span>
+                <span className="text-severity-warning font-bold uppercase text-[10px] tracking-wider">Resolve incident?</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -452,7 +542,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </div>
 
                 {/* Operator Actions - Hover visible */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1.5 absolute right-0 bg-bg-elevated pl-2">
+                <div className="opacity-0 group-hover/bracket:opacity-100 transition-opacity duration-150 flex items-center gap-1.5 absolute right-0 bg-bg-elevated pl-2">
                   {!incident.acknowledged && (
                     <button
                       onClick={(e) => {
@@ -476,7 +566,7 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
                 </div>
 
                 {/* Sparkline chart */}
-                <div className="group-hover:opacity-0 transition-opacity duration-150 w-[60px] h-[20px] opacity-75">
+                <div className="group-hover/bracket:opacity-0 transition-opacity duration-150 w-[60px] h-[20px] opacity-75">
                   {sparklineData.length > 0 && (
                     <Sparkline
                       data={sparklineData.map(d => d.val)}
@@ -491,9 +581,11 @@ const IncidentCard = React.memo(({ incident, onSelect }: { incident: Incident; o
           </motion.div>
         </div>
       </div>
+      <CornerBrackets />
     </motion.div>
   )
-})
+}))
+IncidentCard.displayName = 'IncidentCard'
 
 // ── IncidentPanel component ─────────────────────────────────────────────
 
@@ -502,22 +594,44 @@ interface IncidentPanelProps {
 }
 
 export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
-  const incidents = useStreamStore(selectIncidentList)
+  // Throttled to ~6/s: selectIncidentList returns a new sorted array on
+  // every WS incident update. At high replay speed that re-rendered this
+  // whole animated tree (framer-motion layout + AnimatePresence + N
+  // typewriter effects) far faster than the browser could paint, which is
+  // what actually froze the panel — not a true infinite loop, just far more
+  // renders than the UI needs. Mirrors the same fix applied to
+  // TopologyHealthMap.
+  const rawIncidentList = useStreamStore(selectIncidentList)
+  const [incidents, setIncidents] = useState(rawIncidentList)
+  const pendingListRef = useRef(rawIncidentList)
+  pendingListRef.current = rawIncidentList
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setIncidents(pendingListRef.current)
+    }, 150)
+    return () => window.clearInterval(id)
+  }, [])
+
   const [resolvedExpanded, setResolvedExpanded] = useState(false)
 
   const activeIncidents = incidents.filter((i) => i.status === 'active')
   const resolvedIncidents = incidents.filter((i) => i.status === 'resolved')
 
   const activeCount = useStreamStore((s) => {
-    if (s.stats) return s.stats.active_incidents
-    return [...s.incidents.values()].filter((i) => i.status === 'active').length
+    const stats = s.scrubMode && s.scrubState ? s.scrubState.stats : s.stats
+    const incs = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
+    if (stats) return stats.active_incidents
+    return [...incs.values()].filter((i) => i.status === 'active').length
   })
 
   return (
-    <div className="flex flex-col h-full bg-bg-surface rounded-card border border-border overflow-hidden">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-        <span className="text-ui font-semibold text-text-primary font-sans">Incidents</span>
+        <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+          <span className="text-accent mr-1">▎02</span> Incidents
+        </span>
         <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
           <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
         </div>
@@ -546,8 +660,8 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex flex-col gap-3 p-4">
             <AnimatePresence mode="popLayout">
-              {activeIncidents.map((inc) => (
-                <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} />
+              {activeIncidents.map((inc, index) => (
+                <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} index={index} />
               ))}
             </AnimatePresence>
 
@@ -577,11 +691,11 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: DUR_MICRO }}
                       className="overflow-hidden flex flex-col gap-2"
                     >
-                      {resolvedIncidents.map((inc) => (
-                        <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} />
+                      {resolvedIncidents.map((inc, index) => (
+                        <IncidentCard key={inc.id} incident={inc} onSelect={onIncidentSelect} index={index} />
                       ))}
                     </motion.div>
                   )}

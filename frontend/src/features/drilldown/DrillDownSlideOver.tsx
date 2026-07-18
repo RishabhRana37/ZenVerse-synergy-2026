@@ -6,10 +6,232 @@ import { useStreamStore } from '@/store/stream'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Badge } from '@/components/ui/Badge'
 import { Odometer } from '@/components/ui/Odometer'
-import type { Alert } from '@/lib/types'
+import type { Alert, Incident } from '@/lib/types'
 import { clsx } from 'clsx'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
+import { Eyebrow } from '@/components/ui/Eyebrow'
+import { Button } from '@/components/ui/Button'
 import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/actions'
+import { useFPSStore, springPreset, DUR_ENTER, EASE } from '@/lib/motion'
+import { X } from 'lucide-react'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
+import { useFocusTrap } from '@/hooks/useFocusTrap'
+
+interface CorrelationBeamsProps {
+  incident: Incident
+  alerts: Alert[]
+  topology: { nodes: any[]; edges: any[] } | null
+}
+
+function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps) {
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
+
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+
+  // Find the root alert (corresponds to the first root candidate, or the oldest alert in the list)
+  const topCandidate = incident.root_candidates?.[0]
+  const rootAlert = alerts.find(a => topCandidate && a.service === topCandidate.service) || alerts[0]
+
+  // Affected alerts (excluding rootAlert, cap at 3 items for nice rendering)
+  const affectedAlerts = alerts.filter(a => a.id !== rootAlert?.id).slice(0, 3)
+
+  if (!rootAlert) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-text-muted font-mono text-[11px]">
+        No correlation details available
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-between p-4 relative font-sans text-text-primary overflow-hidden">
+      {/* Expanding Ripple Rings Behind Root cause node */}
+      {!reducedMotion && (
+        <div className="absolute left-[70px] top-[110px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
+          <div className="w-20 h-20 rounded-full border border-accent/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
+          <div className="w-20 h-20 rounded-full border border-accent/10 animate-ping absolute [animation-delay:1.5s]" style={{ animationDuration: '3s' }} />
+        </div>
+      )}
+
+      {/* Background SVG Beams */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="beamGradCritical" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(239, 68, 68, 0.1)" />
+            <stop offset="50%" stopColor="rgba(239, 68, 68, 0.95)" />
+            <stop offset="100%" stopColor="rgba(239, 68, 68, 0.1)" />
+          </linearGradient>
+          <linearGradient id="beamGradWarning" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(245, 158, 11, 0.1)" />
+            <stop offset="50%" stopColor="rgba(245, 158, 11, 0.95)" />
+            <stop offset="100%" stopColor="rgba(245, 158, 11, 0.1)" />
+          </linearGradient>
+          <linearGradient id="beamGradInfo" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(45, 212, 167, 0.1)" />
+            <stop offset="50%" stopColor="rgba(45, 212, 167, 0.95)" />
+            <stop offset="100%" stopColor="rgba(45, 212, 167, 0.1)" />
+          </linearGradient>
+        </defs>
+
+        {affectedAlerts.map((targetAlert, idx) => {
+          const h = 220
+          const startX = 145
+          const startY = h / 2
+          
+          const endX = 355
+          let endY = h / 2
+          if (affectedAlerts.length === 2) {
+            endY = idx === 0 ? 55 : 165
+          } else if (affectedAlerts.length === 3) {
+            endY = idx === 0 ? 45 : idx === 1 ? 110 : 175
+          }
+
+          // Curved path
+          const pathD = `M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`
+
+          // Determine connection reason
+          let reason = "Temporal window"
+          if (rootAlert.service === targetAlert.service) {
+            reason = "Shared Service"
+          } else if (topology) {
+            const hasEdge = topology.edges.some(e => 
+              (e.source === rootAlert.service && e.target === targetAlert.service) ||
+              (e.source === targetAlert.service && e.target === rootAlert.service)
+            )
+            if (hasEdge) {
+              reason = "Downstream Cascade"
+            }
+          }
+
+          // Choose gradient based on alert severity
+          const gradId = 
+            targetAlert.severity === 'critical' ? 'url(#beamGradCritical)' :
+            targetAlert.severity === 'warning' ? 'url(#beamGradWarning)' :
+            'url(#beamGradInfo)'
+
+          // Highlight edge if either connected node is hovered
+          const isHighlighted = hoveredNode === rootAlert.service || hoveredNode === targetAlert.service
+
+          return (
+            <g key={targetAlert.id}>
+              {/* Background trace edge - Animates stroke draw */}
+              <motion.path
+                d={pathD}
+                fill="none"
+                stroke={isHighlighted ? 'var(--accent)' : 'rgba(255, 255, 255, 0.05)'}
+                strokeWidth={isHighlighted ? 2.5 : 1.5}
+                initial={{ pathLength: reducedMotion ? 1 : 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: DUR_ENTER, ease: EASE, delay: idx * 0.1 }}
+                style={{ transition: 'stroke 0.15s ease, stroke-width 0.15s ease' }}
+              />
+              {/* Glowing animated beam overlay (disabled in reduced-motion) */}
+              {!reducedMotion && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={gradId}
+                  strokeWidth="2"
+                  strokeDasharray="20, 100"
+                  className="animate-beam-flow"
+                  style={{
+                    animation: 'beam-flow 2.5s linear infinite',
+                    animationDelay: `${idx * 0.6}s`
+                  }}
+                />
+              )}
+              {/* Text label over the beam path */}
+              <text
+                x={(startX + endX) / 2}
+                y={(startY + endY) / 2 - 5}
+                fill={isHighlighted ? 'var(--accent)' : 'rgba(255, 255, 255, 0.35)'}
+                fontSize="10"
+                fontFamily="JetBrains Mono"
+                textAnchor="middle"
+                className="select-none transition-colors duration-150"
+              >
+                {reason}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+
+      {/* Root Node card on Left */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={reducedMotion ? { duration: 0.1 } : springPreset}
+        onMouseEnter={() => setHoveredNode(rootAlert.service)}
+        onMouseLeave={() => setHoveredNode(null)}
+        className="w-[130px] border bg-[#090E11] rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-accent transition-colors duration-150 animate-pulse-edge-accent"
+      >
+        <CornerBrackets />
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+        </div>
+        <div className="text-[10px] font-semibold text-text-primary truncate font-sans">
+          {rootAlert.service || 'unknown-service'}
+        </div>
+        <div className="text-[10px] font-mono text-text-muted truncate leading-none">
+          {rootAlert.host || 'unknown-host'}
+        </div>
+        <div className="text-[10px] text-text-secondary line-clamp-2 mt-0.5 leading-snug font-sans select-text">
+          {rootAlert.message}
+        </div>
+      </motion.div>
+
+      {/* Affected Nodes cards on Right */}
+      <div className="flex flex-col justify-around h-full py-1 z-10 w-[130px]">
+        {affectedAlerts.map((alert, idx) => {
+          const isCritical = alert.severity === 'critical'
+          const borderStyle = 
+            alert.severity === 'critical' ? 'border-severity-critical/30' :
+            alert.severity === 'warning' ? 'border-severity-warning/30' :
+            'border-severity-info/30'
+
+          return (
+            <motion.div
+              key={alert.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={reducedMotion ? { duration: 0.1 } : { ...springPreset, delay: (idx + 1) * 0.1 }}
+              onMouseEnter={() => setHoveredNode(alert.service)}
+              onMouseLeave={() => setHoveredNode(null)}
+              className={clsx(
+                "border bg-[#090E11] rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-150 relative group/bracket cursor-pointer",
+                borderStyle
+              )}
+            >
+              <CornerBrackets />
+              <div className="flex items-center justify-between">
+                <span className={clsx(
+                  "text-[10px] font-mono uppercase font-bold tracking-wider leading-none",
+                  isCritical ? "text-severity-critical" : "text-text-muted"
+                )}>
+                  {alert.severity} alert
+                </span>
+                <span className={clsx(
+                  "w-1.5 h-1.5 rounded-full",
+                  alert.severity === 'critical' ? "bg-severity-critical" :
+                  alert.severity === 'warning' ? "bg-severity-warning" : "bg-severity-info"
+                )} />
+              </div>
+              <div className="text-[10px] font-semibold text-text-primary truncate font-sans leading-tight">
+                {alert.service || 'unknown-service'}
+              </div>
+              <div className="text-[10px] text-text-secondary line-clamp-1 leading-snug font-sans select-text">
+                {alert.message}
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 interface DrillDownSlideOverProps {
   incidentId: string | null
@@ -151,13 +373,43 @@ const CYTOSCAPE_STYLES = [
 // ── Main SlideOver Component ──────────────────────────────────────────────
 
 export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverProps) {
-  const storeIncident = useStreamStore((s) => s.incidents.get(incidentId || ''))
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+  const focusTrapRef = useFocusTrap(!!incidentId)
+
+  const storeIncident = useStreamStore((s) => {
+    const activeIncidents = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
+    return activeIncidents.get(incidentId || '')
+  })
+  const scrubMode = useStreamStore((s) => s.scrubMode)
+  const scrubState = useStreamStore((s) => s.scrubState)
+  const scrubTime = useStreamStore((s) => s.scrubTime)
 
   const [loading, setLoading] = useState(true)
-  const [detail, setDetail] = useState<{
+  const [liveDetail, setLiveDetail] = useState<{
     members: Alert[]
     topology_path: string[][]
   } | null>(null)
+
+  const detail = React.useMemo(() => {
+    if (!liveDetail) return null
+    if (scrubMode && scrubState) {
+      const scrubbedMembers = Array.from(scrubState.alertIndex.values())
+        .filter((a) => a.cluster_id === incidentId)
+        .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
+
+      const activeServices = new Set(storeIncident?.services || [])
+      const scrubbedTopoPath = (liveDetail.topology_path || []).filter(
+        ([src, dest]) => activeServices.has(src) && activeServices.has(dest)
+      )
+
+      return {
+        members: scrubbedMembers,
+        topology_path: scrubbedTopoPath,
+      }
+    }
+    return liveDetail
+  }, [liveDetail, scrubMode, scrubState, incidentId, storeIncident])
   
   const [topology, setTopology] = useState<{
     nodes: { id: string }[]
@@ -170,6 +422,8 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     x: number
     y: number
   } | null>(null)
+
+  const [activeTab, setActiveTab] = useState<'blast' | 'beams'>('blast')
 
   const cyRef = useRef<any>(null)
   const membersParentRef = useRef<HTMLDivElement>(null)
@@ -206,7 +460,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     if (!incidentId) return
 
     setLoading(true)
-    setDetail(null)
+    setLiveDetail(null)
 
     const fetchAll = async () => {
       try {
@@ -226,7 +480,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
         const iRes = await fetch(`${apiBase}/incidents/${incidentId}`)
         if (iRes.ok) {
           const detailData = await iRes.json()
-          setDetail(detailData)
+          setLiveDetail(detailData)
         }
       } catch (err) {
         console.error('[drilldown] API Fetch Error:', err)
@@ -284,7 +538,8 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
     cy.edges().removeClass('active-prop-edge')
     cy.nodes().removeClass('active-node-blink')
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const fpsReduced = useFPSStore.getState().reducedMotion
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || fpsReduced
     if (prefersReduced) {
       path.forEach((edge) => {
         const src = edge[0]
@@ -403,19 +658,24 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
       {/* Dimmed backdrop (War room remains visible and streaming behind) */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-bg-base/60 backdrop-blur-[3px] z-[60]"
+        className="fixed inset-0 bg-[#0A0E14]/80 z-[var(--z-slideover)]"
       />
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
       <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[60] flex flex-col h-full overflow-hidden"
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Incident details: ${storeIncident.title}`}
+        initial={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
+        transition={reducedMotion ? { duration: 0.15 } : springPreset}
+        className="fixed inset-y-0 right-0 w-full max-w-[720px] bg-bg-surface border-l border-border shadow-elevated z-[var(--z-slideover)] flex flex-col h-full overflow-visible group/bracket"
       >
+        <CornerBrackets />
         {/* Header (Instantly populated from store data) */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-border flex-shrink-0 bg-bg-surface">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-border/40 flex-shrink-0 bg-transparent">
           <div className="flex flex-col gap-1 pr-6">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-mono text-text-secondary select-text">{storeIncident.id}</span>
@@ -426,6 +686,11 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                 )}
               />
               <span className="text-[10px] font-mono uppercase font-semibold text-text-muted">{storeIncident.status}</span>
+              {scrubMode && (
+                <span className="text-[10px] font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/15 border border-accent/30 animate-pulse select-none">
+                  as of t+{scrubTime.toFixed(1)}s
+                </span>
+              )}
             </div>
             <h2 className="text-[15px] font-semibold text-text-primary leading-snug select-text font-sans line-clamp-2">
               {storeIncident.title}
@@ -440,23 +705,23 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               <span>created {new Date(storeIncident.created_at).toLocaleTimeString()}</span>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors p-1.5 rounded hover:bg-bg-elevated text-ui flex-shrink-0"
+            className="h-8 w-8 p-0 text-text-secondary hover:text-text-primary flex items-center justify-center"
             aria-label="Close details"
           >
-            ✕
-          </button>
+            <X size={16} />
+          </Button>
         </div>
 
         {/* Scrollable Content zone */}
-        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-5 p-6 bg-bg-surface/50">
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-6 p-6 bg-transparent">
           
           {/* Section 1: Ranked Candidates (podium style) */}
           <section className="flex flex-col flex-shrink-0">
-            <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase mb-2 select-none">
-              Ranked candidates
-            </h4>
+            <Eyebrow>Ranked candidates</Eyebrow>
             <div className="flex flex-col gap-2">
               {storeIncident.root_candidates.slice(0, 3).map((candidate, idx) => {
                 const rank = idx + 1
@@ -466,16 +731,16 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                     layout
                     key={candidate.alert_id}
                     className={clsx(
-                      "flex items-center gap-3 transition-all duration-200 select-text group",
+                      "flex items-center gap-3 transition-all duration-150 select-text group",
                       isFirst
-                        ? "bg-bg-elevated border border-accent/30 ring-1 ring-accent/30 rounded p-3"
-                        : "bg-bg-base/30 border border-border/50 rounded p-2.5"
+                        ? "bg-bg-surface/80 border border-accent/45 rounded-[10px] p-3 shadow-md"
+                        : "bg-bg-surface/30 border border-border/40 rounded-[10px] p-2.5"
                     )}
                   >
                     <span
                       className={clsx(
-                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0",
-                        isFirst ? "bg-accent text-text-inverse" : "bg-bg-elevated border border-border text-text-secondary"
+                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 border",
+                        isFirst ? "bg-accent border-accent text-[#0A0A0B]" : "bg-bg-surface border-border text-text-secondary"
                       )}
                     >
                       {rank}
@@ -486,7 +751,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                           {candidate.service}
                         </span>
                         {candidate.is_confirmed && (
-                          <span className="text-[8px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                          <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
                             Confirmed
                           </span>
                         )}
@@ -524,65 +789,95 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
             </div>
           </section>
 
-          {/* Section 2: Propagation Graph */}
+          {/* Section 2: Propagation Graph & Beams */}
           <section className="flex flex-col flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[11px] text-text-muted font-mono font-bold tracking-wider uppercase select-none">
-                Propagation graph
-              </h4>
-              {detail && (
+              <div className="flex bg-bg-base p-0.5 rounded border border-border">
+                <button
+                  onClick={() => setActiveTab('blast')}
+                  className={clsx(
+                    "px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors cursor-pointer",
+                    activeTab === 'blast'
+                      ? "bg-bg-surface text-text-primary border border-border shadow-sm font-semibold"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Blast Radius
+                </button>
+                <button
+                  onClick={() => setActiveTab('beams')}
+                  className={clsx(
+                    "px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors cursor-pointer",
+                    activeTab === 'beams'
+                      ? "bg-bg-surface text-text-primary border border-border shadow-sm font-semibold"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Correlation Beams
+                </button>
+              </div>
+
+              {activeTab === 'blast' && detail && (
                 <button
                   onClick={() => runPropagationAnimation(cyRef.current, detail.topology_path)}
-                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[9px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[10px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   replay propagation ↻
                 </button>
               )}
             </div>
             
-            <div className="relative h-[180px] bg-bg-base border border-border rounded overflow-hidden">
+            <div className="relative h-[220px] bg-bg-base border border-border rounded overflow-hidden">
               {loading ? (
                 // Shimmering skeleton loader for the graph
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 animate-pulse bg-bg-base/50">
                   <div className="w-32 h-6 rounded bg-bg-elevated" />
                   <div className="w-48 h-4 rounded bg-bg-elevated/80" />
                 </div>
-              ) : topology && cyElements.length > 0 ? (
-                <>
-                  <CytoscapeComponent
-                    elements={cyElements}
-                    stylesheet={CYTOSCAPE_STYLES as any}
-                    cy={handleCyInit}
-                    layout={{
-                      name: 'dagre',
-                      nodeSep: 35,
-                      rankSep: 40,
-                      rankDir: 'TB',
-                    } as any}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+              ) : activeTab === 'blast' ? (
+                topology && cyElements.length > 0 ? (
+                  <>
+                    <CytoscapeComponent
+                      elements={cyElements}
+                      stylesheet={CYTOSCAPE_STYLES as any}
+                      cy={handleCyInit}
+                      layout={{
+                        name: 'dagre',
+                        nodeSep: 35,
+                        rankSep: 40,
+                        rankDir: 'TB',
+                      } as any}
+                      style={{ width: '100%', height: '100%' }}
+                    />
 
-                  {/* Tooltip Overlay */}
-                  {hoveredNode && (
-                    <div
-                      className="absolute px-2 py-1 rounded bg-bg-elevated border border-border/80 text-[10px] font-mono text-text-primary pointer-events-none z-10 shadow-elevated"
-                      style={{
-                        left: `${hoveredNode.x}px`,
-                        top: `${hoveredNode.y}px`,
-                        transform: 'translate(-50%, -100%)',
-                      }}
-                    >
-                      <div className="font-semibold text-accent">{hoveredNode.service}</div>
-                      <div className="text-[9px] text-text-secondary mt-0.5">
-                        {hoveredNode.count} alerts in incident
+                    {/* Tooltip Overlay */}
+                    {hoveredNode && (
+                      <div
+                        className="absolute px-2 py-1 rounded bg-bg-elevated border border-border/80 text-[10px] font-mono text-text-primary pointer-events-none z-10 shadow-elevated"
+                        style={{
+                          left: `${hoveredNode.x}px`,
+                          top: `${hoveredNode.y}px`,
+                          transform: 'translate(-50%, -100%)',
+                        }}
+                      >
+                        <div className="font-semibold text-accent">{hoveredNode.service}</div>
+                        <div className="text-[10px] text-text-secondary mt-0.5">
+                          {hoveredNode.count} alerts in incident
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-muted text-stream">
+                    No topology path loaded
+                  </div>
+                )
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-text-muted text-stream">
-                  No topology path loaded
-                </div>
+                <CorrelationBeams
+                  incident={storeIncident}
+                  alerts={sortedMembers}
+                  topology={topology}
+                />
               )}
             </div>
           </section>
@@ -597,7 +892,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                 <div>{storeIncident.summary}</div>
                 {storeIncident.first_action && (
                   <div className="mt-3 pt-3 border-t border-border/20 text-accent font-semibold flex flex-col gap-0.5">
-                    <span className="text-text-secondary text-[9px] font-bold tracking-wider">FIRST ACTION:</span>
+                    <span className="text-text-secondary text-[10px] font-bold tracking-wider">FIRST ACTION:</span>
                     <span className="normal-case font-medium">{storeIncident.first_action}</span>
                   </div>
                 )}
@@ -671,7 +966,37 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               )}
             </div>
           </section>
+        </div>
 
+        {/* Footer Action Bar */}
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between bg-bg-surface flex-shrink-0 z-15">
+          <div className="flex items-center gap-3 text-[10px] text-text-secondary font-mono">
+            <span>Shortcut: <kbd className="bg-bg-base border border-border px-1.5 py-0.5 rounded font-mono font-bold text-accent">A</kbd> Ack</span>
+            <span className="text-border/40 select-none">·</span>
+            <span>Shortcut: <kbd className="bg-bg-base border border-border px-1.5 py-0.5 rounded font-mono font-bold text-accent">Shift+R</kbd> Resolve</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {storeIncident.status === 'active' && (
+              <>
+                <Button
+                  size="sm"
+                  variant={storeIncident.acknowledged ? "secondary" : "accent"}
+                  onClick={() => acknowledgeIncident(storeIncident.id)}
+                  disabled={storeIncident.acknowledged}
+                >
+                  {storeIncident.acknowledged ? "Acknowledged" : "Acknowledge"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => resolveIncident(storeIncident.id)}
+                >
+                  Resolve
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </motion.div>
     </>

@@ -11,6 +11,7 @@ import { Card }           from '@/components/ui/Card'
 import { Badge }          from '@/components/ui/Badge'
 import { Stat }           from '@/components/ui/Stat'
 import { ConfidenceBar }  from '@/components/ui/ConfidenceBar'
+import { Button } from '@/components/ui/Button'
 
 // ── Section wrapper ────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -50,15 +51,21 @@ function TypeRow({ label, className, sample }: { label: string; className: strin
 
 export function TokensPage() {
   return (
-    <div className="min-h-screen bg-bg-base p-8 max-w-4xl mx-auto">
+    <div className="w-full min-h-full bg-bg-base text-text-primary font-sans flex flex-col p-8 max-w-4xl mx-auto relative overflow-hidden select-text z-10">
+      {/* Background lasers */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
+        <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
+      </div>
+
+      <div className="relative z-10">
 
       {/* Back button row */}
       <div className="mb-4 text-left">
-        <Link
-          to="/"
-          className="inline-block px-3 py-1.5 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-ui-sm font-semibold text-text-primary transition-all duration-200"
-        >
-          ← War Room
+        <Link to="/war-room">
+          <Button variant="secondary" size="sm" className="font-mono text-[11px] font-semibold text-text-secondary">
+            ← Return to War Room
+          </Button>
         </Link>
       </div>
 
@@ -294,6 +301,7 @@ export function TokensPage() {
       {/* ── Footer ───────────────────────────────────────────────────── */}
       <div className="mt-8 pt-6 border-t border-border text-[11px] text-text-muted font-mono">
         StormLens · Team ZenVerse · Synergy 2026 · HPE PS #10 · /tokens route
+      </div>
       </div>
     </div>
   )

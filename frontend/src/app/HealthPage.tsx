@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStreamStore } from '@/store/stream'
 import { getPresentationMode } from '@/lib/presentationMode'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { CornerBrackets } from '@/components/ui/CornerBrackets'
 
 export function HealthPage() {
   const connection = useStreamStore((s) => s.connection)
@@ -16,7 +19,6 @@ export function HealthPage() {
     const checkApi = async () => {
       try {
         const apiBase = import.meta.env.VITE_API_URL || '/api'
-        
         const res = await fetch(`${apiBase}/topology`)
         if (res.ok) {
           setApiReachable('ok')
@@ -96,8 +98,15 @@ export function HealthPage() {
   const allReady = connection === 'open' && apiReachable === 'ok' && fps >= 55
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-base text-text-primary font-sans items-center justify-center p-6 select-none">
-      <div className="w-full max-w-md p-6 bg-bg-surface border border-border rounded-lg shadow-elevated flex flex-col gap-5">
+    <div className="w-full min-h-full bg-bg-base text-text-primary font-sans flex flex-col items-center justify-center py-12 px-6 select-none relative overflow-hidden">
+      {/* Background laser rays */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        <div className="absolute -top-[10%] left-[5%] w-[160px] h-[140%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/18 to-[#FF2B2E]/0 rotate-[35deg] blur-[90px]" />
+        <div className="absolute -top-[25%] left-[38%] w-[260px] h-[150%] bg-gradient-to-b from-[#FF2B2E]/0 via-[#FF2B2E]/25 to-[#FF4D4F]/8 rotate-[35deg] blur-[130px]" />
+      </div>
+
+      <Card className="w-full max-w-md p-6 flex flex-col gap-5 relative group/bracket bg-bg-surface/80 backdrop-blur-md z-10 border border-border/80 shadow-2xl">
+        <CornerBrackets />
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -105,11 +114,14 @@ export function HealthPage() {
             <span className="text-[14px] font-bold tracking-tight">StormLens Diagnostics</span>
             <span className="text-[10px] text-text-muted font-mono uppercase mt-0.5">Pre-Demo Checklist</span>
           </div>
-          <Link
-            to="/"
-            className="px-2 py-1 rounded bg-bg-elevated border border-border hover:bg-bg-hover text-[10px] font-mono font-semibold text-text-secondary transition-colors"
-          >
-            ← War Room
+          <Link to="/war-room">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-[10px] font-mono font-semibold text-text-secondary"
+            >
+              ← War Room
+            </Button>
           </Link>
         </div>
 
@@ -125,7 +137,7 @@ export function HealthPage() {
 
           {/* API Reachability */}
           <DiagRow
-            label="REST API reachability (port 8000):"
+            label="REST API reachability (backend :8000):"
             value={apiReachable.toUpperCase()}
             color={apiReachable === 'ok' ? 'accent' : apiReachable === 'fail' ? 'critical' : 'muted'}
           />
@@ -170,10 +182,10 @@ export function HealthPage() {
         {!allReady && (
           <div className="flex flex-col gap-1.5 text-[10px] font-mono text-text-muted border-t border-border/30 pt-3">
             {connection !== 'open' && (
-              <span>• WebSocket: ensure the FastAPI backend is running</span>
+              <span>• WebSocket: start the backend (<code className="text-text-secondary">uvicorn app.api.main:app</code>) then reload</span>
             )}
             {apiReachable === 'fail' && (
-              <span>• API: backend API server must be running on port 8000</span>
+              <span>• API: backend must be running (uvicorn app.api.main:app, port 8000)</span>
             )}
             {fps < 55 && (
               <span>• FPS: close other browser tabs and GPU-heavy apps</span>
@@ -181,7 +193,7 @@ export function HealthPage() {
           </div>
         )}
 
-      </div>
+      </Card>
     </div>
   )
 }

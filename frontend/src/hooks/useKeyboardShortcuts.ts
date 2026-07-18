@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useStreamStore } from '@/store/stream'
 import { audioManager } from '@/lib/audio'
+import { startReplay, stopReplay, resetReplay } from '@/lib/actions'
+
 
 export function useKeyboardShortcuts() {
   const navigate = useNavigate()
   const location = useLocation()
-  const clearStore = useStreamStore((s) => s.clearAllState)
 
   const [showOverlay, setShowOverlay] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore shortcuts if user is typing in a form input or select
+      // Cmd+K or Ctrl+K triggers Command Palette (works even in inputs if needed, but usually we ignore it in inputs unless Cmd+K is pressed)
+      const isK = e.key.toLowerCase() === 'k'
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey
+      if (isCmdOrCtrl && isK) {
+        e.preventDefault()
+        window.dispatchEvent(new CustomEvent('stormlens-open-palette'))
+        return
+      }
+
+      // Ignore other shortcuts if user is typing in a form input or select
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
       if (tag === 'input' || tag === 'select' || tag === 'textarea') {
         return
@@ -30,45 +39,21 @@ export function useKeyboardShortcuts() {
       // S — Start Replay
       if (key === 's') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || '/api'
-        fetch(`${apiBase}/replay/start`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
-        }).catch((err) => console.error('[shortcuts] failed to start replay:', err))
+        startReplay('db-cascade', 1)
         return
       }
 
       // X — Stop Replay
       if (key === 'x') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || '/api'
-        fetch(`${apiBase}/replay/stop`, { method: 'POST' }).catch((err) =>
-          console.error('[shortcuts] failed to stop replay:', err)
-        )
+        stopReplay()
         return
       }
 
-      // R — Reset (stop + clear store + restart mock scenario after a beat)
+      // R — Reset (stop + clear store + restart scenario after a beat)
       if (key === 'r') {
         e.preventDefault()
-        const apiBase = import.meta.env.VITE_API_URL || '/api'
-        
-        // Stop first
-        fetch(`${apiBase}/replay/stop`, { method: 'POST' })
-          .then(() => {
-            // Clear local store
-            clearStore()
-            // Restart scenario after a 300ms beat
-            setTimeout(() => {
-              fetch(`${apiBase}/replay/start`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dataset: 'db-cascade', scenario: 'db-cascade', speed: 1 }),
-              }).catch((err) => console.error('[shortcuts] failed to restart scenario:', err))
-            }, 300)
-          })
-          .catch((err) => console.error('[shortcuts] failed during reset:', err))
+        resetReplay('db-cascade', 1)
         return
       }
 
@@ -76,7 +61,7 @@ export function useKeyboardShortcuts() {
       if (key === 'e') {
         e.preventDefault()
         if (location.pathname === '/eval') {
-          navigate('/')
+          navigate('/war-room')
         } else {
           navigate('/eval')
         }
@@ -86,7 +71,7 @@ export function useKeyboardShortcuts() {
       // W — Go to War Room
       if (key === 'w') {
         e.preventDefault()
-        navigate('/')
+        navigate('/war-room')
         return
       }
 
@@ -97,8 +82,8 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // 1 / 2 / 3 — Open incident cards (only in War Room '/')
-      if (location.pathname === '/') {
+      // 1 / 2 / 3 — Open incident cards (only in War Room '/war-room')
+      if (location.pathname === '/war-room') {
         if (key === '1' || key === '2' || key === '3') {
           e.preventDefault()
           const index = parseInt(key, 10) - 1
@@ -119,7 +104,8 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [location.pathname, navigate, clearStore])
+  }, [location.pathname, navigate])
 
   return { showOverlay, setShowOverlay }
 }
+
