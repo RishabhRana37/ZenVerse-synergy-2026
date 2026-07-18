@@ -195,6 +195,9 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
     }
   }, [severity])
 
+  const fpsReduced = useFPSStore((s) => s.reducedMotion)
+  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+
   // Render resolved cards in single-row compression format
   if (incident.status === 'resolved') {
     return (
@@ -265,9 +268,6 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
   const borderClass = incident.acknowledged
     ? 'border-accent/30 bg-bg-surface'
     : 'border-border bg-bg-surface'
-
-  const fpsReduced = useFPSStore((s) => s.reducedMotion)
-  const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
   const cardVariants = {
     hidden: { opacity: 0, scale: 0.96 },

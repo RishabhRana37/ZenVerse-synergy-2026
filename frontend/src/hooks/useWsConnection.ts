@@ -25,6 +25,5 @@ export function useWsConnection() {
 
     client.connect()
     return () => client.disconnect()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }
