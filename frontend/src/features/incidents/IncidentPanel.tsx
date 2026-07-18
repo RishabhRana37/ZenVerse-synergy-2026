@@ -6,7 +6,8 @@ import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
 import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
-import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
+import { acknowledgeIncident, resolveIncident, resolveAllIncidents } from '@/lib/actions'
+import { Button } from '@/components/ui/Button'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { useFPSStore, SPRING, springPreset, DUR_MICRO, DUR_ENTER } from '@/lib/motion'
@@ -632,8 +633,20 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
         <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
           <span className="text-accent mr-1">▎02</span> Incidents
         </span>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
-          <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
+        <div className="flex items-center gap-2">
+          {activeIncidents.length > 0 && (
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={resolveAllIncidents}
+              className="text-[10px] tracking-wide uppercase px-2 py-0.5 rounded border border-accent/20 bg-accent/5 hover:bg-accent/15 select-none font-mono"
+            >
+              Resolve All
+            </Button>
+          )}
+          <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
+            <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
+          </div>
         </div>
       </div>
 

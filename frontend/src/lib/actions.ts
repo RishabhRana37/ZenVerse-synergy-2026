@@ -191,3 +191,47 @@ export async function resetReplay(dataset = 'db-cascade', speed = 1) {
     console.error('[actions] Failed to reset replay:', err)
   }
 }
+
+/**
+ * Resolve all active incidents at once. Optimistically updates local state
+ * and persists to the backend for each active incident.
+ */
+export function resolveAllIncidents() {
+  const store = useStreamStore.getState()
+  const activeIncidents = Array.from(store.incidents.values()).filter(
+    (inc) => inc.status !== 'resolved'
+  )
+  if (activeIncidents.length === 0) return
+
+  const newIncidents = new Map(store.incidents)
+  activeIncidents.forEach((inc) => {
+    const updated = {
+      ...inc,
+      status: 'resolved' as const,
+      resolved_at: new Date().toISOString(),
+    }
+    newIncidents.set(inc.id, updated)
+
+    store.addAuditLogEntry({
+      type: 'incident_resolved',
+      message: `Incident resolved: "${inc.title}" (${inc.alert_count} alerts)`,
+      incidentId: inc.id,
+    })
+
+    fetch(`${apiBase()}/incidents/${inc.id}/resolve`, { method: 'POST' }).catch((err) =>
+      console.error('[actions] resolveIncident failed to persist:', err)
+    )
+  })
+
+  const newStats = store.stats
+    ? {
+        ...store.stats,
+        active_incidents: Math.max(0, store.stats.active_incidents - activeIncidents.length),
+      }
+    : null
+
+  useStreamStore.setState({
+    incidents: newIncidents,
+    stats: newStats,
+  })
+}
