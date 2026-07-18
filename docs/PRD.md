@@ -37,15 +37,19 @@ StormLens is an alert correlation engine that converts a raw alert flood into a 
 
 The product succeeds if, on labeled ground-truth data (AIOps Challenge dataset — see `DATASETS.md`), it demonstrates:
 
-| Metric | Target | Why it matters |
-|---|---|---|
-| **Compression ratio** | ≥ 95% (e.g. 2,000 alerts → ≤ 100 items, ideally ≤ 10 incidents) | The headline value: noise eliminated |
-| **Cluster accuracy (ARI / purity vs labels)** | ≥ 0.8 purity | Groups must be *correct*, not just fewer |
-| **Root-cause hit rate** | Hit@1 ≥ 60%, Hit@3 ≥ 85% | The root cause must be in the top suggestions |
-| **End-to-end latency** | Alert → incident card in < 5 s at 100 alerts/s replay | Must feel real-time in the demo |
-| **Demo reliability** | Fully offline-capable (no live API dependency on stage) | Zero demo risk at the finale |
+| Metric | Target | **Measured** (aiops-scn1, 15 days, 26 labeled faults) | Why it matters |
+|---|---|---|---|
+| **Compression ratio** | ≥ 95% (e.g. 2,000 alerts → ≤ 100 items, ideally ≤ 10 incidents) | **60.2% — miss, and correctly so** (see note) | The headline value: noise eliminated |
+| **Cluster accuracy (ARI / purity vs labels)** | ≥ 0.8 purity | **Purity 1.00, ARI 0.349** — purity hit, ARI reported (no target set) | Groups must be *correct*, not just fewer |
+| **Root-cause hit rate** | Hit@1 ≥ 60%, Hit@3 ≥ 85% | **Hit@1 92%, Hit@3 100%** — both hit | The root cause must be in the top suggestions |
+| **End-to-end latency** | Alert → incident card in < 5 s at 100 alerts/s replay | **db-cascade: 63 ms. aiops-scn1: p50 3.0 s (hit), p95 6.1 s at a 200× burst (miss)** | Must feel real-time in the demo |
+| **Demo reliability** | Fully offline-capable (no live API dependency on stage) | Hit — replay/clustering fully local; only the LLM call is optional network, with a template fallback | Zero demo risk at the finale |
 
-These numbers go on a slide. Measured evaluation is a core deliverable, not an afterthought — it is the primary differentiator against teams that demo without evidence.
+These numbers go on a slide. Measured evaluation is a core deliverable, not an afterthought — it is the primary differentiator against teams that demo without evidence. Every number above is traceable to a committed `eval/results/*.json` (`python -m eval.harness` / `eval.bench` reproduce them).
+
+**Held-out validation:** the clustering `eps` was chosen using only 4 faults from a single day; the numbers above are reported against 22 faults from different days never used to tune it, per the protocol in `EVALUATION.md`.
+
+**On the compression miss — reported honestly, not hidden:** the 15-day dataset contains real background anomaly noise scattered across widely separated timestamps, which the correlator now correctly refuses to merge (see the event-clock fix in `ARCHITECTURE.md` §9). The `naive_dedup` ablation reaches 95.8% compression with 12% Hit@1 — proof that compression alone is a vanity metric decoupled from correctness, which is exactly the argument this row is meant to make to a domain-expert judge.
 
 ## 5. Features
 
@@ -100,9 +104,10 @@ These numbers go on a slide. Measured evaluation is a core deliverable, not an a
 
 1. **Hardest PS in the set** — requires embeddings, clustering, and graph reasoning; most teams won't attempt it (proven strategy from our Randomize win)
 2. **Judge fit** — alert correlation is HPE's own product domain (OpsRamp); evaluators will judge as experts and respect a real attempt
-3. **Measured, not claimed** — labeled ground truth lets us show accuracy numbers no other team will have
+3. **Measured, not claimed** — labeled ground truth lets us show accuracy numbers no other team will have (see §4 — real numbers, not placeholders)
 4. **Visceral demo** — the raw-vs-correlated split screen communicates value in 5 seconds to any audience
 5. **Zero live-demo risk** — offline replay, local embeddings, LLM fallback templates
+6. **Design decisions are evidence-backed, not just asserted** — every non-obvious choice (DBSCAN over DenStream, the distance weights, `eps`) has a measured ablation behind it, including negative results: an external review proposed replacing the blended distance with a hard topology-radius pre-filter for clustering and centrality-based root-cause ranking. Both were built as testable ablations and rejected on measurement, not argument — the gate reproduced the existing default at best and made db-cascade *worse* at a tight radius; pure centrality scored 0% Hit@1 because most real incidents here are single-service, leaving nothing for graph centrality to rank. Being able to show a judge "we tested the alternative your gut suggests, here's why it didn't win" is a stronger position than a design that was never stress-tested.
 
 ## 7. Risks & mitigations
 
@@ -117,6 +122,7 @@ These numbers go on a slide. Measured evaluation is a core deliverable, not an a
 ## 8. Timeline anchors
 
 - **July 14** — PS selection submitted (done)
+- **July 17** — Correlation engine measured against real labeled ground truth (done — see §4); topology-first and centrality-ranking alternatives tested and rejected on evidence
 - **July 20** — Round 1 (online): idea submission & screening → PRD + architecture + early proof (correlation working on sample data) is the screening package
 - **July 31** — Grand Finale (on-campus, 24-hr build + demo to judges)
 

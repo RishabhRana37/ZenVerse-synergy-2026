@@ -14,8 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -221,9 +221,17 @@ __marimo__/
 node_modules/
 *.local
 
+# AIOps Data
+data/AIOps 2020/
+
 # StormLens — raw datasets are fetched via scripts/, never committed
 data/raw/
 
 # StormLens — local artifacts
 *.sqlite3
+*.db
+*.db-journal
 eval/results/
+
+# Vite build cache
+frontend/.vite/
