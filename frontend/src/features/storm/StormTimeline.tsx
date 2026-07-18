@@ -83,6 +83,8 @@ export function StormTimeline() {
   const startScrubbing = useStreamStore((s) => s.startScrubbing)
   const updateScrubbing = useStreamStore((s) => s.updateScrubbing)
   const stopScrubbing = useStreamStore((s) => s.stopScrubbing)
+  const scrubPosition = useStreamStore((s) => s.scrubPosition)
+  const setScrubPosition = useStreamStore((s) => s.setScrubPosition)
 
   // Keep refs up-to-date for RAF loop
   const scrubModeRef = useRef(scrubMode)
@@ -362,12 +364,13 @@ export function StormTimeline() {
     }
 
     const t = Math.max(0, (targetTs - baseline) / 1000)
-    if (isStarting) {
-      startScrubbing(t)
-    } else {
-      updateScrubbing(t)
-    }
-  }, [startScrubbing, updateScrubbing])
+      if (isStarting) {
+        startScrubbing(t)
+      } else {
+        updateScrubbing(t)
+      }
+      setScrubPosition(targetTs)
+    }, [startScrubbing, updateScrubbing, setScrubPosition])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -393,7 +396,10 @@ export function StormTimeline() {
     }
 
     const handleWindowMouseUp = () => {
-      isDraggingRef.current = false
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false
+        handleExitScrub()
+      }
     }
 
     window.addEventListener('mousemove', handleWindowMouseMove)
@@ -402,7 +408,7 @@ export function StormTimeline() {
       window.removeEventListener('mousemove', handleWindowMouseMove)
       window.removeEventListener('mouseup', handleWindowMouseUp)
     }
-  }, [processScrubAtX])
+  }, [processScrubAtX, handleExitScrub])
 
   // Arrow Keys and Space/Esc keyboard listeners
   useEffect(() => {
@@ -557,8 +563,13 @@ export function StormTimeline() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted flex items-center">
             <span className="text-accent mr-1">▎03</span> TIMELINE {scrubMode && "— Reviewing"}
+            {scrubMode && (
+              <span className="ml-2 px-1.5 py-0.5 text-[9px] font-extrabold font-mono text-[#0A0E14] bg-accent rounded uppercase animate-pulse">
+                SCRUB
+              </span>
+            )}
           </span>
         </div>
         <span className="text-[10px] font-mono text-accent tabular-nums">
@@ -580,6 +591,16 @@ export function StormTimeline() {
               blurActive ? "blur-sm duration-200" : "blur-none"
             )}
           />
+          
+          {/* Vertical cursor line at drag position */}
+          {scrubMode && scrubPosition !== null && (
+            <div
+              className="absolute top-0 bottom-0 w-[1px] bg-accent pointer-events-none z-20"
+              style={{
+                left: `${Math.max(0, Math.min(100, (1 - ((scrubStartTimeRef.current || Date.now()) - scrubPosition) / 1000 / WINDOW_SECS) * 100))}%`
+              }}
+            />
+          )}
 
           {/* Pulsing LIVE return button */}
           <Button

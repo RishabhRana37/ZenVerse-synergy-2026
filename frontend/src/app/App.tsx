@@ -20,7 +20,9 @@ import { Button } from '@/components/ui/Button'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
-import { useFPSStore } from '@/lib/motion'
+import { useFPSStore, DUR_ENTER, EASE } from '@/lib/motion'
+import { usePresentationMode } from '@/lib/presentationMode'
+import { motion, AnimatePresence } from 'framer-motion'
 import { clsx } from 'clsx'
 import { AlertTriangle, Check, Volume2, VolumeX, Menu, X } from 'lucide-react'
 
@@ -54,6 +56,7 @@ export function DashboardLayout() {
   // Wire global keyboard shortcuts
   const { showOverlay, setShowOverlay } = useKeyboardShortcuts()
   const shortcutsOverlayRef = useFocusTrap(showOverlay)
+  const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
   const [lastConnection, setLastConnection] = useState(connection)
@@ -245,6 +248,22 @@ export function DashboardLayout() {
             </div>
           )}
         </div>
+
+        {/* Presentation Mode Banner */}
+        <AnimatePresence>
+          {presentationMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 24 }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: DUR_ENTER, ease: EASE }}
+              onClick={togglePresentation}
+              className="w-full bg-accent/10 border-b border-accent/20 text-accent font-mono text-[10px] tracking-wider uppercase flex items-center justify-center cursor-pointer select-none overflow-hidden z-40 relative flex-shrink-0"
+            >
+              PRESENTATION MODE — font scale 110% · enhanced borders · projector optimised
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Global Page Header */}
         <header className="h-16 border-b border-border bg-bg-surface flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
