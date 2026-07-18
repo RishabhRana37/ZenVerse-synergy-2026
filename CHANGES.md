@@ -7,6 +7,7 @@ All notable changes to the StormLens project will be documented in this file. Be
 ## [Unreleased]
 
 ### Added
+*   Operational Guidelines (Version 2.0 Updates) in `AI_GUIDE.md`.
 *   Event-time based alert eviction in backend `state.py` to fix memory leak.
 *   Asynchronous database writer loop with batch transaction queue in `pipeline.py` to resolve SQLite write contention.
 *   Concurrency lock guards in `pipeline.py` and `rest.py` to prevent race conditions during pipeline ticks and replay resets.
