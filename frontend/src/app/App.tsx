@@ -6,6 +6,7 @@ import { TokensPage } from '@/app/TokensPage'
 import { DebugPage } from '@/app/DebugPage'
 import { HealthPage } from '@/app/HealthPage'
 import { LandingPage } from '@/features/landing/LandingPage'
+import { LandingPageNew } from '@/features/landing/LandingPageNew'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useStreamStore } from '@/store/stream'
@@ -510,6 +511,7 @@ function AppInner() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/landing" element={<LandingPageNew />} />
       <Route element={<DashboardLayout />}>
         <Route path="/war-room" element={<WarRoom />} />
         <Route path="/eval" element={<EvalDashboard />} />
