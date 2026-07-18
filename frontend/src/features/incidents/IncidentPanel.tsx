@@ -222,7 +222,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
             <span className="font-semibold text-text-muted truncate max-w-[200px] font-sans">
               {incident.title}
             </span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-muted font-mono leading-none flex-shrink-0 uppercase font-bold">
+            <span className="text-[10px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-muted font-mono leading-none flex-shrink-0 uppercase font-bold">
               Resolved
             </span>
             {topCandidate && (
@@ -352,8 +352,15 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
       <div
         data-incident-id={incident.id}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+          }
+        }}
+        tabIndex={0}
         className={clsx(
-          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border shadow-card transition-all duration-150 ease-out",
+          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border shadow-card transition-all duration-150 ease-out focus-visible:outline-offset-[-2px]",
           borderClass,
           !reducedMotion && "hover:-translate-y-[1px] hover:border-border-hover",
           severity === 'critical' && !incident.acknowledged && "animate-pulse-edge-critical"
@@ -378,7 +385,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
             </h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {incident.acknowledged ? (
-                <span className="text-[9px] font-mono font-bold text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded uppercase leading-none">
+                <span className="text-[10px] font-mono font-bold text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded uppercase leading-none">
                   Ack
                 </span>
               ) : (
@@ -392,12 +399,12 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
           {topCandidate && (
             <motion.div variants={rootLineVariants} className="flex flex-col gap-1.5 my-1.5 pb-2.5 border-b border-border/40 flex-shrink-0">
               <div className="flex items-baseline gap-1 text-[11px] font-mono text-text-secondary truncate select-text">
-                <span className="text-text-muted font-semibold uppercase text-[9px] tracking-wider">Root cause:</span>
+                <span className="text-text-muted font-semibold uppercase text-[10px] tracking-wider">Root cause:</span>
                 <span className={clsx("font-bold", topCandidate.is_confirmed ? "text-accent" : "text-severity-critical")}>
                   {topCandidate.service}
                 </span>
                 {topCandidate.is_confirmed && (
-                  <span className="text-[8px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                  <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
                     Confirmed
                   </span>
                 )}
@@ -470,7 +477,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
                     transition={{ duration: DUR_ENTER }}
                     className="mt-2.5 pt-2 border-t border-border/20 text-accent font-semibold text-[11px] leading-relaxed uppercase tracking-wide select-text flex flex-col gap-0.5"
                   >
-                    <span className="text-text-secondary text-[9px] font-bold tracking-wider">FIRST ACTION:</span>
+                    <span className="text-text-secondary text-[10px] font-bold tracking-wider">FIRST ACTION:</span>
                     <span className="normal-case font-medium">{incident.first_action}</span>
                   </motion.div>
                 )}
@@ -494,7 +501,7 @@ const IncidentCard = React.memo(({ incident, onSelect, index }: { incident: Inci
           <motion.div variants={footerVariants} className="flex items-center justify-between mt-auto pt-2 border-t border-border/30 flex-shrink-0 relative min-h-[28px] z-10">
             {confirmResolve ? (
               <div className="flex items-center gap-2 text-[11px] font-mono" onClick={(e) => e.stopPropagation()}>
-                <span className="text-severity-warning font-bold uppercase text-[9px] tracking-wider">Resolve incident?</span>
+                <span className="text-severity-warning font-bold uppercase text-[10px] tracking-wider">Resolve incident?</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

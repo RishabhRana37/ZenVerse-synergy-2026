@@ -13,6 +13,7 @@ import { startReplay, stopReplay, resetReplay } from '@/lib/actions'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { useFPSStore } from '@/lib/motion'
 import { clsx } from 'clsx'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface PaletteItem {
   id: string
@@ -34,6 +35,7 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const lastFocusedRef = useRef<HTMLElement | null>(null)
+  const focusTrapRef = useFocusTrap(isOpen)
 
   const incidentsMap = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents)
   const alerts = useStreamStore((s) => s.scrubMode && s.scrubState ? s.scrubState.alerts : s.alerts)
@@ -281,6 +283,10 @@ export function CommandPalette() {
           className="fixed inset-0 bg-[#0A0E14]/70 backdrop-blur-md z-[var(--z-modal)] flex items-start justify-center pt-[15vh] select-none font-sans"
         >
           <motion.div
+            ref={focusTrapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command search palette"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -364,16 +370,16 @@ export function CommandPalette() {
                         )}
                         <span className="truncate">{item.name}</span>
                         {item.category === 'Incidents' && item.alertCount !== undefined && (
-                          <span className="text-[9px] font-mono text-text-muted">({item.alertCount} alerts)</span>
+                          <span className="text-[10px] font-mono text-text-muted">({item.alertCount} alerts)</span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0 select-none z-10 relative">
-                        <span className="text-[8px] px-1 py-0.2 rounded border border-border text-text-muted font-mono uppercase bg-bg-base/40">
+                        <span className="text-[10px] px-1 py-0.2 rounded border border-border text-text-muted font-mono uppercase bg-bg-base/40">
                           {item.category}
                         </span>
                         {item.shortcut && (
-                          <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">
+                          <kbd className="text-[10px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">
                             {item.shortcut}
                           </kbd>
                         )}

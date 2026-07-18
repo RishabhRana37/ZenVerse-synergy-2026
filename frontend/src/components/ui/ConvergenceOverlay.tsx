@@ -110,7 +110,7 @@ export function ConvergenceOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-[70] overflow-hidden" aria-hidden="true">
       <AnimatePresence>
         {particles.map((p) => {
           // Slight arc math: lift the midpoint up in Y coordinates

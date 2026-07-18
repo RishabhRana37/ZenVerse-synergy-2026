@@ -191,7 +191,7 @@ export function LandingPage() {
       <section className="min-h-screen w-full flex flex-col items-center justify-center pt-24 pb-12 px-6 md:px-12 relative z-10">
         <div className="w-full max-w-4xl text-center flex flex-col items-center">
           {/* Eyebrow */}
-          <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-text-muted mb-6 animate-fade-in">
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-text-muted mb-6 animate-fade-in">
             SYNERGY 2026 · HPE PS #10
           </span>
 
@@ -280,7 +280,7 @@ export function LandingPage() {
       {/* ── 3. HOW IT WORKS ── */}
       <section id="how-it-works" className="w-full py-24 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
         <div className="text-left mb-16">
-          <span className="font-mono text-[9px] uppercase tracking-widest text-accent">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-accent">
             Workflow Architecture
           </span>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary mt-1.5 font-sans">
@@ -311,17 +311,17 @@ export function LandingPage() {
             {/* Log Stream Mock */}
             <div className="border border-border/80 bg-[#11161F]/60 p-4 rounded-lg font-mono text-[10px] text-left flex flex-col gap-2 shadow-inner">
               <div className="flex items-center gap-2 opacity-80 animate-pulse">
-                <span className="px-1.5 py-0.5 rounded bg-severity-critical text-[#0A0E14] font-bold text-[8px]">CRIT</span>
+                <span className="px-1.5 py-0.5 rounded bg-severity-critical text-[#0A0E14] font-bold text-[10px]">CRIT</span>
                 <span className="text-text-muted">12:54:37</span>
                 <span className="text-text-secondary select-text">postgres-primary · disk write timeout</span>
               </div>
               <div className="flex items-center gap-2 opacity-60">
-                <span className="px-1.5 py-0.5 rounded bg-severity-warning text-[#0A0E14] font-bold text-[8px]">WARN</span>
+                <span className="px-1.5 py-0.5 rounded bg-severity-warning text-[#0A0E14] font-bold text-[10px]">WARN</span>
                 <span className="text-text-muted">12:54:36</span>
                 <span className="text-text-secondary select-text">redis-cache · response late 180ms</span>
               </div>
               <div className="flex items-center gap-2 opacity-40">
-                <span className="px-1.5 py-0.5 rounded bg-severity-info text-[#0A0E14] font-bold text-[8px]">INFO</span>
+                <span className="px-1.5 py-0.5 rounded bg-severity-info text-[#0A0E14] font-bold text-[10px]">INFO</span>
                 <span className="text-text-muted">12:54:35</span>
                 <span className="text-text-secondary select-text">gateway-service · 200 GET /health</span>
               </div>
@@ -377,7 +377,7 @@ export function LandingPage() {
             <div className="border border-border/80 bg-[#11161F]/60 p-4 rounded-lg text-left flex flex-col gap-2.5 shadow-inner">
               <div className="flex items-center justify-between border-b border-border/20 pb-2">
                 <span className="text-[10px] font-mono font-bold text-accent">postgres-primary.root-cause</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-bold">98% CONF</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-bold">98% CONF</span>
               </div>
               <TypingText text="Outage cascade triggered by disk block write delays on postgres-primary (host-12). Downstream connections topayment-service and billing API timed out, affecting auth-service." />
             </div>
@@ -389,7 +389,7 @@ export function LandingPage() {
       <section id="features" className="w-full py-24 bg-[#0A0E14]/40 border-t border-border/60 relative z-10 px-6 md:px-12">
         <div className="max-w-5xl mx-auto">
           <div className="text-left mb-16">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-accent">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-accent">
               Core Capabilities
             </span>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-text-primary mt-1.5 font-sans">
@@ -428,7 +428,7 @@ export function LandingPage() {
                   <circle cx="150" cy="30" r="10" fill="#11161F" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
                   <circle cx="150" cy="90" r="10" fill="#11161F" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
                   <circle cx="240" cy="60" r="10" fill="#11161F" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-                  <text x="60" y="63" fill="#FF4D4F" fontSize="8" fontFamily="monospace" textAnchor="middle">ROOT</text>
+                  <text x="60" y="63" fill="#FF4D4F" fontSize="10" fontFamily="monospace" textAnchor="middle">ROOT</text>
                 </svg>
               </div>
             </motion.div>
@@ -483,7 +483,7 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="flex items-center justify-between border-t border-border/20 pt-3 mt-4">
-                <span className="text-[9px] font-mono text-text-muted">DIAL SPEED</span>
+                <span className="text-[10px] font-mono text-text-muted">DIAL SPEED</span>
                 <span className="text-[11px] font-mono font-bold text-accent">1000× speed</span>
               </div>
             </motion.div>
@@ -502,9 +502,9 @@ export function LandingPage() {
               </div>
               <div className="flex items-center gap-1.5 mt-4">
                 <Kbd>⌘K</Kbd>
-                <span className="text-[9px] font-mono text-text-muted">palette</span>
+                <span className="text-[10px] font-mono text-text-muted">palette</span>
                 <Kbd>W</Kbd>
-                <span className="text-[9px] font-mono text-text-muted">war room</span>
+                <span className="text-[10px] font-mono text-text-muted">war room</span>
               </div>
             </motion.div>
 
@@ -521,8 +521,8 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="flex items-center justify-between border-t border-border/20 pt-3 mt-4">
-                <span className="text-[9px] font-mono text-text-muted">ABLATION</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-bold">✓ PASS</span>
+                <span className="text-[10px] font-mono text-text-muted">ABLATION</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-bold">✓ PASS</span>
               </div>
             </motion.div>
           </motion.div>
@@ -533,7 +533,7 @@ export function LandingPage() {
       <section className="w-full py-16 bg-[#050810] border-t border-border/60 relative z-10 px-6">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="text-left flex flex-col gap-1">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-accent">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-accent">
               AIOPS EVALUATION
             </span>
             <h3 className="text-xl font-bold tracking-tight text-text-primary font-sans">
@@ -545,7 +545,7 @@ export function LandingPage() {
             <div>
               <div className="flex justify-between text-text-secondary mb-1">
                 <span>PRECISION</span>
-                <span className="text-accent font-bold">96.4% <span className="text-[9px] text-[#2DD4A7]/60">PASS</span></span>
+                <span className="text-accent font-bold">96.4% <span className="text-[10px] text-[#2DD4A7]/60">PASS</span></span>
               </div>
               <div className="h-1.5 w-full bg-[#11161F] rounded border border-border/40 overflow-hidden relative">
                 <div className="absolute top-0 bottom-0 left-0 bg-accent rounded" style={{ width: '96.4%' }} />
@@ -554,7 +554,7 @@ export function LandingPage() {
             <div>
               <div className="flex justify-between text-text-secondary mb-1">
                 <span>RECALL</span>
-                <span className="text-accent font-bold">87.0% <span className="text-[9px] text-[#2DD4A7]/60">PASS</span></span>
+                <span className="text-accent font-bold">87.0% <span className="text-[10px] text-[#2DD4A7]/60">PASS</span></span>
               </div>
               <div className="h-1.5 w-full bg-[#11161F] rounded border border-border/40 overflow-hidden relative">
                 <div className="absolute top-0 bottom-0 left-0 bg-accent rounded" style={{ width: '87.0%' }} />
@@ -563,7 +563,7 @@ export function LandingPage() {
             <div>
               <div className="flex justify-between text-text-secondary mb-1">
                 <span>COMPRESSION RATIO</span>
-                <span className="text-accent font-bold">99.85% <span className="text-[9px] text-[#2DD4A7]/60">PASS</span></span>
+                <span className="text-accent font-bold">99.85% <span className="text-[10px] text-[#2DD4A7]/60">PASS</span></span>
               </div>
               <div className="h-1.5 w-full bg-[#11161F] rounded border border-border/40 overflow-hidden relative">
                 <div className="absolute top-0 bottom-0 left-0 bg-accent rounded" style={{ width: '99.85%' }} />
@@ -595,14 +595,14 @@ export function LandingPage() {
             >
               Launch Dashboard
             </Button>
-            <span className="text-[9px] font-mono text-text-muted mt-2 tracking-wide">
+            <span className="text-[10px] font-mono text-text-muted mt-2 tracking-wide">
               Press <kbd className="px-1.5 py-0.5 rounded bg-bg-surface border border-border text-accent font-bold select-all font-mono">W</kbd> during the demo to return here
             </span>
           </div>
         </div>
 
         {/* Footer */}
-        <footer className="w-full max-w-5xl border-t border-border/20 mt-32 pt-8 flex flex-col md:flex-row items-center justify-between text-[9px] font-mono text-text-muted gap-4">
+        <footer className="w-full max-w-5xl border-t border-border/20 mt-32 pt-8 flex flex-col md:flex-row items-center justify-between text-[10px] font-mono text-text-muted gap-4">
           <span>Team ZenVerse · Synergy 2026</span>
           <div className="flex gap-4">
             <a href="https://github.com/RishabhRana37/ZenVerse-synergy-2026" target="_blank" rel="noopener noreferrer" className="hover:text-text-secondary transition-colors">GitHub</a>

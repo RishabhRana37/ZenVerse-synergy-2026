@@ -277,7 +277,7 @@ export function HeroConvergenceCanvas() {
     <div ref={containerRef} className="w-full h-full relative select-none">
       {/* Floating Alerts Counter */}
       <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
-        <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted mb-1">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-text-muted mb-1">
           Active Alert Volume
         </span>
         <div className="flex items-baseline gap-2">
@@ -296,7 +296,7 @@ export function HeroConvergenceCanvas() {
         </div>
       </div>
 
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <canvas ref={canvasRef} className="block w-full h-full" aria-hidden="true" />
     </div>
   )
 }

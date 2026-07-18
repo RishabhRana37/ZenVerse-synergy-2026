@@ -15,6 +15,7 @@ import { acknowledgeIncident, resolveIncident, confirmRootCause } from '@/lib/ac
 import { useFPSStore, springPreset, DUR_ENTER, EASE } from '@/lib/motion'
 import { X } from 'lucide-react'
 import '@/lib/cytoscapeInit'  // ensures dagre registered exactly once
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface CorrelationBeamsProps {
   incident: Incident
@@ -145,7 +146,7 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
                 x={(startX + endX) / 2}
                 y={(startY + endY) / 2 - 5}
                 fill={isHighlighted ? 'var(--accent)' : 'rgba(255, 255, 255, 0.35)'}
-                fontSize="7"
+                fontSize="10"
                 fontFamily="JetBrains Mono"
                 textAnchor="middle"
                 className="select-none transition-colors duration-150"
@@ -168,16 +169,16 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
       >
         <CornerBrackets />
         <div className="flex items-center justify-between">
-          <span className="text-[7px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
+          <span className="text-[10px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
         </div>
         <div className="text-[10px] font-semibold text-text-primary truncate font-sans">
           {rootAlert.service || 'unknown-service'}
         </div>
-        <div className="text-[8px] font-mono text-text-muted truncate leading-none">
+        <div className="text-[10px] font-mono text-text-muted truncate leading-none">
           {rootAlert.host || 'unknown-host'}
         </div>
-        <div className="text-[9px] text-text-secondary line-clamp-2 mt-0.5 leading-snug font-sans select-text">
+        <div className="text-[10px] text-text-secondary line-clamp-2 mt-0.5 leading-snug font-sans select-text">
           {rootAlert.message}
         </div>
       </motion.div>
@@ -207,7 +208,7 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
               <CornerBrackets />
               <div className="flex items-center justify-between">
                 <span className={clsx(
-                  "text-[7px] font-mono uppercase font-bold tracking-wider leading-none",
+                  "text-[10px] font-mono uppercase font-bold tracking-wider leading-none",
                   isCritical ? "text-severity-critical" : "text-text-muted"
                 )}>
                   {alert.severity} alert
@@ -218,10 +219,10 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
                   alert.severity === 'warning' ? "bg-severity-warning" : "bg-severity-info"
                 )} />
               </div>
-              <div className="text-[9px] font-semibold text-text-primary truncate font-sans leading-tight">
+              <div className="text-[10px] font-semibold text-text-primary truncate font-sans leading-tight">
                 {alert.service || 'unknown-service'}
               </div>
-              <div className="text-[8px] text-text-secondary line-clamp-1 leading-snug font-sans select-text">
+              <div className="text-[10px] text-text-secondary line-clamp-1 leading-snug font-sans select-text">
                 {alert.message}
               </div>
             </motion.div>
@@ -374,6 +375,7 @@ const CYTOSCAPE_STYLES = [
 export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverProps) {
   const fpsReduced = useFPSStore((s) => s.reducedMotion)
   const reducedMotion = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
+  const focusTrapRef = useFocusTrap(!!incidentId)
 
   const storeIncident = useStreamStore((s) => {
     const activeIncidents = s.scrubMode && s.scrubState ? s.scrubState.incidents : s.incidents
@@ -661,6 +663,10 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
 
       {/* Slide-over panel (Right aligned, 720px wide) */}
       <motion.div
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Incident details: ${storeIncident.title}`}
         initial={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: reducedMotion ? 0 : '100%', opacity: reducedMotion ? 0 : 1 }}
@@ -745,7 +751,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                           {candidate.service}
                         </span>
                         {candidate.is_confirmed && (
-                          <span className="text-[8px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                          <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
                             Confirmed
                           </span>
                         )}
@@ -814,7 +820,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               {activeTab === 'blast' && detail && (
                 <button
                   onClick={() => runPropagationAnimation(cyRef.current, detail.topology_path)}
-                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[9px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-[10px] font-mono text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   replay propagation ↻
                 </button>
@@ -855,7 +861,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                         }}
                       >
                         <div className="font-semibold text-accent">{hoveredNode.service}</div>
-                        <div className="text-[9px] text-text-secondary mt-0.5">
+                        <div className="text-[10px] text-text-secondary mt-0.5">
                           {hoveredNode.count} alerts in incident
                         </div>
                       </div>
@@ -886,7 +892,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                 <div>{storeIncident.summary}</div>
                 {storeIncident.first_action && (
                   <div className="mt-3 pt-3 border-t border-border/20 text-accent font-semibold flex flex-col gap-0.5">
-                    <span className="text-text-secondary text-[9px] font-bold tracking-wider">FIRST ACTION:</span>
+                    <span className="text-text-secondary text-[10px] font-bold tracking-wider">FIRST ACTION:</span>
                     <span className="normal-case font-medium">{storeIncident.first_action}</span>
                   </div>
                 )}

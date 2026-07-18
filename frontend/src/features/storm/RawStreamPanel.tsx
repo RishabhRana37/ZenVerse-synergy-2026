@@ -394,7 +394,7 @@ export function RawStreamPanel() {
         </div>
         <div className="flex items-center gap-1.5">
           {isFirehose && (
-            <span className="px-1.5 py-0.5 rounded bg-severity-warning/20 border border-severity-warning/30 text-severity-warning text-[9px] font-mono font-bold animate-pulse">
+            <span className="px-1.5 py-0.5 rounded bg-severity-warning/20 border border-severity-warning/30 text-severity-warning text-[10px] font-mono font-bold animate-pulse">
               🔥 FIREHOSE ({replaySpeed}x)
             </span>
           )}
@@ -425,7 +425,7 @@ export function RawStreamPanel() {
               size="sm"
               onClick={() => setCritEnabled(!critEnabled)}
               className={clsx(
-                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 critEnabled
                   ? "bg-severity-critical/15 border-severity-critical/30 text-severity-critical hover:bg-severity-critical/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
@@ -437,7 +437,7 @@ export function RawStreamPanel() {
               size="sm"
               onClick={() => setWarnEnabled(!warnEnabled)}
               className={clsx(
-                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 warnEnabled
                   ? "bg-severity-warning/15 border-severity-warning/30 text-severity-warning hover:bg-severity-warning/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
@@ -449,7 +449,7 @@ export function RawStreamPanel() {
               size="sm"
               onClick={() => setInfoEnabled(!infoEnabled)}
               className={clsx(
-                "px-2 py-0.5 h-6 text-[9px] font-bold font-sans",
+                "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 infoEnabled
                   ? "bg-severity-info/15 border-severity-info/30 text-severity-info hover:bg-severity-info/20"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
@@ -480,6 +480,7 @@ export function RawStreamPanel() {
             variant={showClaimed ? "secondary" : "accent"}
             onClick={() => setShowClaimed(!showClaimed)}
             title={showClaimed ? "Hide claimed alerts" : "Show claimed alerts"}
+            aria-label={showClaimed ? "Hide claimed alerts" : "Show claimed alerts"}
             className="h-6 w-6 p-0 flex items-center justify-center shrink-0"
           >
             {showClaimed ? (
@@ -506,6 +507,7 @@ export function RawStreamPanel() {
               variant="secondary"
               onClick={handleClearFilters}
               title="Clear all filters"
+              aria-label="Clear all filters"
               className="h-6 w-6 p-0 flex items-center justify-center"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

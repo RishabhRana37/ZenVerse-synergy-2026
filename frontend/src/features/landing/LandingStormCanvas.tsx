@@ -203,9 +203,9 @@ export function LandingStormCanvas({ replaySignal }: Props) {
 
   return (
     <div ref={wrapRef} className="relative w-full h-full">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" aria-hidden="true" />
       <div className="absolute top-8 left-0 right-0 flex flex-col items-center gap-0.5 pointer-events-none select-none">
-        <span className="text-[9px] font-mono text-text-muted uppercase tracking-[0.22em]">alerts ingested</span>
+        <span className="text-[10px] font-mono text-text-muted uppercase tracking-[0.22em]">alerts ingested</span>
         <Odometer value={displayCount} format="integer" easing="spring"
           className="text-[36px] font-bold text-text-primary tabular-nums leading-none" />
       </div>

@@ -36,7 +36,7 @@ const COMPACT_STYLES = [
       'border-color': 'rgba(255,255,255,0.08)',
       'border-width': 1,
       'color': '#8B98A9',
-      'font-size': 8,
+      'font-size': 10,
       'font-family': 'JetBrains Mono',
       'text-valign': 'center',
       'text-halign': 'center',
@@ -358,7 +358,6 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
     cy.userPanningEnabled(false)
     cy.boxSelectionEnabled(false)
 
-    // Show label on hover
     cy.on('mouseover', 'node', (evt: any) => {
       const node = evt.target
       node.addClass('label-visible')
@@ -370,10 +369,8 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
       setHoveredNode(null)
     })
 
-    // Click — open drill-down for the incident that owns this node
     cy.on('tap', 'node', (evt: any) => {
       const nodeId = evt.target.id()
-      // Find the incident that has this service
       const incidentsMap = useStreamStore.getState().incidents
       let targetIncidentId: string | null = null
       incidentsMap.forEach((incident) => {
@@ -388,7 +385,6 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
     })
   }, [onNodeClick])
 
-  // ── Counts for legend labels ─────────────────────────────────────────────
   const rootCauseCount = [...serviceHealthMap.values()].filter(h => h.health === 'root-cause').length
   const degradedCount  = [...serviceHealthMap.values()].filter(h => h.health === 'degraded').length
 
@@ -396,10 +392,10 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
 
   return (
     <div className="flex-shrink-0 bg-bg-surface border-b border-border select-none">
-      {/* Section header / collapse toggle */}
-      <div
-        className="flex items-center justify-between px-4 h-[30px] cursor-pointer hover:bg-bg-elevated/40 transition-colors"
+      <button
+        className="flex items-center justify-between px-4 h-[30px] w-full cursor-pointer hover:bg-bg-elevated/40 transition-colors border-none bg-transparent"
         onClick={() => setCollapsed(c => !c)}
+        aria-expanded={!collapsed}
       >
         <div className="flex items-center gap-2">
           <svg
@@ -412,7 +408,7 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
             Topology Health
           </span>
         </div>
-        <div className="flex items-center gap-2 text-[9px] font-mono">
+        <div className="flex items-center gap-2 text-[10px] font-mono">
           {rootCauseCount > 0 && (
             <span className="text-severity-critical inline-flex items-baseline gap-0.5 select-all">
               <Odometer value={rootCauseCount} easing="spring" className="text-severity-critical" /> critical
@@ -427,9 +423,8 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
             <span className="text-accent">all healthy</span>
           )}
         </div>
-      </div>
+      </button>
 
-      {/* Graph + legend */}
       {!collapsed && (
         <>
           <div className="relative h-[168px] bg-bg-base mx-2 mb-0 rounded overflow-hidden border border-border/40">
@@ -456,7 +451,6 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
                   style={{ width: '100%', height: '100%' }}
                 />
 
-                {/* Radar Pulse Overlay for active root cause node */}
                 {rootNodePos && !prefersReduced && (
                   <div
                     className="absolute pointer-events-none rounded-[5px] border border-severity-critical animate-radar-pulse z-20"
@@ -470,10 +464,9 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
                   />
                 )}
 
-                {/* Node tooltip */}
                 {hoveredNode && (
                   <div
-                    className="absolute pointer-events-none z-10 px-2 py-1 rounded bg-bg-elevated border border-border text-[9px] font-mono text-text-primary shadow-elevated"
+                    className="absolute pointer-events-none z-10 px-2 py-1 rounded bg-bg-elevated border border-border text-[10px] font-mono text-text-primary shadow-elevated"
                     style={{
                       left: hoveredNode.x,
                       top: hoveredNode.y - 32,
@@ -502,8 +495,7 @@ export function TopologyHealthMap({ onNodeClick }: TopologyHealthMapProps) {
             )}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 px-4 py-1.5 text-[9px] font-mono text-text-muted">
+          <div className="flex items-center gap-4 px-4 py-1.5 text-[10px] font-mono text-text-muted">
             <div className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-[2px] bg-bg-elevated border border-border/40 flex-shrink-0" />
               <span>healthy</span>

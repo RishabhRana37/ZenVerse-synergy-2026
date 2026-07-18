@@ -93,6 +93,7 @@ export function DemoDriver() {
               <button
                 onClick={() => setExpanded(false)}
                 className="text-text-muted hover:text-text-primary text-xs cursor-pointer"
+                aria-label="Close replay harness"
               >
                 <X size={14} />
               </button>
@@ -122,6 +123,7 @@ export function DemoDriver() {
                   <button
                     key={val}
                     onClick={() => setSpeed(val)}
+                    aria-label={`Set speed multiplier to ${val} times`}
                     className={clsx(
                       "py-1 rounded text-[10px] font-mono border transition-all duration-100 active:scale-[0.97] cursor-pointer",
                       speed === val
@@ -171,6 +173,7 @@ export function DemoDriver() {
           // Collapsed mini pill
           <button
             onClick={() => setExpanded(true)}
+            aria-label={running ? "View replay progress" : "Open demo controls"}
             className={clsx(
               "px-3 py-1.5 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 shadow-card transition-all duration-100 active:scale-[0.95] cursor-pointer",
               running

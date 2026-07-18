@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface ColdOpenProps {
   onComplete: () => void
@@ -10,6 +11,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
   const [progress, setProgress] = useState(0)
   const [phase, setPhase] = useState<'loading' | 'filled' | 'reveal'>('loading')
   const [maskRadius, setMaskRadius] = useState(0)
+  const focusTrapRef = useFocusTrap(true)
 
   // 1. Save to session storage and call onComplete
   const handleSkip = () => {
@@ -73,6 +75,10 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
 
   return (
     <motion.div
+      ref={focusTrapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Cinematic launch intro"
       style={{
         maskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`,
         WebkitMaskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`
@@ -80,18 +86,18 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
       className="fixed inset-0 bg-[#0B0F19] z-[var(--z-intro)] flex flex-col items-center justify-center font-sans overflow-hidden select-none"
     >
       {/* ── Reticle HUD Grid lines (Lens/Optical look) ───────────────────── */}
-      <div className="absolute inset-0 pointer-events-none border border-border/10 m-10" />
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border/[0.04]" />
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-border/[0.04]" />
+      <div className="absolute inset-0 pointer-events-none border border-border/10 m-10" aria-hidden="true" />
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border/[0.04]" aria-hidden="true" />
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-border/[0.04]" aria-hidden="true" />
 
       {/* Top Left Status Branding */}
-      <div className="absolute top-8 left-8 flex items-center gap-2 font-mono text-[9px] text-text-secondary uppercase tracking-widest">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" />
+      <div className="absolute top-8 left-8 flex items-center gap-2 font-mono text-[10px] text-text-secondary uppercase tracking-widest">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" aria-hidden="true" />
         <span>StormLens Launch System v1.2</span>
       </div>
 
       {/* Top Right Branding */}
-      <div className="absolute top-8 right-8 font-mono text-[9px] text-text-muted uppercase tracking-widest">
+      <div className="absolute top-8 right-8 font-mono text-[10px] text-text-muted uppercase tracking-widest">
         <span>Team ZenVerse · Synergy 2026</span>
       </div>
 
@@ -112,7 +118,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
           className="relative z-20 flex items-center justify-center w-64 h-64"
         >
           {/* Obys Logo Split Crescents */}
-          <svg viewBox="0 0 200 200" className="w-full h-full text-text-primary transition-all duration-500 ease-in-out">
+          <svg viewBox="0 0 200 200" className="w-full h-full text-text-primary transition-all duration-500 ease-in-out" aria-hidden="true">
             {/* Left Crescent */}
             <motion.path
               d="M 100 20 A 80 80 0 0 0 100 180 A 90 80 0 0 1 100 20 Z"
@@ -167,6 +173,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
             e.stopPropagation()
             handleSkip()
           }}
+          aria-label="Skip cinematic introduction"
           className="font-mono text-[10px] text-text-muted hover:text-text-primary uppercase tracking-wider px-2.5 py-1"
         >
           Skip Intro ↵

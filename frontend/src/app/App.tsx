@@ -18,6 +18,7 @@ import { Kbd } from '@/components/ui/Kbd'
 import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
 import { Button } from '@/components/ui/Button'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
 import { useFPSStore } from '@/lib/motion'
@@ -53,6 +54,7 @@ export function DashboardLayout() {
   
   // Wire global keyboard shortcuts
   const { showOverlay, setShowOverlay } = useKeyboardShortcuts()
+  const shortcutsOverlayRef = useFocusTrap(showOverlay)
   
   const connection = useStreamStore((s) => s.connection)
   const [lastConnection, setLastConnection] = useState(connection)
@@ -169,7 +171,7 @@ export function DashboardLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
               </svg>
             </span>
-            <span className="text-[9px] font-mono text-text-muted leading-none">HPE Cluster</span>
+            <span className="text-[10px] font-mono text-text-muted leading-none">HPE Cluster</span>
           </div>
         </div>
 
@@ -193,7 +195,7 @@ export function DashboardLayout() {
               )}
             >
               <span>{item.label}</span>
-              <span className="text-[9px] font-mono text-text-muted/60 opacity-60">▎{item.badge}</span>
+              <span className="text-[10px] font-mono text-text-muted/60 opacity-60">▎{item.badge}</span>
             </NavLink>
           ))}
         </nav>
@@ -210,7 +212,7 @@ export function DashboardLayout() {
               size="sm"
               variant="accent"
               onClick={() => setShowOverlay(true)}
-              className="text-[9px] font-mono font-bold px-2 py-0.5 h-auto rounded"
+              className="text-[10px] font-mono font-bold px-2 py-0.5 h-auto rounded"
             >
               Press ?
             </Button>
@@ -221,7 +223,7 @@ export function DashboardLayout() {
               onClick={() => {
                 navigate('/')
               }}
-              className="text-[9px] hover:text-text-primary px-1.5 py-0.5 rounded border border-border hover:bg-bg-hover transition-colors font-sans cursor-pointer font-bold"
+              className="text-[10px] hover:text-text-primary px-1.5 py-0.5 rounded border border-border hover:bg-bg-hover transition-colors font-sans cursor-pointer font-bold"
             >
               Exit
             </button>
@@ -232,7 +234,7 @@ export function DashboardLayout() {
       {/* ── Main Workspace Area ── */}
       <div className="flex-1 flex flex-col h-full min-w-0 relative">
         {/* Connection Banners (thin strips under navbar/header) */}
-        <div className="w-full flex-shrink-0 select-none z-[50] relative">
+        <div className="w-full flex-shrink-0 select-none z-[50] relative" aria-live="polite">
           {connection !== 'open' && !showRecoveryFlash && (
           <div className="h-6 w-full bg-severity-critical text-text-inverse text-[10px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5 animate-pulse z-[var(--z-banner)] relative">
               <AlertTriangle size={12} /> CONNECTION LOST — RECONNECTING…
@@ -273,7 +275,7 @@ export function DashboardLayout() {
                   </span>
                 </div>
                 {replayRunning && (
-                  <div className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[8px] font-semibold tracking-wider uppercase animate-pulse">
+                  <div className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[10px] font-semibold tracking-wider uppercase animate-pulse">
                     Replay
                   </div>
                 )}
@@ -312,18 +314,18 @@ export function DashboardLayout() {
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80" />
                       <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-bold" />
-                      <span className="text-[9px] text-text-muted uppercase">alerts</span>
+                      <span className="text-[10px] text-text-muted uppercase font-mono">alerts</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-accent/80 animate-pulse" />
                       <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-bold" />
-                      <span className="text-[9px] text-text-muted uppercase">incidents</span>
+                      <span className="text-[10px] text-text-muted uppercase font-mono">incidents</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
                       <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-accent font-bold" />
-                      <span className="text-[9px] text-text-muted uppercase font-sans">Noise Suppressed</span>
+                      <span className="text-[10px] text-text-muted uppercase font-sans">Noise Suppressed</span>
                     </div>
                   </div>
                 )}
@@ -364,6 +366,7 @@ export function DashboardLayout() {
                     setMuted(audioManager.getMuted())
                   }}
                   title={muted ? "Unmute ambient storm hum" : "Mute ambient storm hum"}
+                  aria-label={muted ? "Unmute ambient storm hum" : "Mute ambient storm hum"}
                   className="h-7 w-7 p-0 flex items-center justify-center"
                 >
                   {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
@@ -405,7 +408,7 @@ export function DashboardLayout() {
                         className="flex items-center justify-between px-3.5 py-2 text-ui-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors text-left font-sans cursor-pointer border-t border-border/20"
                       >
                         <span>Command Palette</span>
-                        <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
+                        <kbd className="text-[10px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.5 rounded">⌘K</kbd>
                       </button>
                     </Card>
                   )}
@@ -442,11 +445,15 @@ export function DashboardLayout() {
           className="fixed inset-0 bg-bg-base/70 backdrop-blur-md z-[var(--z-modal)] flex items-center justify-center select-none font-sans"
         >
           <div
+            ref={shortcutsOverlayRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-title"
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm p-6 bg-bg-surface border border-border rounded-lg shadow-elevated flex flex-col gap-4 text-text-primary"
           >
             <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
-              <span className="text-[12px] font-bold text-accent uppercase tracking-wider font-sans">
+              <span id="shortcuts-title" className="text-[12px] font-bold text-accent uppercase tracking-wider font-sans">
                 Keyboard Shortcuts
               </span>
               <button

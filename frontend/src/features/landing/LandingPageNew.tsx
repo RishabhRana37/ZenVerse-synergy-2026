@@ -144,7 +144,7 @@ function LandingNav() {
           title="Search commands (⌘K)"
         >
           <span>Search</span>
-          <kbd className="text-[9px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">⌘K</kbd>
+          <kbd className="text-[10px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">⌘K</kbd>
         </button>
         <Link
           to="/"
@@ -326,8 +326,8 @@ function HowItWorks() {
             </div>
           ))}
           <div className="flex items-center justify-between px-2.5 py-1 border-t border-border/30 mt-1">
-            <span className="font-mono text-[9px] text-text-muted">+1,995 more</span>
-            <span className="font-mono text-[9px] text-accent">streaming live</span>
+            <span className="font-mono text-[10px] text-text-muted">+1,995 more</span>
+            <span className="font-mono text-[10px] text-accent">streaming live</span>
           </div>
         </div>
       ),
@@ -342,7 +342,7 @@ function HowItWorks() {
               <g key={i}>
                 <circle cx={x} cy={y} r="8" fill="none" stroke={['#FF4D4F','#F5A623','#4D9FFF'][i]} strokeWidth="1.5" />
                 <circle cx={x} cy={y} r="3" fill={['#FF4D4F','#F5A623','#4D9FFF'][i]} />
-                <text x={x+14} y={y+4} fill="#8B98A9" fontSize="8" fontFamily="JetBrains Mono,monospace">
+                <text x={x+14} y={y+4} fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">
                   {['api-gw','redis','db'][i]}
                 </text>
               </g>
@@ -350,8 +350,8 @@ function HowItWorks() {
             {/* Incident node */}
             <circle cx={230} cy={80} r="14" fill="rgba(45,212,167,0.08)" stroke="#2DD4A7" strokeWidth="1.5" />
             <circle cx={230} cy={80} r="5" fill="#2DD4A7" />
-            <text x={248} y={76} fill="#2DD4A7" fontSize="8" fontFamily="JetBrains Mono,monospace">INC-01</text>
-            <text x={248} y={86} fill="#8B98A9" fontSize="7" fontFamily="JetBrains Mono,monospace">97% conf</text>
+            <text x={248} y={76} fill="#2DD4A7" fontSize="10" fontFamily="JetBrains Mono,monospace">INC-01</text>
+            <text x={248} y={86} fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">97% conf</text>
             {/* Bezier edges */}
             <path ref={beamRef}
               d="M28,30 C100,30 130,80 216,80 M28,80 C100,80 130,80 216,80 M28,130 C100,130 130,80 216,80"
@@ -368,7 +368,7 @@ function HowItWorks() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#FF4D4F]" />
             <span className="font-mono text-[10px] text-text-primary font-bold">INC-001 · DB Cascade</span>
-            <span className="ml-auto font-mono text-[9px] text-accent font-bold">ACTIVE</span>
+            <span className="ml-auto font-mono text-[10px] text-accent font-bold">ACTIVE</span>
           </div>
           <ConfidenceBar confidence={0.97} height="xs" showLabel />
           <TypewriterText
@@ -488,7 +488,7 @@ function FeatureBento() {
 
           {/* Cell 1: Root-cause graph — col-span-1 row-span-2 */}
           <BentoCell delay={0} className="row-span-2 flex flex-col gap-3">
-            <span className="font-mono text-[9px] text-text-muted uppercase tracking-wider">Root-cause graph</span>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Root-cause graph</span>
             <div className="flex-1 relative">
               <svg viewBox="0 0 130 180" className="w-full h-full" aria-hidden>
                 {/* Root node — pulsing */}
@@ -497,7 +497,7 @@ function FeatureBento() {
                   <animate attributeName="stroke-opacity" values="1;0.4;1" dur="2.4s" repeatCount="indefinite" />
                 </circle>
                 <circle cx="65" cy="90" r="6" fill="#FF4D4F" />
-                <text x="65" y="115" textAnchor="middle" fill="#FF4D4F" fontSize="7" fontFamily="JetBrains Mono,monospace">db-primary</text>
+                <text x="65" y="115" textAnchor="middle" fill="#FF4D4F" fontSize="10" fontFamily="JetBrains Mono,monospace">db-primary</text>
                 {/* Leaf nodes */}
                 {[[20,30],[110,30],[20,150],[110,150]].map(([x,y],i)=>(
                   <g key={i}>
@@ -506,10 +506,10 @@ function FeatureBento() {
                     <circle cx={x} cy={y} r="2.5" fill="#2DD4A7" />
                   </g>
                 ))}
-                <text x="20" y="20" textAnchor="middle" fill="#8B98A9" fontSize="6" fontFamily="JetBrains Mono,monospace">api-gw</text>
-                <text x="110" y="20" textAnchor="middle" fill="#8B98A9" fontSize="6" fontFamily="JetBrains Mono,monospace">redis</text>
-                <text x="20" y="166" textAnchor="middle" fill="#8B98A9" fontSize="6" fontFamily="JetBrains Mono,monospace">auth</text>
-                <text x="110" y="166" textAnchor="middle" fill="#8B98A9" fontSize="6" fontFamily="JetBrains Mono,monospace">lb-01</text>
+                <text x="20" y="20" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">api-gw</text>
+                <text x="110" y="20" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">redis</text>
+                <text x="20" y="166" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">auth</text>
+                <text x="110" y="166" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">lb-01</text>
               </svg>
             </div>
             <p className="text-[11px] text-text-muted leading-snug">Causal edge inference from raw alert streams.</p>
@@ -530,7 +530,7 @@ function FeatureBento() {
 
           {/* Cell 3: Blast radius */}
           <BentoCell delay={0.08} className="flex flex-col gap-2">
-            <span className="font-mono text-[9px] text-text-muted uppercase tracking-wider">Blast radius</span>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Blast radius</span>
             <div className="flex-1 flex items-center justify-center">
               <svg viewBox="0 0 80 80" className="w-20 h-20" aria-hidden>
                 {[32,22,12].map((r,i)=>(
@@ -549,12 +549,12 @@ function FeatureBento() {
 
           {/* Cell 4: Offline replay */}
           <BentoCell delay={0.12} className="flex flex-col gap-2">
-            <span className="font-mono text-[9px] text-text-muted uppercase tracking-wider">Offline replay</span>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Offline replay</span>
             <div className="flex-1 flex items-center">
               <div className="flex flex-col gap-1.5 w-full">
                 {['1×','10×','100×','1000×'].map((speed, i) => (
                   <div key={speed} className="flex items-center gap-2">
-                    <span className="font-mono text-[9px] text-text-muted w-10">{speed}</span>
+                    <span className="font-mono text-[10px] text-text-muted w-10">{speed}</span>
                     <div className="flex-1 h-1 rounded-full bg-bg-elevated overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
@@ -574,7 +574,7 @@ function FeatureBento() {
 
           {/* Cell 5: Keyboard-driven — col-span-2 */}
           <BentoCell delay={0.06} className="col-span-2 flex flex-col gap-3">
-            <span className="font-mono text-[9px] text-text-muted uppercase tracking-wider">Keyboard-driven demo</span>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Keyboard-driven demo</span>
             <div className="flex items-center gap-2 flex-wrap">
               {[
                 { key: 'S', desc: 'start replay' },
@@ -596,7 +596,7 @@ function FeatureBento() {
 
           {/* Cell 6: Eval harness */}
           <BentoCell delay={0.10} className="flex flex-col gap-2">
-            <span className="font-mono text-[9px] text-text-muted uppercase tracking-wider">Eval harness</span>
+            <span className="font-mono text-[10px] text-text-muted uppercase tracking-wider">Eval harness</span>
             <div className="flex-1 flex flex-col justify-center gap-2">
               {[
                 { label: 'Precision', val: 0.992 },
@@ -604,7 +604,7 @@ function FeatureBento() {
                 { label: 'Latency',   val: 0.87  },
               ].map(({ label, val }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <span className="font-mono text-[8px] text-text-muted w-12 flex-shrink-0">{label}</span>
+                  <span className="font-mono text-[10px] text-text-muted w-12 flex-shrink-0">{label}</span>
                   <div className="flex-1 h-1 rounded-full bg-bg-elevated overflow-hidden">
                     <motion.div
                       className="h-full rounded-full bg-accent"
@@ -614,7 +614,7 @@ function FeatureBento() {
                       transition={{ duration: 0.9, ease: EASE }}
                     />
                   </div>
-                  <span className="font-mono text-[8px] text-accent font-bold w-6 flex-shrink-0">PASS</span>
+                  <span className="font-mono text-[10px] text-accent font-bold w-6 flex-shrink-0">PASS</span>
                 </div>
               ))}
             </div>
