@@ -120,6 +120,20 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
   const hoveredParticleIdx = useRef(-1)
   const hoveredWellIdx = useRef(-1)
 
+  // ── Physics visual extensions refs ──
+  const frameCount = useRef(0)
+  const previousWellIds = useRef<Set<string>>(new Set())
+  const shockwaves = useRef<Array<{ x: number; y: number; r: number; maxR: number; color: string; alpha: number }>>([])
+  const surgeIntensity = useRef(0)
+  const frozenRef = useRef(false)
+  const surgeDOMRef = useRef<HTMLDivElement>(null)
+  const frozenDOMRef = useRef<HTMLDivElement>(null)
+
+  // Trail buffer refs
+  const trailX = useRef(new Float32Array(MAX_PARTICLES * 6))
+  const trailY = useRef(new Float32Array(MAX_PARTICLES * 6))
+  const trailLen = useRef(new Uint8Array(MAX_PARTICLES))
+
   // Refs for loop coordination
   const animationFrameId = useRef<number | null>(null)
   const lastTimeRef = useRef<number>(0)
@@ -474,6 +488,35 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       ctx.fillStyle = '#06090F' // sleeker dark theme background
       ctx.fillRect(0, 0, width, height)
 
+      // ── Visual additions initial calculations ──
+      frameCount.current++
+
+      let criticalCount = 0
+      let activeCount = 0
+      for (let idx = 0; idx < MAX_PARTICLES; idx++) {
+        if (pState.current[idx] !== 4) {
+          activeCount++
+          if (pSeverity.current[idx] === 2 && pState.current[idx] < 3) {
+            criticalCount++
+          }
+        }
+      }
+      const criticalRatio = criticalCount / Math.max(1, activeCount)
+      const targetSurge = criticalRatio > 0.4 ? Math.min(1, (criticalRatio - 0.4) / 0.3) : 0
+      surgeIntensity.current += (targetSurge - surgeIntensity.current) * 0.04 * dt
+
+      // Update HUD DOM states directly
+      if (surgeDOMRef.current) {
+        surgeDOMRef.current.style.opacity = String(surgeIntensity.current > 0.05 ? 1 : 0)
+        const labelSpan = surgeDOMRef.current.querySelector('.surge-label')
+        if (labelSpan) {
+          labelSpan.textContent = `STORM SURGE — ${Math.round(criticalRatio * 100)}% CRITICAL`
+        }
+      }
+      if (frozenDOMRef.current) {
+        frozenDOMRef.current.style.display = frozenRef.current ? 'block' : 'none'
+      }
+
       // ── Draw Faint Dimensional Background ────────────────────────────────
       // Radial grid centered in well area
       const wellCenterX = width * 0.75
@@ -508,6 +551,82 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         ctx.fill()
       }
 
+      // ── Storm Surge Vignette (Enhancement 4) ──
+      if (surgeIntensity.current > 0.01) {
+        ctx.save()
+        const grad = ctx.createRadialGradient(
+          width / 2, height / 2, height * 0.3,
+          width / 2, height / 2, height * 0.85
+        )
+        grad.addColorStop(0, 'rgba(255, 77, 79, 0)')
+        grad.addColorStop(1, `rgba(255, 77, 79, ${surgeIntensity.current * 0.18})`)
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, width, height)
+        
+        ctx.strokeStyle = `rgba(255, 77, 79, ${surgeIntensity.current * 0.25})`
+        ctx.lineWidth = 3
+        ctx.strokeRect(1, 1, width - 2, height - 2)
+        ctx.restore()
+      }
+
+      // ── Gravitational Vector Field Lines (Enhancement 5) ──
+      const activeWellsForField = wellsRef.current.filter(w => w.status === 'active' && w.radius > 0.5)
+      if (activeWellsForField.length > 0 && !isThrottled && !prefersReduced) {
+        ctx.save()
+        for (let gx = 24; gx < width; gx += 48) {
+          for (let gy = 24; gy < height; gy += 48) {
+            let fx = 0
+            let fy = 0
+            let totalStrength = 0
+            
+            for (let wIdx = 0; wIdx < activeWellsForField.length; wIdx++) {
+              const well = activeWellsForField[wIdx]
+              const dx = well.x - gx
+              const dy = well.y - gy
+              const dist = Math.sqrt(dx * dx + dy * dy)
+              if (dist < 1) continue
+              
+              const strength = (well.radius * well.radius) / (dist * dist)
+              fx += (dx / dist) * strength
+              fy += (dy / dist) * strength
+              totalStrength += strength
+            }
+            
+            const pullDist = Math.sqrt(fx * fx + fy * fy)
+            if (pullDist > 0.001) {
+              const ndx = fx / pullDist
+              const ndy = fy / pullDist
+              const arrowLen = 8
+              const alpha = Math.min(0.06, totalStrength * 0.003)
+              
+              if (alpha > 0.002) {
+                ctx.strokeStyle = `rgba(45, 212, 167, ${alpha})`
+                ctx.fillStyle = `rgba(45, 212, 167, ${alpha})`
+                ctx.lineWidth = 1
+                
+                const endX = gx + ndx * arrowLen
+                const endY = gy + ndy * arrowLen
+                
+                // Draw 6px line
+                ctx.beginPath()
+                ctx.moveTo(gx, gy)
+                ctx.lineTo(endX, endY)
+                ctx.stroke()
+                
+                // Draw tiny 2px arrowhead
+                const angle = Math.atan2(ndy, ndx)
+                ctx.beginPath()
+                ctx.moveTo(endX, endY)
+                ctx.lineTo(endX - 2.5 * Math.cos(angle - Math.PI/6), endY - 2.5 * Math.sin(angle - Math.PI/6))
+                ctx.lineTo(endX - 2.5 * Math.cos(angle + Math.PI/6), endY - 2.5 * Math.sin(angle + Math.PI/6))
+                ctx.fill()
+              }
+            }
+          }
+        }
+        ctx.restore()
+      }
+
       // ── Update & Draw Gravity Wells ──────────────────────────────────────
       const springK = 0.07
       const damping = 0.22
@@ -519,6 +638,14 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
           return false
         }
         return true
+      })
+
+      // Clean up resolved well IDs from previousWellIds
+      const activeWellIds = new Set(wellsRef.current.filter(w => w.status === 'active').map(w => w.id))
+      previousWellIds.current.forEach(id => {
+        if (!activeWellIds.has(id)) {
+          previousWellIds.current.delete(id)
+        }
       })
 
       // Update well spring vertical positions
@@ -534,6 +661,24 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
 
         // Rotation
         w.rotationAngle += 0.004 * simSpeed
+
+        // Detect new wells for shockwave (Enhancement 2)
+        if (w.status === 'active' && w.radius > 1.0) {
+          if (!previousWellIds.current.has(w.id)) {
+            if (shockwaves.current.length >= 3) {
+              shockwaves.current.shift()
+            }
+            shockwaves.current.push({
+              x: w.x,
+              y: w.y,
+              r: 0,
+              maxR: 220,
+              color: w.color,
+              alpha: 0.7
+            })
+            previousWellIds.current.add(w.id)
+          }
+        }
 
         // Decay pulse indicator
         if (w.pulse > 0) {
@@ -614,6 +759,80 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
           ctx.fillText(`${w.count} active alerts`, w.x + w.radius + 12, w.y + 11)
         }
       })
+
+      // ── Draw Shockwaves (Enhancement 2) ──
+      if (!isThrottled) {
+        shockwaves.current = shockwaves.current.filter(sw => sw.alpha > 0)
+        shockwaves.current.forEach(sw => {
+          sw.r += 3.5 * simSpeed
+          sw.alpha -= 0.012 * simSpeed
+
+          if (sw.alpha > 0) {
+            const alphaHex = Math.max(0, Math.min(255, Math.floor(sw.alpha * 255))).toString(16).padStart(2, '0')
+            
+            // First outer ring
+            ctx.save()
+            ctx.beginPath()
+            ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2)
+            ctx.strokeStyle = sw.color + alphaHex
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+
+            // Second inner ring
+            const alphaHex2 = Math.max(0, Math.min(255, Math.floor(sw.alpha * 0.4 * 255))).toString(16).padStart(2, '0')
+            ctx.beginPath()
+            ctx.arc(sw.x, sw.y, sw.r * 0.6, 0, Math.PI * 2)
+            ctx.strokeStyle = sw.color + alphaHex2
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+            ctx.restore()
+          }
+        })
+      }
+
+      // ── Draw Inter-incident Service Overlap Arcs (Enhancement 3) ──
+      if (!isThrottled) {
+        const activeWells = wellsRef.current.filter(w => w.status === 'active' && w.radius > 0.5)
+        for (let i = 0; i < activeWells.length; i++) {
+          for (let j = i + 1; j < activeWells.length; j++) {
+            const wA = activeWells[i]
+            const wB = activeWells[j]
+            
+            // Check for shared service
+            let sharedSvc = null
+            const sA = wA.incident.services
+            const sB = wB.incident.services
+            for (let sIdx = 0; sIdx < sA.length; sIdx++) {
+              if (sB.includes(sA[sIdx])) {
+                sharedSvc = sA[sIdx]
+                break
+              }
+            }
+
+            if (sharedSvc) {
+              const midX = (wA.x + wB.x) / 2
+              const midY = (wA.y + wB.y) / 2 - 60
+              
+              ctx.save()
+              ctx.beginPath()
+              ctx.moveTo(wA.x, wA.y)
+              ctx.quadraticCurveTo(midX, midY, wB.x, wB.y)
+              ctx.strokeStyle = 'rgba(255, 184, 77, 0.12)' // warning amber, very faint
+              ctx.lineWidth = 1
+              ctx.setLineDash([3, 5])
+              ctx.stroke()
+              ctx.setLineDash([])
+
+              // Draw tiny label at midpoint
+              ctx.fillStyle = 'rgba(255, 184, 77, 0.35)'
+              ctx.font = '9px "JetBrains Mono", Menlo, monospace'
+              ctx.textAlign = 'center'
+              ctx.fillText(sharedSvc, midX, midY - 8)
+              ctx.restore()
+            }
+          }
+        }
+      }
 
       // ── Update Spatial Hash Grid ─────────────────────────────────────────
       grid.clear()
@@ -701,7 +920,8 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         if (state === 4) continue // Skip dead
 
         // 1. Physics Calculations
-        if (state === 0) {
+        if (!frozenRef.current) {
+          if (state === 0) {
           // Unclustered: swarm in left 60% with rightward drift & turbulence
           if (!prefersReduced) {
             // Turbulence/perlin-ish wander using sinusoidal coordinates
@@ -778,6 +998,14 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
               pvx.current[i] *= Math.pow(0.91, simSpeed)
               pvy.current[i] *= Math.pow(0.91, simSpeed)
 
+              // Push current position into the ring buffer BEFORE updating px/py (Enhancement 1)
+              const offset = (frameCount.current % 6)
+              trailX.current[i * 6 + offset] = px.current[i]
+              trailY.current[i * 6 + offset] = py.current[i]
+              if (trailLen.current[i] < 6) {
+                trailLen.current[i] = Math.min(6, trailLen.current[i] + 1)
+              }
+
               px.current[i] += pvx.current[i] * simSpeed
               py.current[i] += pvy.current[i] * simSpeed
             }
@@ -852,6 +1080,12 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
             py.current[i] += pvy.current[i] * simSpeed
           }
         }
+      }
+
+        // On State 3 or 4 transition, zero out trailLen (Enhancement 1)
+        if (pState.current[i] === 3 || pState.current[i] === 4) {
+          trailLen.current[i] = 0
+        }
 
         // 2. Draw Particle
         let alpha = 0.75
@@ -881,6 +1115,25 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         if (isParticleHovered || isOrbitWellHovered) {
           alpha = 1.0
           baseRadius += 1.5
+        }
+
+        // Draw Trail (skip if isThrottled) (Enhancement 1)
+        if ((state === 1 || state === 2) && !isThrottled && trailLen.current[i] > 0) {
+          const offset = frameCount.current % 6
+          for (let k = 0; k < trailLen.current[i]; k++) {
+            const stepIdx = (offset - k + 6) % 6
+            const tx = trailX.current[i * 6 + stepIdx]
+            const ty = trailY.current[i * 6 + stepIdx]
+            
+            const trailOpacity = 0.35 * (1 - k / 6) * alpha
+            const trailRadius = 1.2 - 0.08 * k
+            
+            const trailAlphaHex = Math.max(0, Math.min(255, Math.floor(trailOpacity * 255))).toString(16).padStart(2, '0')
+            ctx.fillStyle = color + trailAlphaHex
+            ctx.beginPath()
+            ctx.arc(tx, ty, trailRadius, 0, Math.PI * 2)
+            ctx.fill()
+          }
         }
 
         ctx.fillStyle = isParticleHovered ? '#FFFFFF' : `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`
@@ -984,28 +1237,48 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         const cx = mouseX.current
         const cy = mouseY.current
 
-        // Target acquired if hovering a particle or a well
-        const isTargetAcquired = closestIdx !== -1 || hoveredWellIdx.current !== -1
+        if (frozenRef.current) {
+          ctx.strokeStyle = '#F5A524'
+          ctx.lineWidth = 1.2
+          ctx.shadowColor = '#F5A524'
+          ctx.shadowBlur = 4
 
-        ctx.strokeStyle = '#F5A524'
-        ctx.lineWidth = 1.2
-        ctx.shadowColor = '#F5A524'
-        ctx.shadowBlur = isTargetAcquired ? 3 : 0
-
-        const angle = isTargetAcquired ? Math.PI / 4 : 0
-        const innerGap = isTargetAcquired ? 3.5 : 6.0
-        const tickLength = 5.0
-
-        // Draw 4 ticks
-        for (let j = 0; j < 4; j++) {
-          const tickAngle = angle + (j * Math.PI) / 2
-          const cos = Math.cos(tickAngle)
-          const sin = Math.sin(tickAngle)
-
+          // Draw small circle (r=8)
           ctx.beginPath()
-          ctx.moveTo(cx + innerGap * cos, cy + innerGap * sin)
-          ctx.lineTo(cx + (innerGap + tickLength) * cos, cy + (innerGap + tickLength) * sin)
+          ctx.arc(cx, cy, 8, 0, Math.PI * 2)
           ctx.stroke()
+
+          // Draw crosshair lines extending 12px
+          ctx.beginPath()
+          ctx.moveTo(cx - 12, cy)
+          ctx.lineTo(cx + 12, cy)
+          ctx.moveTo(cx, cy - 12)
+          ctx.lineTo(cx, cy + 12)
+          ctx.stroke()
+        } else {
+          // Target acquired if hovering a particle or a well
+          const isTargetAcquired = closestIdx !== -1 || hoveredWellIdx.current !== -1
+
+          ctx.strokeStyle = '#F5A524'
+          ctx.lineWidth = 1.2
+          ctx.shadowColor = '#F5A524'
+          ctx.shadowBlur = isTargetAcquired ? 3 : 0
+
+          const angle = isTargetAcquired ? Math.PI / 4 : 0
+          const innerGap = isTargetAcquired ? 3.5 : 6.0
+          const tickLength = 5.0
+
+          // Draw 4 ticks
+          for (let j = 0; j < 4; j++) {
+            const tickAngle = angle + (j * Math.PI) / 2
+            const cos = Math.cos(tickAngle)
+            const sin = Math.sin(tickAngle)
+
+            ctx.beginPath()
+            ctx.moveTo(cx + innerGap * cos, cy + innerGap * sin)
+            ctx.lineTo(cx + (innerGap + tickLength) * cos, cy + (innerGap + tickLength) * sin)
+            ctx.stroke()
+          }
         }
         ctx.restore()
       }
@@ -1014,10 +1287,20 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
       animationFrameId.current = requestAnimationFrame(loop)
     }
 
+    const handleFreeze = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault()
+        frozenRef.current = !frozenRef.current
+        audioManager.playWhoosh()
+      }
+    }
+    window.addEventListener('keydown', handleFreeze)
+
     animationFrameId.current = requestAnimationFrame(loop)
 
     return () => {
       window.removeEventListener('resize', resizeCanvas)
+      window.removeEventListener('keydown', handleFreeze)
       unsubscribeStore()
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current)
@@ -1124,6 +1407,24 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         ref={wellTooltipRef}
         className="absolute pointer-events-none z-30 hidden w-[280px] p-4 rounded-card border border-border bg-bg-elevated shadow-card font-mono text-[10px] text-text-secondary text-left leading-normal"
       />
+
+      {/* Zero React Render Frozen Indicator (Enhancement 6) */}
+      <div
+        ref={frozenDOMRef}
+        className="absolute top-16 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full border border-warning/40 bg-bg-elevated/80 font-mono text-[10px] text-warning tracking-widest uppercase hidden pointer-events-none select-none backdrop-blur-sm shadow-card"
+      >
+        ⏸ FROZEN · SPACE TO RESUME
+      </div>
+
+      {/* Zero React Render Storm Surge Indicator (Enhancement 4) */}
+      <div
+        ref={surgeDOMRef}
+        className="absolute bottom-4 right-6 z-20 flex items-center gap-2 font-mono text-[10px] select-none transition-opacity duration-500 pointer-events-none bg-bg-surface px-3 py-2 rounded-card border border-[#FF4D4F]/30 shadow-card"
+        style={{ opacity: 0, color: '#FF4D4F' }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D4F] animate-pulse" />
+        <span className="surge-label">STORM SURGE — 0% CRITICAL</span>
+      </div>
     </div>
   )
 }
