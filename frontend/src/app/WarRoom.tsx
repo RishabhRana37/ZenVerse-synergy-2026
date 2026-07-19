@@ -148,7 +148,7 @@ export function WarRoom() {
 
           {/* Right Panel: Incidents (60%) with Corner Brackets */}
           <section className="w-[60%] flex flex-col h-full rounded-card border border-border bg-bg-surface/85 backdrop-blur-xl shadow-card transition-all duration-150 hover:border-border-hover relative group/bracket">
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-accent rounded-t-card z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-border-strong rounded-t-card z-10 pointer-events-none" />
             <PanelErrorBoundary label="Incidents">
               <IncidentPanel onIncidentSelect={setSelectedIncidentId} />
             </PanelErrorBoundary>
@@ -161,9 +161,9 @@ export function WarRoom() {
 
       {/* ── Time Machine REVIEWING Pill DOM Overlay ─────────────────────── */}
       {scrubMode && (
-        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-[#0B0F19]/80 border border-accent/30 shadow-elevated px-4 py-2 rounded-full font-mono text-[10px] text-text-primary select-none backdrop-blur-md animate-fade-in">
-          <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-accent">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-[#131312]/80 border border-brand/30 shadow-elevated px-4 py-2 rounded-full font-mono text-[10px] text-text-primary select-none backdrop-blur-md animate-fade-in">
+          <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-brand">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand animate-ping" />
             Reviewing
           </span>
           <span className="text-text-secondary font-mono">t+{scrubTime.toFixed(1)}s</span>
@@ -172,7 +172,7 @@ export function WarRoom() {
             size="sm"
             variant="ghost"
             onClick={handleCaptureSnapshot}
-            className="h-6 w-6 p-0 hover:bg-bg-hover hover:text-accent flex items-center justify-center"
+            className="h-6 w-6 p-0 hover:bg-bg-hover hover:text-brand flex items-center justify-center"
             title="Copy shareable text snapshot to clipboard"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

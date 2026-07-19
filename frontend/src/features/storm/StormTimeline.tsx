@@ -16,15 +16,15 @@ const WINDOW_SECS = 90          // rolling window width
 const CANVAS_HEIGHT = 72        // px — must match the outer wrapper height
 const GRID_LINES = 4            // horizontal y-grid lines
 
-const COLOR_CRIT  = 'rgba(255, 90, 95,  0.30)'
-const COLOR_WARN  = 'rgba(255, 184, 77, 0.25)'
-const COLOR_INFO  = 'rgba(61, 214, 140, 0.20)'
-const COLOR_EDGE  = '#FF6363'   // accent — top stroke
+const COLOR_CRIT  = 'rgba(229, 72, 77, 0.30)'
+const COLOR_WARN  = 'rgba(232, 163, 61, 0.25)'
+const COLOR_INFO  = 'rgba(106, 113, 120, 0.20)'
+const COLOR_EDGE  = '#F5A524'   // accent — top stroke
 const COLOR_GRID  = 'rgba(255, 255, 255, 0.04)'
 const COLOR_TEXT  = 'rgba(161, 161, 166, 0.9)'
-const COLOR_CRIT_SOLID  = '#FF5A5F'
-const COLOR_ACCENT_SOLID = '#FF6363'
-const COLOR_PLAYHEAD = 'rgba(255, 99, 99, 0.5)'
+const COLOR_CRIT_SOLID  = '#E5484D'
+const COLOR_ACCENT_SOLID = '#F5A524'
+const COLOR_PLAYHEAD = 'rgba(245, 165, 36, 0.5)'
 const COLOR_MARKER_LINE = 'rgba(255, 255, 255, 0.08)'
 
 interface Bucket {
@@ -254,7 +254,7 @@ export function StormTimeline() {
       const fadePct = Math.min(1, Math.max(0, x / 30))
       const rootSvc = incident.root_candidates?.[0]?.service ?? ''
       const sev = incident.root_candidates?.[0] !== undefined
-        ? (incident.status === 'resolved' ? 'rgba(45,212,167,0.45)' : COLOR_CRIT_SOLID)
+        ? (incident.status === 'resolved' ? 'rgba(47,184,166,0.45)' : COLOR_CRIT_SOLID)
         : COLOR_ACCENT_SOLID
 
       ctx.save()
@@ -610,10 +610,12 @@ export function StormTimeline() {
             onClick={handleExitScrub}
             className={clsx(
               "absolute right-4 top-1/2 -translate-y-1/2 z-30 font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-120",
-              scrubMode ? "animate-pulse shadow-elevated" : "opacity-80 disabled:opacity-50"
+              scrubMode 
+                ? "animate-pulse shadow-elevated" 
+                : "opacity-100 disabled:opacity-100 border border-brand/30 text-brand bg-brand-dim/5"
             )}
           >
-            <span className={clsx("w-1.5 h-1.5 rounded-full", scrubMode ? "bg-text-inverse" : "bg-accent")} />
+            <span className={clsx("w-1.5 h-1.5 rounded-full", scrubMode ? "bg-brand" : "bg-brand animate-pulse")} />
             LIVE {scrubMode && newIncidentsCount > 0 && `+${newIncidentsCount}`}
           </Button>
 

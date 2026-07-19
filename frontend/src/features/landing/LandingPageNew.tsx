@@ -161,8 +161,9 @@ function LandingNav() {
           <kbd className="text-[10px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">⌘K</kbd>
         </button>
         <Link
-          to="/"
-          className="px-3.5 py-1.5 rounded-md bg-accent text-[#0A0E14] text-[12px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150 whitespace-nowrap"
+          to="/war-room"
+          className="px-3.5 py-1.5 rounded-md text-[12px] font-bold font-sans hover:opacity-90 active:scale-95 transition-all duration-150 whitespace-nowrap"
+          style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
         >
           Enter War Room
         </Link>
@@ -175,7 +176,7 @@ function LandingNav() {
 // 1. HERO
 // ════════════════════════════════════════════════════════════════════════════════
 // ── Magnetic Button (Upgrade 5) ────────────────────────────────────────────────
-function MagneticButton({ children, to, className }: { children: React.ReactNode; to: string; className?: string }) {
+function MagneticButton({ children, to, className, style }: { children: React.ReactNode; to: string; className?: string; style?: React.CSSProperties }) {
   const buttonRef = useRef<HTMLAnchorElement>(null)
   const [{ x, y }, setCoords] = useState({ x: 0, y: 0 })
 
@@ -222,7 +223,7 @@ function MagneticButton({ children, to, className }: { children: React.ReactNode
       transition={{ type: 'spring', stiffness: 150, damping: 15 }}
       className="inline-block"
     >
-      <Link ref={buttonRef} to={to} className={className}>
+      <Link ref={buttonRef} to={to} className={className} style={style}>
         {children}
       </Link>
     </motion.div>
@@ -234,9 +235,9 @@ function TextRevealHeadline() {
   if (prefersReduced) {
     return (
       <h1 className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight text-text-primary">
-        From 2,000 alerts{' '}
+        From 2,000 alerts to{' '}
         <span className="inline-block text-brand">
-          to 3 answers.
+          3 answers.
         </span>
       </h1>
     )
@@ -354,7 +355,7 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
   const yDustVal = prefersReduced ? 0 : yDust
 
   return (
-    <section ref={heroRef} className="relative min-h-screen pt-14 flex overflow-hidden bg-[#050810]">
+    <section ref={heroRef} className="relative min-h-screen pt-14 flex overflow-hidden bg-bg-base">
       {/* 1px conic gradient sweep and text rise styling */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes text-rise {
@@ -394,11 +395,11 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center opacity-[0.05]"
       >
         <svg width="800" height="800" viewBox="0 0 800 800" fill="none">
-          <circle cx="400" cy="400" r="300" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
-          <circle cx="400" cy="400" r="200" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
-          <circle cx="400" cy="400" r="100" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
-          <line x1="400" y1="0" x2="400" y2="800" stroke="#F5A524" strokeWidth="0.5" strokeDasharray="2 4" />
-          <line x1="0" y1="400" x2="800" y2="400" stroke="#F5A524" strokeWidth="0.5" strokeDasharray="2 4" />
+          <circle cx="400" cy="400" r="300" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="200" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="100" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <line x1="400" y1="0" x2="400" y2="800" stroke="#1E1E1B" strokeWidth="0.5" strokeDasharray="2 4" />
+          <line x1="0" y1="400" x2="800" y2="400" stroke="#1E1E1B" strokeWidth="0.5" strokeDasharray="2 4" />
         </svg>
       </motion.div>
 
@@ -427,7 +428,7 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         }}
       />
       {/* Subtle radial fade on left */}
-      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#050810] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#0C0C0B] to-transparent pointer-events-none z-10" />
 
       {/* Left — text content */}
       <div className="relative z-10 flex flex-col justify-center items-start w-[45%] pl-12 pr-4 gap-6">
@@ -436,9 +437,9 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
           initial={prefersReduced ? {} : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR_ENTER, ease: EASE }}
-          className="flex items-center gap-2.5 text-[10px] font-mono text-text-muted uppercase tracking-[0.2em] select-none"
+          className="flex items-center gap-2.5 text-[10px] font-mono text-text-low uppercase tracking-[0.2em] select-none"
         >
-          <span className="w-4 h-px bg-accent/60" />
+          <span className="w-4 h-px bg-brand" />
           SYNERGY 2026 · HPE PS #10
         </motion.div>
 
@@ -465,7 +466,8 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         >
           <MagneticButton
             to="/war-room"
-            className="px-5 py-2.5 rounded-md bg-brand text-brand-on text-[13px] font-bold font-sans hover:bg-brand-hover transition-all duration-150 whitespace-nowrap block"
+            className="px-5 py-2.5 rounded-md text-[13px] font-bold font-sans hover:opacity-90 transition-all duration-150 whitespace-nowrap block"
+            style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
           >
             Enter the War Room
           </MagneticButton>
@@ -1053,7 +1055,7 @@ function FinalCTA() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(45,212,167,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(245,165,36,0.07) 0%, transparent 70%)',
         }}
       />
 
@@ -1068,8 +1070,9 @@ function FinalCTA() {
           One command. Live storm. Real-time answers. No setup needed.
         </p>
         <Link
-          to="/"
-          className="px-8 py-3 rounded-md bg-accent text-[#0A0E14] text-[14px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150"
+          to="/war-room"
+          className="px-8 py-3 rounded-md text-[14px] font-bold font-sans hover:opacity-90 active:scale-95 transition-all duration-150"
+          style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
         >
           Enter the War Room →
         </Link>
@@ -1088,9 +1091,9 @@ function FinalCTA() {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="flex items-center gap-4 text-[12px] font-sans">
               <Link to="/eval" className="text-text-secondary hover:text-text-primary transition-colors duration-150">Eval</Link>
-              <Link to="/" className="text-text-secondary hover:text-text-primary transition-colors duration-150">War Room</Link>
+              <Link to="/war-room" className="text-text-secondary hover:text-text-primary transition-colors duration-150">War Room</Link>
             </div>
-            <div className="text-[11px] font-mono text-accent select-none bg-accent/5 px-2.5 py-1 rounded border border-accent/10 tabular-nums">
+            <div className="text-[11px] font-mono text-brand select-none bg-brand-dim px-2.5 py-1 rounded border border-brand/20 tabular-nums">
               {time}
             </div>
           </div>
@@ -1150,7 +1153,7 @@ export function LandingPageNew() {
       {/* Scroll Progress Bar (Upgrade 2) */}
       <motion.div
         style={{ scaleX }}
-        className="fixed top-0 left-0 right-0 h-[2px] bg-accent z-[9999] origin-left"
+        className="fixed top-0 left-0 right-0 h-[2px] bg-brand z-[9999] origin-left"
       />
       <LandingNav />
       <HeroSection onReplay={handleReplay} replaySignal={replaySignal} />

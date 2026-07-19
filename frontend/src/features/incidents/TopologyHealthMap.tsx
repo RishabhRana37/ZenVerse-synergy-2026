@@ -32,7 +32,7 @@ const COMPACT_STYLES = [
       'width': 72,
       'height': 22,
       'shape': 'roundrectangle',
-      'background-color': '#11161F',
+      'background-color': '#131312',
       'border-color': 'rgba(255,255,255,0.08)',
       'border-width': 1,
       'color': '#8B98A9',

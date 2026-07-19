@@ -438,13 +438,25 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
           <motion.div variants={chipsVariants} className="flex flex-wrap gap-1.5 mb-2.5 flex-shrink-0">
             {visibleServices.map((svc) => {
               const isRoot = svc === rootService
+              const getRootChipStyles = () => {
+                if (incident.status === 'resolved') {
+                  return "bg-ok-dim border border-ok/35 text-ok font-bold"
+                }
+                if (severity === 'critical') {
+                  return "bg-sev-crit-dim border border-sev-crit/35 text-sev-crit font-bold"
+                }
+                if (severity === 'warning') {
+                  return "bg-sev-warn-dim border border-sev-warn/35 text-sev-warn font-bold"
+                }
+                return "bg-sev-info-dim border border-sev-info/35 text-sev-info font-bold"
+              }
               return (
                 <span
                   key={svc}
                   className={clsx(
                     "text-[10px] font-mono px-2 py-0.5 rounded border leading-none transition-colors",
                     isRoot
-                      ? "bg-sev-crit-dim border border-sev-crit/35 text-sev-crit font-bold"
+                      ? getRootChipStyles()
                       : "bg-bg-base/60 border-border text-text-secondary"
                   )}
                 >
@@ -477,7 +489,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
                       e.stopPropagation()
                       setIsExpanded(!isExpanded)
                     }}
-                    className="text-accent hover:underline text-[10px] font-mono mt-1.5 block select-none z-10 relative cursor-pointer"
+                    className="text-text-mid hover:text-text-hi hover:underline text-[10px] font-mono mt-1.5 block select-none z-10 relative cursor-pointer"
                   >
                     {isExpanded ? 'Show less' : 'Show more'}
                   </button>
@@ -488,7 +500,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: DUR_ENTER }}
-                    className="mt-2.5 pt-2 border-t border-border/20 text-accent font-semibold text-[11px] leading-relaxed uppercase tracking-wide select-text flex flex-col gap-0.5"
+                    className="mt-2.5 pt-2 border-t border-border/20 text-brand font-semibold text-[11px] leading-relaxed uppercase tracking-wide select-text flex flex-col gap-0.5"
                   >
                     <span className="text-text-secondary text-[10px] font-bold tracking-wider">FIRST ACTION:</span>
                     <span className="normal-case font-medium">{incident.first_action}</span>
@@ -632,10 +644,10 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
-          <span className="text-accent mr-1">▎02</span> Incidents
+          <span className="text-brand mr-1">▎02</span> Incidents
         </span>
-        <div className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-stream text-text-secondary font-mono select-none">
-          <Odometer value={activeCount} easing="spring" className="text-text-secondary" /> active
+        <div className="px-2 py-0.5 rounded bg-brand-dim border border-brand/20 text-stream text-brand font-mono font-bold select-none">
+          <Odometer value={activeCount} easing="spring" className="text-brand" /> active
         </div>
       </div>
 
@@ -647,14 +659,14 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center select-none animate-fade-in">
           <div className="relative w-12 h-12 flex items-center justify-center">
             {/* Concentric rings */}
-            <div className="absolute inset-0 rounded-full border border-accent/20 animate-concentric" />
-            <div className="absolute inset-2.5 rounded-full border border-accent/40 animate-concentric" style={{ animationDelay: '1s' }} />
-            <div className="w-3.5 h-3.5 rounded-full bg-accent" />
+            <div className="absolute inset-0 rounded-full border border-ok/20 animate-concentric" />
+            <div className="absolute inset-2.5 rounded-full border border-ok/40 animate-concentric" style={{ animationDelay: '1s' }} />
+            <div className="w-3.5 h-3.5 rounded-full bg-ok" />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[13px] font-semibold text-text-secondary font-sans">Monitoring — no active incidents</span>
             <span className="text-[10px] text-text-muted font-mono tracking-wide uppercase">
-              System Nominal
+               System Nominal
             </span>
           </div>
         </div>

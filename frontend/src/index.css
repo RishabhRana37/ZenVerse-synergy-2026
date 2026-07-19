@@ -306,8 +306,8 @@ html.presentation-mode {
     border-color: rgba(255, 255, 255, 0.10);
   }
   40% {
-    border-color: rgba(45, 212, 167, 0.6);
-    box-shadow: 0 0 6px rgba(45, 212, 167, 0.25);
+    border-color: rgba(245, 165, 36, 0.6);
+    box-shadow: 0 0 6px rgba(245, 165, 36, 0.25);
   }
   100% {
     border-color: rgba(255, 255, 255, 0.10);
@@ -472,8 +472,8 @@ html.presentation-mode {
 
 /* ── Pulse Edge Accent Animation ── */
 @keyframes pulse-edge-accent {
-  0%, 100% { border-color: rgba(45, 212, 167, 0.4); box-shadow: 0 0 4px rgba(45, 212, 167, 0.1); }
-  50% { border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 12px rgba(45, 212, 167, 0.3); }
+  0%, 100% { border-color: rgba(245, 165, 36, 0.4); box-shadow: 0 0 4px rgba(245, 165, 36, 0.1); }
+  50% { border-color: rgba(245, 165, 36, 1); box-shadow: 0 0 12px rgba(245, 165, 36, 0.3); }
 }
 .animate-pulse-edge-accent {
   animation: pulse-edge-accent 2s infinite ease-in-out;
@@ -481,9 +481,9 @@ html.presentation-mode {
 
 /* ── Keycap Press Down Animation ── */
 @keyframes press-down {
-  0% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
-  20% { transform: translateY(1px) scale(0.96); border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 8px rgba(45, 212, 167, 0.4); }
-  100% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+  0% { transform: translateY(0) scale(1); border-color: rgba(245, 165, 36, 0.4); }
+  20% { transform: translateY(1px) scale(0.96); border-color: rgba(245, 165, 36, 1); box-shadow: 0 0 8px rgba(245, 165, 36, 0.4); }
+  100% { transform: translateY(0) scale(1); border-color: rgba(245, 165, 36, 0.4); }
 }
 .animate-press-down {
   animation: press-down 0.3s ease-out;

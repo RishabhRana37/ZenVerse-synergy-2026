@@ -272,12 +272,12 @@ export function DashboardLayout() {
             className="absolute top-0 left-0 right-0 h-[3px] animate-mesh-gradient"
             style={{
               background: `linear-gradient(90deg, 
-                #3b82f6 0%, 
-                #3b82f6 ${infoPct}%, 
-                #f59e0b ${infoPct}%, 
-                #f59e0b ${infoPct + warnPct}%, 
-                #ff4d4f ${infoPct + warnPct}%, 
-                #ff4d4f 100%)`
+                var(--sev-info) 0%, 
+                var(--sev-info) ${infoPct}%, 
+                var(--sev-warn) ${infoPct}%, 
+                var(--sev-warn) ${infoPct + warnPct}%, 
+                var(--sev-crit) ${infoPct + warnPct}%, 
+                var(--sev-crit) 100%)`
             }}
           />
 
@@ -288,12 +288,18 @@ export function DashboardLayout() {
                 <ReticleLogo connection={connection} />
                 <span className="font-semibold text-text-primary text-[15px] tracking-tight font-sans">StormLens</span>
                 <div className="flex items-center gap-1.5 pl-2.5 border-l border-border">
-                  <span className="text-[11px] text-text-secondary font-mono capitalize">
+                  {connection === 'open' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse flex-shrink-0" />
+                  )}
+                  <span className={clsx(
+                    "text-[11px] font-mono capitalize tracking-wide font-bold",
+                    connection === 'open' ? "text-brand" : "text-text-secondary"
+                  )}>
                     {connection === 'open' ? 'live' : connection}
                   </span>
                 </div>
                 {replayRunning && (
-                  <div className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[10px] font-semibold tracking-wider uppercase animate-pulse">
+                  <div className="px-1.5 py-0.5 rounded bg-brand-dim border border-brand/20 text-brand font-mono text-[10px] font-semibold tracking-wider uppercase animate-pulse">
                     Replay
                   </div>
                 )}
@@ -330,19 +336,19 @@ export function DashboardLayout() {
                 {view === 'stream' && (
                   <div className="flex items-center gap-4 bg-bg-base/40 px-3 py-1.5 rounded border border-border text-[11px] font-mono text-text-secondary select-none animate-fade-in">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-sev-info/80" />
                       <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-mono">alerts</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent/80 animate-pulse" />
-                      <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-bold" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand/80 animate-pulse" />
+                      <Odometer value={activeIncidents} format="integer" easing="spring" className="text-brand font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-mono">incidents</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
-                      <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-accent font-bold" />
+                      <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-brand font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-sans">Noise Suppressed</span>
                     </div>
                   </div>
