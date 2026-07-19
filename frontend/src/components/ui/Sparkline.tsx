@@ -8,7 +8,7 @@ interface SparklineProps {
   color?: string
 }
 
-export function Sparkline({ data, width, height, color = '#2DD4A7' }: SparklineProps) {
+export function Sparkline({ data, width, height, color = 'var(--brand)' }: SparklineProps) {
   const fpsReduced = useFPSStore((s) => s.reducedMotion)
   const prefersReduced = (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || fpsReduced
 
@@ -35,6 +35,7 @@ export function Sparkline({ data, width, height, color = '#2DD4A7' }: SparklineP
 
   // Generate area d string (under sparkline)
   const areaD = d ? `${d} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z` : ''
+  const safeColorId = color.replace(/[^a-zA-Z0-9]/g, '')
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible select-none pointer-events-none">
@@ -42,7 +43,7 @@ export function Sparkline({ data, width, height, color = '#2DD4A7' }: SparklineP
       {areaD && (
         <motion.path
           d={areaD}
-          fill={`url(#sparkline-grad-${color.replace('#', '')})`}
+          fill={`url(#sparkline-grad-${safeColorId})`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.12 }}
           transition={{ duration: 0.3, delay: prefersReduced ? 0 : 0.4 }}
@@ -65,7 +66,7 @@ export function Sparkline({ data, width, height, color = '#2DD4A7' }: SparklineP
       )}
 
       <defs>
-        <linearGradient id={`sparkline-grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`sparkline-grad-${safeColorId}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.4" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>

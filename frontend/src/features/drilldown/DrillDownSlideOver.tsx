@@ -682,12 +682,12 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               <span
                 className={clsx(
                   "w-1.5 h-1.5 rounded-full",
-                  storeIncident.status === 'active' ? "bg-severity-critical animate-pulse-dot" : "bg-accent"
+                  storeIncident.status === 'active' ? "bg-sev-crit animate-pulse-dot" : "bg-ok"
                 )}
               />
               <span className="text-[10px] font-mono uppercase font-semibold text-text-muted">{storeIncident.status}</span>
               {scrubMode && (
-                <span className="text-[10px] font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/15 border border-accent/30 animate-pulse select-none">
+                <span className="text-[10px] font-mono font-bold text-brand px-1.5 py-0.5 rounded bg-brand-dim border border-brand/30 animate-pulse select-none">
                   as of t+{scrubTime.toFixed(1)}s
                 </span>
               )}
@@ -767,6 +767,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                         showLabel={true}
                         greenThreshold={0.6}
                         amberThreshold={0.3}
+                        status={storeIncident.status}
                       />
                     </div>
                     {rank > 1 && (

@@ -42,10 +42,10 @@ export function ReticleLogo({ connection }: ReticleLogoProps) {
         r="1.8"
         fill={
           connection === 'open'
-            ? '#2DD4A7'
+            ? '#2FB8A6'
             : connection === 'connecting'
-            ? '#F5A623'
-            : '#FF4D4F'
+            ? '#E8A33D'
+            : '#E5484D'
         }
         className={clsx(
           (connection === 'open' || connection === 'connecting') && "animate-pulse-dot"

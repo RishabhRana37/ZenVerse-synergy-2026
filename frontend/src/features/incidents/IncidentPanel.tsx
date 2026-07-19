@@ -175,22 +175,22 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
     switch (severity) {
       case 'critical':
         return {
-          border: 'rgba(239, 68, 68, 0.4)',
-          glow: 'rgba(239, 68, 68, 0.12)',
-          rgb: '239, 68, 68',
+          border: 'rgba(229, 72, 77, 0.4)',
+          glow: 'rgba(229, 72, 77, 0.12)',
+          rgb: '229, 72, 77',
         }
       case 'warning':
         return {
-          border: 'rgba(245, 158, 11, 0.4)',
-          glow: 'rgba(245, 158, 11, 0.12)',
-          rgb: '245, 158, 11',
+          border: 'rgba(232, 163, 61, 0.4)',
+          glow: 'rgba(232, 163, 61, 0.12)',
+          rgb: '232, 163, 61',
         }
       case 'info':
       default:
         return {
-          border: 'rgba(59, 130, 246, 0.4)',
-          glow: 'rgba(59, 130, 246, 0.12)',
-          rgb: '59, 130, 246',
+          border: 'rgba(106, 113, 120, 0.4)',
+          glow: 'rgba(106, 113, 120, 0.12)',
+          rgb: '106, 113, 120',
         }
     }
   }, [severity])
@@ -228,23 +228,23 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
             />
           )}
           <div className="flex items-center gap-2 min-w-0 flex-1 z-10 relative">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-            <span className="font-semibold text-text-muted truncate max-w-[200px] font-sans">
+            <span className="w-1.5 h-1.5 rounded-full bg-ok flex-shrink-0" />
+            <span className="font-semibold text-text-mid truncate max-w-[200px] font-sans">
               {incident.title}
             </span>
-            <span className="text-[10px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-muted font-mono leading-none flex-shrink-0 uppercase font-bold">
+            <span className="text-[10px] px-1 py-0.2 rounded bg-bg-base border border-border/30 text-text-low font-mono leading-none flex-shrink-0 uppercase font-bold">
               Resolved
             </span>
             {topCandidate && (
-              <span className="font-mono text-text-muted truncate max-w-[150px] hidden sm:inline">
+              <span className="font-mono text-text-low truncate max-w-[150px] hidden sm:inline">
                 rc: <span className="text-text-secondary font-semibold">{topCandidate.service}</span>
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-muted z-10 relative">
+          <div className="flex items-center gap-2 flex-shrink-0 font-mono text-[10px] text-text-low z-10 relative">
             <span className="inline-flex items-baseline gap-0.5">
-              <Odometer value={incident.alert_count} easing="spring" className="text-text-muted" />
+              <Odometer value={incident.alert_count} easing="spring" className="text-text-low" />
               <span>alerts</span>
             </span>
             {incident.resolved_at && (
@@ -371,8 +371,9 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
         }}
         tabIndex={0}
         className={clsx(
-          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border shadow-card transition-all duration-150 ease-out focus-visible:outline-offset-[-2px]",
+          "rounded-card p-5 flex flex-col relative overflow-hidden select-none border border-l-2 shadow-card transition-all duration-150 ease-out focus-visible:outline-offset-[-2px]",
           borderClass,
+          severity === 'critical' ? 'border-l-sev-crit' : severity === 'warning' ? 'border-l-sev-warn' : 'border-l-sev-info',
           !reducedMotion && "hover:-translate-y-[1px] hover:border-border-hover",
           severity === 'critical' && !incident.acknowledged && "animate-pulse-edge-critical"
         )}
@@ -382,7 +383,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
           <motion.div
             variants={lineVariants}
             style={{ originX: 0 }}
-            className="absolute top-0 left-0 right-0 h-[1px] bg-accent pointer-events-none transition-opacity duration-200 z-10"
+            className="absolute top-0 left-0 right-0 h-[1px] bg-brand pointer-events-none transition-opacity duration-200 z-10"
             animate={{ opacity: isPulsing ? 1.0 : topCandidate.confidence }}
           />
         )}
@@ -396,11 +397,11 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
             </h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {incident.acknowledged ? (
-                <span className="text-[10px] font-mono font-bold text-accent bg-accent/15 border border-accent/30 px-1 py-0.5 rounded uppercase leading-none">
+                <span className="text-[10px] font-mono font-bold text-brand bg-brand-dim border border-brand/30 px-1 py-0.5 rounded uppercase leading-none">
                   Ack
                 </span>
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-severity-critical animate-pulse-dot" />
+                <span className="w-1.5 h-1.5 rounded-full bg-sev-crit animate-pulse-dot" />
               )}
               <RelativeTime timestamp={incident.created_at} />
             </div>
@@ -411,11 +412,11 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
             <motion.div variants={rootLineVariants} className="flex flex-col gap-1.5 my-1.5 pb-2.5 border-b border-border/40 flex-shrink-0">
               <div className="flex items-baseline gap-1 text-[11px] font-mono text-text-secondary truncate select-text">
                 <span className="text-text-muted font-semibold uppercase text-[10px] tracking-wider">Root cause:</span>
-                <span className={clsx("font-bold", topCandidate.is_confirmed ? "text-accent" : "text-severity-critical")}>
+                <span className={clsx("font-bold", topCandidate.is_confirmed ? "text-brand" : "text-sev-crit")}>
                   {topCandidate.service}
                 </span>
                 {topCandidate.is_confirmed && (
-                  <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                  <span className="text-[10px] font-bold text-brand bg-brand-dim px-1 py-0.2 rounded border border-brand/20 uppercase leading-none font-sans shrink-0">
                     Confirmed
                   </span>
                 )}
@@ -428,6 +429,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
                 showLabel={true}
                 greenThreshold={0.6}
                 amberThreshold={0.3}
+                status="active"
               />
             </motion.div>
           )}
@@ -442,7 +444,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
                   className={clsx(
                     "text-[10px] font-mono px-2 py-0.5 rounded border leading-none transition-colors",
                     isRoot
-                      ? "bg-severity-critical/10 border-severity-critical/30 text-severity-critical font-bold"
+                      ? "bg-sev-crit-dim border border-sev-crit/35 text-sev-crit font-bold"
                       : "bg-bg-base/60 border-border text-text-secondary"
                   )}
                 >
@@ -572,7 +574,7 @@ const IncidentCard = React.memo(React.forwardRef<HTMLDivElement, { incident: Inc
                       data={sparklineData.map(d => d.val)}
                       width={60}
                       height={20}
-                      color="#2DD4A7"
+                      color="var(--brand)"
                     />
                   )}
                 </div>

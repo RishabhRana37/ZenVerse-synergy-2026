@@ -25,7 +25,7 @@ function LensMark({ size = 20 }: { size?: number }) {
       <line x1="10" y1="17.8" x2="10" y2="20" stroke="#E6EDF3" strokeWidth="1.3" />
       <line x1="0" y1="10" x2="2.2" y2="10" stroke="#E6EDF3" strokeWidth="1.3" />
       <line x1="17.8" y1="10" x2="20" y2="10" stroke="#E6EDF3" strokeWidth="1.3" />
-      <circle cx="16.5" cy="4.5" r="1.9" fill="#2DD4A7" />
+      <circle cx="16.5" cy="4.5" r="1.9" fill="#F5A524" />
     </svg>
   )
 }
@@ -122,14 +122,14 @@ function LandingNav() {
           scrolled ? 'opacity-20' : 'opacity-0'
         )}
         style={{
-          background: 'linear-gradient(90deg, #2DD4A7 0%, transparent 100%)'
+          background: 'linear-gradient(90deg, var(--brand) 0%, transparent 100%)'
         }}
       />
 
       {/* Wordmark */}
-      <Link to="/landing" className="flex items-center gap-2.5 mr-auto select-none group">
+      <Link to="/" className="flex items-center gap-2.5 mr-auto select-none group">
         <LensMark size={20} />
-        <span className="font-sans font-bold text-[14px] tracking-tight text-text-primary group-hover:text-accent transition-colors duration-150">
+        <span className="font-sans font-bold text-[14px] tracking-tight text-text-primary group-hover:text-brand transition-colors duration-150">
           StormLens
         </span>
       </Link>
@@ -235,16 +235,7 @@ function TextRevealHeadline() {
     return (
       <h1 className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight text-text-primary">
         From 2,000 alerts{' '}
-        <span
-          className="inline-block"
-          style={{
-            background: 'linear-gradient(120deg, #2DD4A7 0%, #4D9FFF 50%, #2DD4A7 100%)',
-            backgroundSize: '200% auto',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
+        <span className="inline-block text-brand">
           to 3 answers.
         </span>
       </h1>
@@ -280,17 +271,11 @@ function TextRevealHeadline() {
               <span
                 className={clsx(
                   "inline-block translate-y-[16px] opacity-0",
-                  isAccent && "bg-gradient-to-r from-[#2DD4A7] via-[#4D9FFF] to-[#2DD4A7] bg-[length:200%_auto]"
+                  isAccent && "text-brand"
                 )}
                 style={{
                   animation: `text-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
-                  animationDelay: `${delay}ms`,
-                  ...(isAccent ? {
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    animation: `text-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, gradient-sweep 2s cubic-bezier(0.2, 0.8, 0.2, 1) ${delay + 300}ms forwards`
-                  } : {})
+                  animationDelay: `${delay}ms`
                 }}
               >
                 {w}
@@ -409,11 +394,11 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center opacity-[0.05]"
       >
         <svg width="800" height="800" viewBox="0 0 800 800" fill="none">
-          <circle cx="400" cy="400" r="300" stroke="#2DD4A7" strokeWidth="1" strokeDasharray="4 8" />
-          <circle cx="400" cy="400" r="200" stroke="#2DD4A7" strokeWidth="1" strokeDasharray="4 8" />
-          <circle cx="400" cy="400" r="100" stroke="#2DD4A7" strokeWidth="1" strokeDasharray="4 8" />
-          <line x1="400" y1="0" x2="400" y2="800" stroke="#2DD4A7" strokeWidth="0.5" strokeDasharray="2 4" />
-          <line x1="0" y1="400" x2="800" y2="400" stroke="#2DD4A7" strokeWidth="0.5" strokeDasharray="2 4" />
+          <circle cx="400" cy="400" r="300" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="200" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="100" stroke="#F5A524" strokeWidth="1" strokeDasharray="4 8" />
+          <line x1="400" y1="0" x2="400" y2="800" stroke="#F5A524" strokeWidth="0.5" strokeDasharray="2 4" />
+          <line x1="0" y1="400" x2="800" y2="400" stroke="#F5A524" strokeWidth="0.5" strokeDasharray="2 4" />
         </svg>
       </motion.div>
 
@@ -422,14 +407,14 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         style={{ y: yDustVal }}
         className="absolute inset-0 pointer-events-none z-0"
       >
-        <div className="absolute top-[20%] left-[10%] w-2 h-2 rounded-full bg-accent/20 filter blur-[4px]" />
-        <div className="absolute top-[45%] left-[80%] w-3.5 h-3.5 rounded-full bg-accent/15 filter blur-[6px]" />
-        <div className="absolute top-[75%] left-[30%] w-2 h-2 rounded-full bg-accent/25 filter blur-[4px]" />
-        <div className="absolute top-[15%] left-[70%] w-3 h-3 rounded-full bg-accent/15 filter blur-[5px]" />
-        <div className="absolute top-[60%] left-[15%] w-2.5 h-2.5 rounded-full bg-accent/20 filter blur-[4px]" />
-        <div className="absolute top-[85%] left-[85%] w-3 w-3 rounded-full bg-accent/20 filter blur-[5px]" />
-        <div className="absolute top-[30%] left-[55%] w-1.5 h-1.5 rounded-full bg-accent/30 filter blur-[3px]" />
-        <div className="absolute top-[50%] left-[40%] w-2 w-2 rounded-full bg-accent/15 filter blur-[4px]" />
+        <div className="absolute top-[20%] left-[10%] w-2 h-2 rounded-full bg-brand/20 filter blur-[4px]" />
+        <div className="absolute top-[45%] left-[80%] w-3.5 h-3.5 rounded-full bg-brand/15 filter blur-[6px]" />
+        <div className="absolute top-[75%] left-[30%] w-2 h-2 rounded-full bg-brand/25 filter blur-[4px]" />
+        <div className="absolute top-[15%] left-[70%] w-3 h-3 rounded-full bg-brand/15 filter blur-[5px]" />
+        <div className="absolute top-[60%] left-[15%] w-2.5 h-2.5 rounded-full bg-brand/20 filter blur-[4px]" />
+        <div className="absolute top-[85%] left-[85%] w-3 w-3 rounded-full bg-brand/20 filter blur-[5px]" />
+        <div className="absolute top-[30%] left-[55%] w-1.5 h-1.5 rounded-full bg-brand/30 filter blur-[3px]" />
+        <div className="absolute top-[50%] left-[40%] w-2 w-2 rounded-full bg-brand/15 filter blur-[4px]" />
       </motion.div>
 
       {/* Subtle grid */}
@@ -479,8 +464,8 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
           className="flex items-center gap-4 flex-wrap"
         >
           <MagneticButton
-            to="/"
-            className="px-5 py-2.5 rounded-md bg-accent text-[#0A0E14] text-[13px] font-bold font-sans hover:bg-accent/90 transition-all duration-150 whitespace-nowrap block"
+            to="/war-room"
+            className="px-5 py-2.5 rounded-md bg-brand text-brand-on text-[13px] font-bold font-sans hover:bg-brand-hover transition-all duration-150 whitespace-nowrap block"
           >
             Enter the War Room
           </MagneticButton>
@@ -494,12 +479,12 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
               <div
                 className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{
-                  background: 'conic-gradient(from 0deg, transparent 40%, #2DD4A7 80%, transparent 100%)',
+                  background: 'conic-gradient(from 0deg, transparent 40%, #F5A524 80%, transparent 100%)',
                   animation: 'border-sweep 4s linear infinite',
                   margin: '-1px'
                 }}
               />
-              <div className="absolute inset-[1px] rounded-[5px] bg-[#050810] group-hover:bg-[#11161F]/90 transition-colors" />
+              <div className="absolute inset-[1px] rounded-[5px] bg-bg-base group-hover:bg-bg-raised/90 transition-colors" />
             </div>
             <span className="relative z-10">Watch the storm</span>
           </button>
@@ -616,27 +601,27 @@ function HowItWorks() {
               </g>
             ))}
             {/* Incident node */}
-            <circle cx={230} cy={80} r="14" fill="rgba(45,212,167,0.08)" stroke="#2DD4A7" strokeWidth="1.5" />
-            <circle cx={230} cy={80} r="5" fill="#2DD4A7" />
-            <text x={248} y={76} fill="#2DD4A7" fontSize="10" fontFamily="JetBrains Mono,monospace">INC-01</text>
+            <circle cx={230} cy={80} r="14" fill="rgba(245,165,36,0.08)" stroke="#F5A524" strokeWidth="1.5" />
+            <circle cx={230} cy={80} r="5" fill="#F5A524" />
+            <text x={248} y={76} fill="#F5A524" fontSize="10" fontFamily="JetBrains Mono,monospace">INC-01</text>
             <text x={248} y={86} fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">97% conf</text>
             {/* Bezier edges */}
             <path ref={beamRef}
               d="M28,30 C100,30 130,80 216,80 M28,80 C100,80 130,80 216,80 M28,130 C100,130 130,80 216,80"
-              fill="none" stroke="#2DD4A7" strokeWidth="1" strokeOpacity="0.5"
+              fill="none" stroke="#F5A524" strokeWidth="1" strokeOpacity="0.5"
             />
           </svg>
         </div>
       ),
     },
     {
-      num: '03', title: 'EXPLAIN', color: '#2DD4A7',
+      num: '03', title: 'EXPLAIN', color: '#F5A524',
       visual: (
         <div className="w-full max-w-xs border border-border/60 bg-bg-surface/80 rounded-lg p-3 flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#FF4D4F]" />
             <span className="font-mono text-[10px] text-text-primary font-bold">INC-001 · DB Cascade</span>
-            <span className="ml-auto font-mono text-[10px] text-accent font-bold">ACTIVE</span>
+            <span className="ml-auto font-mono text-[10px] text-brand font-bold">ACTIVE</span>
           </div>
           <ConfidenceBar confidence={0.97} height="xs" showLabel />
           <TypewriterText
@@ -828,9 +813,9 @@ function FeatureBento() {
                 {/* Leaf nodes */}
                 {[[20,30],[110,30],[20,150],[110,150]].map(([x,y],i)=>(
                   <g key={i}>
-                    <line x1={x} y1={y} x2="65" y2="90" stroke="#2DD4A7" strokeWidth="0.8" strokeOpacity="0.35" />
-                    <circle cx={x} cy={y} r="7" fill="rgba(45,212,167,0.08)" stroke="#2DD4A7" strokeWidth="1" />
-                    <circle cx={x} cy={y} r="2.5" fill="#2DD4A7" />
+                    <line x1={x} y1={y} x2="65" y2="90" stroke="#F5A524" strokeWidth="0.8" strokeOpacity="0.35" />
+                    <circle cx={x} cy={y} r="7" fill="rgba(245,165,36,0.08)" stroke="#F5A524" strokeWidth="1" />
+                    <circle cx={x} cy={y} r="2.5" fill="#F5A524" />
                   </g>
                 ))}
                 <text x="20" y="20" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">api-gw</text>
@@ -889,7 +874,7 @@ function FeatureBento() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, delay: i * 0.1, ease: EASE }}
                         className="h-full rounded-full"
-                        style={{ background: i === 3 ? '#2DD4A7' : `rgba(45,212,167,${0.3+i*0.2})` }}
+                        style={{ background: i === 3 ? '#F5A524' : `rgba(245,165,36,${0.3+i*0.2})` }}
                       />
                     </div>
                   </div>

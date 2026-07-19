@@ -34,7 +34,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
       <>
         {parts.map((part, i) =>
           part.toLowerCase() === query.toLowerCase() ? (
-            <mark key={i} className="bg-accent/30 text-accent font-semibold px-0.5 rounded-sm select-all">
+            <mark key={i} className="bg-brand/30 text-brand font-semibold px-0.5 rounded-sm select-all">
               {part}
             </mark>
           ) : (
@@ -63,7 +63,7 @@ const DupBadge = React.memo(({ count }: { count: number }) => {
     const animate = () => {
       if (currentCount.current < targetCount.current) {
         if (badgeRef.current) {
-          badgeRef.current.classList.add('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+          badgeRef.current.classList.add('scale-105', 'bg-sev-warn', 'border-sev-warn', 'text-brand-on')
           badgeRef.current.classList.remove('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
         }
 
@@ -80,7 +80,7 @@ const DupBadge = React.memo(({ count }: { count: number }) => {
         setTimeout(() => {
           if (badgeRef.current) {
             badgeRef.current.classList.add('scale-100', 'bg-bg-elevated', 'border-border', 'text-text-secondary')
-            badgeRef.current.classList.remove('scale-105', 'bg-severity-warning', 'border-severity-warning', 'text-[#0A0E14]')
+            badgeRef.current.classList.remove('scale-105', 'bg-sev-warn', 'border-sev-warn', 'text-brand-on')
           }
         }, 150)
 
@@ -129,9 +129,9 @@ const AlertRow = React.memo(
     const claimedClass = alert.cluster_id ? 'opacity-40' : ''
 
     const sevBorderColor =
-      alert.severity === 'critical' ? 'border-l-severity-critical' :
-      alert.severity === 'warning'  ? 'border-l-severity-warning' :
-      'border-l-severity-info'
+      alert.severity === 'critical' ? 'border-l-sev-crit' :
+      alert.severity === 'warning'  ? 'border-l-sev-warn' :
+      'border-l-sev-info'
 
     // Bypass entrance animations entirely under high replay rate / reduced motion
     if (reducedMotion || isFirehose) {
@@ -140,7 +140,7 @@ const AlertRow = React.memo(
           data-alert-id={alert.id}
           style={{
             ...style,
-            boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
+            boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px var(--sev-crit-dim)' : undefined,
           }}
           className={clsx(
             "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
@@ -190,7 +190,7 @@ const AlertRow = React.memo(
         }}
         style={{
           ...style,
-          boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px rgba(255, 77, 79, 0.15)' : undefined,
+          boxShadow: alert.severity === 'critical' ? 'inset 0 0 0 1px var(--sev-crit-dim)' : undefined,
         }}
         className={clsx(
           "flex items-center gap-3 px-4 border-l-2 border-b border-b-border/30 font-mono text-[12px] h-[44px] select-none hover:bg-bg-hover transition-colors duration-100",
@@ -392,7 +392,7 @@ export function RawStreamPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
-            <span className="text-accent mr-1">▎01</span> Raw Stream
+            <span className="text-brand mr-1">▎01</span> Raw Stream
           </span>
           {alerts.length > 0 && (
             <span className="text-[11px] text-text-muted font-mono inline-flex items-baseline gap-1 select-none">
@@ -423,7 +423,7 @@ export function RawStreamPanel() {
       <div
         className={clsx(
           "flex items-center justify-between px-3 py-1 bg-bg-surface/50 border-b transition-colors duration-150 h-[36px] shrink-0 gap-2 select-none",
-          isFilterActive ? "border-b-accent/50" : "border-b-border/40"
+          isFilterActive ? "border-b-brand/50" : "border-b-border/40"
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -435,11 +435,11 @@ export function RawStreamPanel() {
               className={clsx(
                 "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 critEnabled
-                  ? "bg-severity-critical/15 border-severity-critical/30 text-severity-critical hover:bg-severity-critical/20"
+                  ? "bg-sev-crit-dim border border-sev-crit/35 text-sev-crit hover:bg-sev-crit-dim/80"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              CRIT <span className="font-mono font-medium opacity-80">(<Odometer value={critCount} easing="spring" className="text-severity-critical" />)</span>
+              CRIT <span className="font-mono font-medium opacity-80">(<Odometer value={critCount} easing="spring" className="text-sev-crit" />)</span>
             </Button>
             <Button
               size="sm"
@@ -447,11 +447,11 @@ export function RawStreamPanel() {
               className={clsx(
                 "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 warnEnabled
-                  ? "bg-severity-warning/15 border-severity-warning/30 text-severity-warning hover:bg-severity-warning/20"
+                  ? "bg-sev-warn-dim border border-sev-warn/35 text-sev-warn hover:bg-sev-warn-dim/80"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              WARN <span className="font-mono font-medium opacity-80">(<Odometer value={warnCount} easing="spring" className="text-severity-warning" />)</span>
+              WARN <span className="font-mono font-medium opacity-80">(<Odometer value={warnCount} easing="spring" className="text-sev-warn" />)</span>
             </Button>
             <Button
               size="sm"
@@ -459,11 +459,11 @@ export function RawStreamPanel() {
               className={clsx(
                 "px-2 py-0.5 h-6 text-[10px] font-bold font-sans",
                 infoEnabled
-                  ? "bg-severity-info/15 border-severity-info/30 text-severity-info hover:bg-severity-info/20"
+                  ? "bg-sev-info-dim border border-sev-info/35 text-sev-info hover:bg-sev-info-dim/80"
                   : "bg-transparent border-border/40 text-text-muted hover:border-border"
               )}
             >
-              INFO <span className="font-mono font-medium opacity-80">(<Odometer value={infoCount} easing="spring" className="text-severity-info" />)</span>
+              INFO <span className="font-mono font-medium opacity-80">(<Odometer value={infoCount} easing="spring" className="text-sev-info" />)</span>
             </Button>
           </div>
 
@@ -534,13 +534,13 @@ export function RawStreamPanel() {
           </div>
         ) : totalAlerts > 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-text-secondary text-ui-sm font-sans gap-2 select-none px-6 text-center">
-            <div className="flex items-center gap-1.5 text-accent font-semibold">
+            <div className="flex items-center gap-1.5 text-ok font-semibold">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Storm subsided
             </div>
-            <div className="text-text-muted text-[11px] font-mono">
+            <div className="text-text-mid text-[11px] font-mono">
               {totalAlerts} alerts processed → {incidentCount} incident{incidentCount === 1 ? '' : 's'}
             </div>
           </div>

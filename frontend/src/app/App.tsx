@@ -362,7 +362,7 @@ export function DashboardLayout() {
                         data={rateHistory.map(d => d.value)}
                         width={42}
                         height={14}
-                        color="#2DD4A7"
+                        color="var(--brand)"
                       />
                     )}
                   </div>
@@ -525,10 +525,10 @@ function AppInner() {
   useEffect(() => {
     const dotColor =
       connection === 'open'
-        ? '%232DD4A7'
+        ? '%232FB8A6'
         : connection === 'connecting'
-        ? '%23F5A623'
-        : '%23FF4D4F'
+        ? '%23E8A33D'
+        : '%23E5484D'
 
     const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32"><circle cx="10" cy="10" r="7" fill="none" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="0" x2="10" y2="2" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="18" x2="10" y2="20" stroke="%23E6EDF3" stroke-width="1"/><line x1="0" y1="10" x2="2" y2="10" stroke="%23E6EDF3" stroke-width="1"/><line x1="18" y1="10" x2="20" y2="10" stroke="%23E6EDF3" stroke-width="1"/><circle cx="16.5" cy="4.5" r="2" fill="${dotColor}"/></svg>`
 

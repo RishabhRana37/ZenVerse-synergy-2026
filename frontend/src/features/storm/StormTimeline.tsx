@@ -293,8 +293,8 @@ export function StormTimeline() {
       if (pxVal >= 0 && pxVal <= W) {
         ctx.save()
         // Playhead Line
-        ctx.strokeStyle = '#2DD4A7'
-        ctx.shadowColor = '#2DD4A7'
+        ctx.strokeStyle = '#F5A524'
+        ctx.shadowColor = '#F5A524'
         ctx.shadowBlur = 6
         ctx.lineWidth = 2
         ctx.beginPath()
@@ -303,7 +303,7 @@ export function StormTimeline() {
         ctx.stroke()
 
         // Knob at the top
-        ctx.fillStyle = '#2DD4A7'
+        ctx.fillStyle = '#F5A524'
         ctx.beginPath()
         ctx.arc(pxVal, 6, 4.5, 0, Math.PI * 2)
         ctx.fill()

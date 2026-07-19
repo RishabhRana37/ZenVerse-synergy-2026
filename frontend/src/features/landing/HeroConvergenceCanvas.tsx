@@ -186,10 +186,10 @@ export function HeroConvergenceCanvas({ resetKey = 0 }: { resetKey?: number }) {
           p.x = mt * mt * p.startX + 2 * mt * t * p.controlX + t * t * p.targetX
           p.y = mt * mt * p.startY + 2 * mt * t * p.controlY + t * t * p.targetY
 
-          // Interpolate color toward accent (#2DD4A7: r=45, g=212, b=167)
-          const r = Math.round(p.startR + (45 - p.startR) * t)
-          const g = Math.round(p.startG + (212 - p.startG) * t)
-          const b = Math.round(p.startB + (167 - p.startB) * t)
+          // Interpolate color toward brand amber (#F5A524: r=245, g=165, b=36)
+          const r = Math.round(p.startR + (245 - p.startR) * t)
+          const g = Math.round(p.startG + (165 - p.startG) * t)
+          const b = Math.round(p.startB + (36 - p.startB) * t)
 
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
           ctx.beginPath()
@@ -209,7 +209,7 @@ export function HeroConvergenceCanvas({ resetKey = 0 }: { resetKey?: number }) {
           const flashPct = elapsedStage3 / 300
           const radius = (5 + flashPct * 40) * dpr
           const opacity = 1 - flashPct
-          ctx.strokeStyle = `rgba(45, 212, 167, ${opacity})`
+          ctx.strokeStyle = `rgba(245, 165, 36, ${opacity})`
           ctx.lineWidth = 2 * dpr
           
           wells.forEach(well => {
@@ -256,18 +256,18 @@ export function HeroConvergenceCanvas({ resetKey = 0 }: { resetKey?: number }) {
         c.scale(scale, scale)
 
         // Card solid fill
-        c.fillStyle = `rgba(17, 22, 31, ${opacity})`
+        c.fillStyle = `rgba(19, 19, 18, ${opacity})`
         c.beginPath()
         c.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 6 * pixelRatio)
         c.fill()
 
         // Accent border
-        c.strokeStyle = `rgba(45, 212, 167, ${opacity})`
+        c.strokeStyle = `rgba(245, 165, 36, ${opacity})`
         c.lineWidth = 1.5 * pixelRatio
         c.stroke()
 
         // Faint label text
-        c.fillStyle = `rgba(139, 152, 169, ${opacity})`
+        c.fillStyle = `rgba(156, 155, 148, ${opacity})`
         c.font = `bold ${10 * pixelRatio}px monospace`
         c.textAlign = 'center'
         c.fillText(`INC-0${idx + 1}`, 0, 4 * pixelRatio)

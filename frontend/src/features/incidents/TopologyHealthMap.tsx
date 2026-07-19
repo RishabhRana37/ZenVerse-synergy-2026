@@ -47,8 +47,8 @@ const COMPACT_STYLES = [
   {
     selector: 'node.healthy',
     style: {
-      'background-color': '#11161F',
-      'border-color': 'rgba(255,255,255,0.08)',
+      'background-color': '#131312',
+      'border-color': 'rgba(255,255,255,0.06)',
       'border-width': 1,
       'opacity': 1,
     }
@@ -56,8 +56,8 @@ const COMPACT_STYLES = [
   {
     selector: 'node.degraded',
     style: {
-      'background-color': 'rgba(245, 166, 35, 0.08)',
-      'border-color': '#F5A623',
+      'background-color': 'rgba(232, 163, 61, 0.08)',
+      'border-color': '#E8A33D',
       'border-width': 1.5,
       'opacity': 1,
     }
@@ -65,8 +65,8 @@ const COMPACT_STYLES = [
   {
     selector: 'node.root-cause',
     style: {
-      'background-color': 'rgba(255, 77, 79, 0.15)',
-      'border-color': '#FF4D4F',
+      'background-color': 'rgba(229, 72, 77, 0.15)',
+      'border-color': '#E5484D',
       'border-width': 2,
       'opacity': 1,
     }
@@ -93,16 +93,16 @@ const COMPACT_STYLES = [
   {
     selector: 'edge.affected',
     style: {
-      'line-color': 'rgba(245, 166, 35, 0.3)',
-      'target-arrow-color': 'rgba(245, 166, 35, 0.3)',
+      'line-color': 'rgba(232, 163, 61, 0.3)',
+      'target-arrow-color': 'rgba(232, 163, 61, 0.3)',
     }
   },
   {
     selector: 'edge.edge-pulse',
     style: {
       'width': 2.5,
-      'line-color': '#2DD4A7',
-      'target-arrow-color': '#2DD4A7',
+      'line-color': '#F5A524',
+      'target-arrow-color': '#F5A524',
       'transition-property': 'width, line-color, target-arrow-color',
       'transition-duration': '0.15s',
     }
