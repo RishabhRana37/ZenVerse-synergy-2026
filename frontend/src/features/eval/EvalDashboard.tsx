@@ -365,8 +365,8 @@ export function EvalDashboard() {
                         className={clsx(
                           "px-1.5 py-0.5 rounded-badge text-[10px] font-bold border font-mono tracking-wider",
                           pass
-                            ? "bg-accent-dim border-accent/20 text-accent"
-                            : "bg-severity-warning/10 border-severity-warning/20 text-severity-warning"
+                            ? "bg-ok-dim border-ok/20 text-ok"
+                            : "bg-sev-crit-dim border border-sev-crit/20 text-sev-crit"
                         )}
                       >
                         {pass ? '✓ PASS' : '✗ FAIL'}
@@ -514,13 +514,13 @@ export function EvalDashboard() {
                   >
                     <XAxis
                       dataKey="name"
-                      stroke="#4D5866"
+                      stroke="var(--text-low)"
                       fontSize={10}
                       fontFamily="JetBrains Mono"
                       tickLine={false}
                     />
                     <YAxis
-                      stroke="#4D5866"
+                      stroke="var(--text-low)"
                       fontSize={10}
                       fontFamily="JetBrains Mono"
                       tickLine={false}
@@ -529,48 +529,48 @@ export function EvalDashboard() {
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#161D29',
-                        borderColor: 'rgba(255,255,255,0.08)',
+                        backgroundColor: 'var(--bg-raised-2)',
+                        borderColor: 'var(--border-subtle)',
                         borderRadius: '4px',
                       }}
-                      labelStyle={{ color: '#8B98A9', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                      itemStyle={{ color: '#E6EDF3', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                      labelStyle={{ color: 'var(--text-mid)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                      itemStyle={{ color: 'var(--text-hi)', fontSize: 11, fontFamily: 'JetBrains Mono' }}
                       formatter={(v) => [`${v}%`]}
                     />
                     <Legend
-                      wrapperStyle={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#8B98A9' }}
+                      wrapperStyle={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: 'var(--text-mid)' }}
                       iconType="rect"
                       iconSize={8}
                     />
                     
-                    {/* Hit@1 Bar: Accent Green */}
+                    {/* Hit@1 Bar: Accent Brand */}
                     <Bar
                       dataKey="Hit@1"
-                      fill="#2DD4A7"
+                      fill="var(--brand)"
                       name="Hit@1"
                       radius={[2, 2, 0, 0]}
                     >
                       <LabelList
                         dataKey="Hit@1"
                         position="top"
-                        fill="#E6EDF3"
+                        fill="var(--text-hi)"
                         fontSize={9}
                         fontFamily="JetBrains Mono"
                         formatter={(v: number) => `${v}%`}
                       />
                     </Bar>
                     
-                    {/* Hit@3 Bar: Info Blue */}
+                    {/* Hit@3 Bar: Info OK */}
                     <Bar
                       dataKey="Hit@3"
-                      fill="#4D9FFF"
+                      fill="var(--ok)"
                       name="Hit@3"
                       radius={[2, 2, 0, 0]}
                     >
                       <LabelList
                         dataKey="Hit@3"
                         position="top"
-                        fill="#E6EDF3"
+                        fill="var(--text-hi)"
                         fontSize={9}
                         fontFamily="JetBrains Mono"
                         formatter={(v: number) => `${v}%`}

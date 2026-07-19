@@ -15,21 +15,21 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  critical: 'bg-[rgba(255,77,79,0.12)] text-severity-critical border border-[rgba(255,77,79,0.3)]',
-  warning:  'bg-[rgba(245,166,35,0.12)] text-severity-warning border border-[rgba(245,166,35,0.3)]',
-  info:     'bg-[rgba(77,159,255,0.12)] text-[#4D9FFF] border border-[rgba(77,159,255,0.3)]',
+  critical: 'bg-sev-crit-dim text-sev-crit border border-sev-crit/30',
+  warning:  'bg-sev-warn-dim text-sev-warn border border-sev-warn/30',
+  info:     'bg-sev-info-dim text-sev-info border border-sev-info/30',
   neutral:  'bg-bg-elevated text-text-secondary border border-border',
-  accent:   'bg-accent-dim text-accent border border-[rgba(45,212,167,0.3)]',
-  resolved: 'bg-[rgba(45,212,167,0.08)] text-accent border border-[rgba(45,212,167,0.2)]',
+  accent:   'bg-brand-dim text-brand border border-brand/30',
+  resolved: 'bg-ok-dim text-ok border border-ok/25',
 }
 
 const dotColors: Record<BadgeVariant, string> = {
-  critical: 'bg-severity-critical',
-  warning:  'bg-severity-warning',
-  info:     'bg-[#4D9FFF]',
+  critical: 'bg-sev-crit',
+  warning:  'bg-sev-warn',
+  info:     'bg-sev-info',
   neutral:  'bg-text-muted',
-  accent:   'bg-accent',
-  resolved: 'bg-accent',
+  accent:   'bg-brand',
+  resolved: 'bg-ok',
 }
 
 export function Badge({ variant = 'neutral', children, className, dot = false }: BadgeProps) {

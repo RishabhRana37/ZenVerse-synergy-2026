@@ -7,36 +7,64 @@ export default {
       // ── Colour palette ────────────────────────────────────────────────
       colors: {
         bg: {
-          base:     '#0A0E14',  // app canvas
-          surface:  '#11161F',  // solid panel
-          elevated: '#161D29',  // elevated container / tooltips
-          hover:    '#1B2332',  // surface hover state
+          base:     'var(--bg-base)',
+          raised:   'var(--bg-raised)',
+          'raised-2': 'var(--bg-raised-2)',
+          surface:  'var(--bg-surface)',
+          elevated: 'var(--bg-elevated)',
+          hover:    'var(--bg-hover)',
         },
         border: {
-          DEFAULT: 'rgba(255, 255, 255, 0.06)',
-          hover:   'rgba(255, 255, 255, 0.14)',
-          subtle:  'rgba(255, 255, 255, 0.03)',
-          strong:  'rgba(255, 255, 255, 0.12)',
+          DEFAULT: 'var(--border)',
+          subtle:  'var(--border-subtle)',
+          strong:  'var(--border-strong)',
+          hover:   'var(--border-hover)',
         },
         text: {
-          primary:   '#E6EDF3',
-          secondary: '#8B98A9',
-          muted:     '#4D5866',
-          inverse:   '#05080E',
+          hi:      'var(--text-hi)',
+          mid:     'var(--text-mid)',
+          low:     'var(--text-low)',
+          primary:   'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted:     'var(--text-muted)',
+          inverse:   'var(--on-brand)',
+        },
+        brand: {
+          DEFAULT: 'var(--brand)',
+          hover:   'var(--brand-hover)',
+          dim:     'var(--brand-dim)',
+          on:      'var(--on-brand)',
+        },
+        ok: {
+          DEFAULT: 'var(--ok)',
+          dim:     'var(--ok-dim)',
         },
         severity: {
-          critical: '#FF4D4F',
-          warning:  '#F5A623',
-          info:     '#4D9FFF',
+          critical: 'var(--severity-critical)',
+          warning:  'var(--severity-warning)',
+          info:     'var(--severity-info)',
+        },
+        sev: {
+          crit:     'var(--sev-crit)',
+          'crit-dim': 'var(--sev-crit-dim)',
+          warn:     'var(--sev-warn)',
+          'warn-dim': 'var(--sev-warn-dim)',
+          info:     'var(--sev-info)',
+          'info-dim': 'var(--sev-info-dim)',
+        },
+        viz: {
+          1: 'var(--viz-1)',
+          2: 'var(--viz-2)',
+          3: 'var(--viz-3)',
         },
         accent: {
-          DEFAULT: '#2DD4A7', // Green brand accent
-          dim:     'rgba(45, 212, 167, 0.15)',
+          DEFAULT: 'var(--accent)',
+          dim:     'var(--accent-dim)',
         },
         confidence: {
-          high: '#2DD4A7',
-          mid:  '#F5A623',
-          low:  '#FF4D4F',
+          high: 'var(--conf-high)',
+          mid:  'var(--conf-mid)',
+          low:  'var(--conf-low)',
         },
       },
 

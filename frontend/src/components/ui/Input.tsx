@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             // States & errors
             error
               ? 'border-severity-critical focus:border-severity-critical focus:ring-2 focus:ring-severity-critical/40'
-              : 'border-border hover:border-border-hover focus:border-accent focus:ring-2 focus:ring-accent/40 focus:shadow-[0_0_8px_rgba(45,212,167,0.25)]',
+              : 'border-border hover:border-border-hover focus:border-brand focus:ring-2 focus:ring-brand/40 focus:shadow-[0_0_8px_rgba(245,165,36,0.25)]',
             className
           )}
           {...props}

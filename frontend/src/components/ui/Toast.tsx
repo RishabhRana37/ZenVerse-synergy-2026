@@ -132,7 +132,7 @@ export function Toast() {
                   }
                 }}
                 className={clsx(
-                  "bg-[#090E11]/95 border rounded-card p-3 shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md cursor-grab active:cursor-grabbing select-none flex items-start gap-3 transition-colors duration-120",
+                  "bg-[#131312]/95 border rounded-card p-3 shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md cursor-grab active:cursor-grabbing select-none flex items-start gap-3 transition-colors duration-120",
                   isCritical ? "border-severity-critical/30" : "border-border/80"
                 )}
               >
@@ -142,13 +142,13 @@ export function Toast() {
                     <span
                       className={clsx(
                         "w-2 h-2 rounded-full inline-block animate-pulse-dot",
-                        toast.severity === 'critical' && "bg-severity-critical",
-                        toast.severity === 'warning' && "bg-severity-warning",
-                        toast.severity === 'info' && "bg-severity-info"
+                        toast.severity === 'critical' && "bg-sev-crit",
+                        toast.severity === 'warning' && "bg-sev-warn",
+                        toast.severity === 'info' && "bg-sev-info"
                       )}
                     />
                   ) : (
-                    <span className="w-2 h-2 rounded-full inline-block bg-accent animate-pulse-dot" />
+                    <span className="w-2 h-2 rounded-full inline-block bg-brand animate-pulse-dot" />
                   )}
                 </div>
 

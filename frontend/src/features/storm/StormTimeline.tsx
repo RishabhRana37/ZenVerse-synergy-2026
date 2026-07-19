@@ -16,15 +16,15 @@ const WINDOW_SECS = 90          // rolling window width
 const CANVAS_HEIGHT = 72        // px — must match the outer wrapper height
 const GRID_LINES = 4            // horizontal y-grid lines
 
-const COLOR_CRIT  = 'rgba(255, 90, 95,  0.30)'
-const COLOR_WARN  = 'rgba(255, 184, 77, 0.25)'
-const COLOR_INFO  = 'rgba(61, 214, 140, 0.20)'
-const COLOR_EDGE  = '#FF6363'   // accent — top stroke
+const COLOR_CRIT  = 'rgba(229, 72, 77, 0.30)'
+const COLOR_WARN  = 'rgba(232, 163, 61, 0.25)'
+const COLOR_INFO  = 'rgba(106, 113, 120, 0.20)'
+const COLOR_EDGE  = '#F5A524'   // accent — top stroke
 const COLOR_GRID  = 'rgba(255, 255, 255, 0.04)'
 const COLOR_TEXT  = 'rgba(161, 161, 166, 0.9)'
-const COLOR_CRIT_SOLID  = '#FF5A5F'
-const COLOR_ACCENT_SOLID = '#FF6363'
-const COLOR_PLAYHEAD = 'rgba(255, 99, 99, 0.5)'
+const COLOR_CRIT_SOLID  = '#E5484D'
+const COLOR_ACCENT_SOLID = '#F5A524'
+const COLOR_PLAYHEAD = 'rgba(245, 165, 36, 0.5)'
 const COLOR_MARKER_LINE = 'rgba(255, 255, 255, 0.08)'
 
 interface Bucket {
@@ -83,6 +83,8 @@ export function StormTimeline() {
   const startScrubbing = useStreamStore((s) => s.startScrubbing)
   const updateScrubbing = useStreamStore((s) => s.updateScrubbing)
   const stopScrubbing = useStreamStore((s) => s.stopScrubbing)
+  const scrubPosition = useStreamStore((s) => s.scrubPosition)
+  const setScrubPosition = useStreamStore((s) => s.setScrubPosition)
 
   // Keep refs up-to-date for RAF loop
   const scrubModeRef = useRef(scrubMode)
@@ -252,7 +254,7 @@ export function StormTimeline() {
       const fadePct = Math.min(1, Math.max(0, x / 30))
       const rootSvc = incident.root_candidates?.[0]?.service ?? ''
       const sev = incident.root_candidates?.[0] !== undefined
-        ? (incident.status === 'resolved' ? 'rgba(45,212,167,0.45)' : COLOR_CRIT_SOLID)
+        ? (incident.status === 'resolved' ? 'rgba(47,184,166,0.45)' : COLOR_CRIT_SOLID)
         : COLOR_ACCENT_SOLID
 
       ctx.save()
@@ -291,8 +293,8 @@ export function StormTimeline() {
       if (pxVal >= 0 && pxVal <= W) {
         ctx.save()
         // Playhead Line
-        ctx.strokeStyle = '#2DD4A7'
-        ctx.shadowColor = '#2DD4A7'
+        ctx.strokeStyle = '#F5A524'
+        ctx.shadowColor = '#F5A524'
         ctx.shadowBlur = 6
         ctx.lineWidth = 2
         ctx.beginPath()
@@ -301,7 +303,7 @@ export function StormTimeline() {
         ctx.stroke()
 
         // Knob at the top
-        ctx.fillStyle = '#2DD4A7'
+        ctx.fillStyle = '#F5A524'
         ctx.beginPath()
         ctx.arc(pxVal, 6, 4.5, 0, Math.PI * 2)
         ctx.fill()
@@ -362,12 +364,13 @@ export function StormTimeline() {
     }
 
     const t = Math.max(0, (targetTs - baseline) / 1000)
-    if (isStarting) {
-      startScrubbing(t)
-    } else {
-      updateScrubbing(t)
-    }
-  }, [startScrubbing, updateScrubbing])
+      if (isStarting) {
+        startScrubbing(t)
+      } else {
+        updateScrubbing(t)
+      }
+      setScrubPosition(targetTs)
+    }, [startScrubbing, updateScrubbing, setScrubPosition])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -393,7 +396,10 @@ export function StormTimeline() {
     }
 
     const handleWindowMouseUp = () => {
-      isDraggingRef.current = false
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false
+        handleExitScrub()
+      }
     }
 
     window.addEventListener('mousemove', handleWindowMouseMove)
@@ -402,7 +408,7 @@ export function StormTimeline() {
       window.removeEventListener('mousemove', handleWindowMouseMove)
       window.removeEventListener('mouseup', handleWindowMouseUp)
     }
-  }, [processScrubAtX])
+  }, [processScrubAtX, handleExitScrub])
 
   // Arrow Keys and Space/Esc keyboard listeners
   useEffect(() => {
@@ -557,8 +563,13 @@ export function StormTimeline() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
+          <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted flex items-center">
             <span className="text-accent mr-1">▎03</span> TIMELINE {scrubMode && "— Reviewing"}
+            {scrubMode && (
+              <span className="ml-2 px-1.5 py-0.5 text-[9px] font-extrabold font-mono text-[#0A0E14] bg-accent rounded uppercase animate-pulse">
+                SCRUB
+              </span>
+            )}
           </span>
         </div>
         <span className="text-[10px] font-mono text-accent tabular-nums">
@@ -580,6 +591,16 @@ export function StormTimeline() {
               blurActive ? "blur-sm duration-200" : "blur-none"
             )}
           />
+          
+          {/* Vertical cursor line at drag position */}
+          {scrubMode && scrubPosition !== null && (
+            <div
+              className="absolute top-0 bottom-0 w-[1px] bg-accent pointer-events-none z-20"
+              style={{
+                left: `${Math.max(0, Math.min(100, (1 - ((scrubStartTimeRef.current || Date.now()) - scrubPosition) / 1000 / WINDOW_SECS) * 100))}%`
+              }}
+            />
+          )}
 
           {/* Pulsing LIVE return button */}
           <Button
@@ -589,10 +610,12 @@ export function StormTimeline() {
             onClick={handleExitScrub}
             className={clsx(
               "absolute right-4 top-1/2 -translate-y-1/2 z-30 font-mono text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-120",
-              scrubMode ? "animate-pulse shadow-elevated" : "opacity-80 disabled:opacity-50"
+              scrubMode 
+                ? "animate-pulse shadow-elevated" 
+                : "opacity-100 disabled:opacity-100 border border-brand/30 text-brand bg-brand-dim/5"
             )}
           >
-            <span className={clsx("w-1.5 h-1.5 rounded-full", scrubMode ? "bg-text-inverse" : "bg-accent")} />
+            <span className={clsx("w-1.5 h-1.5 rounded-full", scrubMode ? "bg-brand" : "bg-brand animate-pulse")} />
             LIVE {scrubMode && newIncidentsCount > 0 && `+${newIncidentsCount}`}
           </Button>
 
