@@ -8,6 +8,7 @@ All notable changes to the StormLens project will be documented in this file. Be
 
 ### Added
 *   Operational Guidelines (Version 2.0 Updates) in `AI_GUIDE.md`.
+*   Logging on 4 previously-silent `except Exception` blocks (`rest.py` eval-file parsers, `ws.py` broadcast-send failure, `denstream_clusterer.py` predict_one guard) — visibility only, no behavior change.
 *   Event-time based alert eviction in backend `state.py` to fix memory leak.
 *   Asynchronous database writer loop with batch transaction queue in `pipeline.py` to resolve SQLite write contention.
 *   Concurrency lock guards in `pipeline.py` and `rest.py` to prevent race conditions during pipeline ticks and replay resets.
@@ -23,6 +24,10 @@ All notable changes to the StormLens project will be documented in this file. Be
 *   Duplicate React Keys warning caused by lack of deduplication during replay restarts.
 *   AudioContext autoplay warning caused by missing user interaction guard.
 *   React Router v7 future flag warnings in App.tsx.
+
+### Removed
+*   `frontend/src/mock/mock-ws-server.ts` — unfinished mock WebSocket client from before the real backend existed, never wired to anything.
+*   `frontend/src/components/ui/CommandPalette.tsx` — dead re-export shim left over from a merge; the real component lives at `features/palette/CommandPalette.tsx` and was already imported directly.
 
 ### Added (Original)
 *   `AI_GUIDE.md` defining strict guidelines for AI agents and human developers working on StormLens.
