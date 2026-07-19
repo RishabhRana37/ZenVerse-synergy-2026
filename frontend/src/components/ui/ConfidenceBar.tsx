@@ -21,18 +21,19 @@ interface ConfidenceBarProps {
   className?: string
   greenThreshold?: number
   amberThreshold?: number
+  status?: 'active' | 'resolved'
 }
 
-function confidenceColor(c: number, green: number = 0.6, amber: number = 0.3): string {
-  if (c >= green) return '#2DD4A7'
-  if (c >= amber) return '#F5A623'
-  return '#FF4D4F'
+function confidenceColor(c: number, status: 'active' | 'resolved' = 'active', green: number = 0.6, amber: number = 0.3): string {
+  if (c >= green) return status === 'resolved' ? 'var(--ok)' : 'var(--brand)'
+  if (c >= amber) return 'var(--sev-warn)'
+  return 'var(--sev-crit)'
 }
 
-function confidenceGlow(c: number, green: number = 0.6, amber: number = 0.3): string {
-  if (c >= green) return '0 0 6px rgba(45,212,167,0.4)'
-  if (c >= amber) return '0 0 6px rgba(245,166,35,0.4)'
-  return '0 0 6px rgba(255,77,79,0.4)'
+function confidenceGlow(c: number, status: 'active' | 'resolved' = 'active', green: number = 0.6, amber: number = 0.3): string {
+  if (c >= green) return status === 'resolved' ? '0 0 6px var(--ok)' : '0 0 6px var(--brand)'
+  if (c >= amber) return '0 0 6px var(--sev-warn)'
+  return '0 0 6px var(--sev-crit)'
 }
 
 const heightMap = {
@@ -48,10 +49,11 @@ export function ConfidenceBar({
   className,
   greenThreshold = 0.6,
   amberThreshold = 0.3,
+  status = 'active',
 }: ConfidenceBarProps) {
   const pct = Math.round(Math.min(Math.max(confidence, 0), 1) * 100)
-  const color = confidenceColor(confidence, greenThreshold, amberThreshold)
-  const glow = confidenceGlow(confidence, greenThreshold, amberThreshold)
+  const color = confidenceColor(confidence, status, greenThreshold, amberThreshold)
+  const glow = confidenceGlow(confidence, status, greenThreshold, amberThreshold)
   const isShimmering = confidence < 0.4
 
   const fpsReduced = useFPSStore((s) => s.reducedMotion)

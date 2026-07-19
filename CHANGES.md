@@ -7,6 +7,7 @@ All notable changes to the StormLens project will be documented in this file. Be
 ## [Unreleased]
 
 ### Added
+*   Merged `frontend-dev`: Graphite/Amber/Teal retheme, cinematic landing page, global Command Palette, Presentation Mode, Time Machine scrub cursor, and "Resolve All" incidents action — reconciled against `main`'s backend-adjacent fixes (alert dedup on batch apply, cluster_id propagation on incident create/update, AudioContext autoplay guard, concurrency lock guards, centralized demo dataset/speed state) so neither side's work was lost.
 *   Operational Guidelines (Version 2.0 Updates) in `AI_GUIDE.md`.
 *   Logging on 4 previously-silent `except Exception` blocks (`rest.py` eval-file parsers, `ws.py` broadcast-send failure, `denstream_clusterer.py` predict_one guard) — visibility only, no behavior change.
 *   Event-time based alert eviction in backend `state.py` to fix memory leak.

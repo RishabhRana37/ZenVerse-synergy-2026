@@ -18,18 +18,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={clsx(
           // Base
-          'inline-flex items-center justify-center gap-1.5 font-sans font-medium transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:shadow-[0_0_8px_rgba(45,212,167,0.3)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
+          'inline-flex items-center justify-center gap-1.5 font-sans font-medium transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:shadow-[0_0_8px_rgba(245,165,36,0.3)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
           !reducedMotion && 'active:scale-[0.98]',
           // Radii & spacing
           size === 'sm' && 'px-2.5 py-1 text-[11px] rounded-badge',
           size === 'md' && 'px-3.5 py-1.5 text-ui-sm rounded-card',
           size === 'lg' && 'px-5 py-2.5 text-ui rounded-card',
           // Variants
-          variant === 'primary' && 'bg-gradient-to-b from-accent to-[#24B08A] text-[#0A0E14] font-bold shadow-sm hover:shadow-[0_0_8px_rgba(45,212,167,0.35)] border border-accent/25',
-          variant === 'secondary' && 'bg-bg-surface border border-border hover:bg-bg-hover hover:border-border-hover text-text-primary shadow-sm',
+          variant === 'primary' && 'bg-brand text-brand-on font-bold border border-brand/25 hover:bg-brand-hover hover:border-brand-hover shadow-sm',
+          variant === 'secondary' && 'bg-transparent border border-border-strong text-text-hi hover:border-brand hover:bg-bg-raised-2/20 shadow-sm',
           variant === 'ghost' && 'text-text-secondary hover:text-text-primary hover:bg-bg-hover',
-          variant === 'danger' && 'bg-severity-critical/10 border border-severity-critical/20 text-severity-critical hover:bg-severity-critical/20',
-          variant === 'accent' && 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20',
+          variant === 'danger' && 'bg-sev-crit-dim border border-sev-crit/20 text-sev-crit hover:bg-sev-crit-dim/80',
+          variant === 'accent' && 'bg-brand-dim border border-brand/30 text-brand hover:bg-brand-dim/80',
           className
         )}
         {...props}

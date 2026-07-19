@@ -49,8 +49,8 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
       {/* Expanding Ripple Rings Behind Root cause node */}
       {!reducedMotion && (
         <div className="absolute left-[70px] top-[110px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-          <div className="w-20 h-20 rounded-full border border-accent/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
-          <div className="w-20 h-20 rounded-full border border-accent/10 animate-ping absolute [animation-delay:1.5s]" style={{ animationDuration: '3s' }} />
+          <div className="w-20 h-20 rounded-full border border-brand/20 animate-ping absolute" style={{ animationDuration: '3s' }} />
+          <div className="w-20 h-20 rounded-full border border-brand/10 animate-ping absolute [animation-delay:1.5s]" style={{ animationDuration: '3s' }} />
         </div>
       )}
 
@@ -58,19 +58,19 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="beamGradCritical" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(239, 68, 68, 0.1)" />
-            <stop offset="50%" stopColor="rgba(239, 68, 68, 0.95)" />
-            <stop offset="100%" stopColor="rgba(239, 68, 68, 0.1)" />
+            <stop offset="0%" stopColor="rgba(229, 72, 77, 0.1)" />
+            <stop offset="50%" stopColor="rgba(229, 72, 77, 0.95)" />
+            <stop offset="100%" stopColor="rgba(229, 72, 77, 0.1)" />
           </linearGradient>
           <linearGradient id="beamGradWarning" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(245, 158, 11, 0.1)" />
-            <stop offset="50%" stopColor="rgba(245, 158, 11, 0.95)" />
-            <stop offset="100%" stopColor="rgba(245, 158, 11, 0.1)" />
+            <stop offset="0%" stopColor="rgba(232, 163, 61, 0.1)" />
+            <stop offset="50%" stopColor="rgba(232, 163, 61, 0.95)" />
+            <stop offset="100%" stopColor="rgba(232, 163, 61, 0.1)" />
           </linearGradient>
           <linearGradient id="beamGradInfo" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(45, 212, 167, 0.1)" />
-            <stop offset="50%" stopColor="rgba(45, 212, 167, 0.95)" />
-            <stop offset="100%" stopColor="rgba(45, 212, 167, 0.1)" />
+            <stop offset="0%" stopColor="rgba(106, 113, 120, 0.1)" />
+            <stop offset="50%" stopColor="rgba(106, 113, 120, 0.95)" />
+            <stop offset="100%" stopColor="rgba(106, 113, 120, 0.1)" />
           </linearGradient>
         </defs>
 
@@ -165,12 +165,12 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
         transition={reducedMotion ? { duration: 0.1 } : springPreset}
         onMouseEnter={() => setHoveredNode(rootAlert.service)}
         onMouseLeave={() => setHoveredNode(null)}
-        className="w-[130px] border bg-[#090E11] rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-accent transition-colors duration-150 animate-pulse-edge-accent"
+        className="w-[130px] border bg-[#131312] rounded-md p-2.5 flex flex-col gap-1 z-10 shadow-elevated relative group/bracket hover:border-brand transition-colors duration-150 animate-pulse-edge-accent"
       >
         <CornerBrackets />
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono text-accent uppercase font-bold tracking-wider leading-none">Root Alert</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+          <span className="text-[10px] font-mono text-brand uppercase font-bold tracking-wider leading-none">Root Alert</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-brand animate-ping" />
         </div>
         <div className="text-[10px] font-semibold text-text-primary truncate font-sans">
           {rootAlert.service || 'unknown-service'}
@@ -201,7 +201,7 @@ function CorrelationBeams({ incident, alerts, topology }: CorrelationBeamsProps)
               onMouseEnter={() => setHoveredNode(alert.service)}
               onMouseLeave={() => setHoveredNode(null)}
               className={clsx(
-                "border bg-[#090E11] rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-150 relative group/bracket cursor-pointer",
+                "border bg-[#131312] rounded-md p-2 flex flex-col gap-0.5 shadow-elevated hover:border-border transition-colors duration-150 relative group/bracket cursor-pointer",
                 borderStyle
               )}
             >
@@ -266,7 +266,7 @@ const MemberAlertRow = React.memo(({ alert, isRootCandidate }: { alert: Alert; i
       className={clsx(
         "flex items-center gap-3 px-4 border-l-[3px] border-b border-b-border/40 font-mono text-[12px] h-[44px] select-none bg-bg-surface",
         sevBorderColor,
-        isRootCandidate ? "bg-bg-elevated/45 border-r border-r-accent/25" : ""
+        isRootCandidate ? "bg-bg-elevated/45 border-r border-r-brand/25" : ""
       )}
     >
       <span className="text-text-muted flex-shrink-0 w-[92px] tabular-nums">
@@ -302,7 +302,7 @@ const CYTOSCAPE_STYLES = [
       'width': 120,
       'height': 32,
       'shape': 'roundrectangle',
-      'background-color': '#11161F',
+      'background-color': '#131312',
       'border-color': 'rgba(255,255,255,0.08)',
       'border-width': 1,
       'color': '#E6EDF3',
@@ -682,12 +682,12 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
               <span
                 className={clsx(
                   "w-1.5 h-1.5 rounded-full",
-                  storeIncident.status === 'active' ? "bg-severity-critical animate-pulse-dot" : "bg-accent"
+                  storeIncident.status === 'active' ? "bg-sev-crit animate-pulse-dot" : "bg-ok"
                 )}
               />
               <span className="text-[10px] font-mono uppercase font-semibold text-text-muted">{storeIncident.status}</span>
               {scrubMode && (
-                <span className="text-[10px] font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/15 border border-accent/30 animate-pulse select-none">
+                <span className="text-[10px] font-mono font-bold text-brand px-1.5 py-0.5 rounded bg-brand-dim border border-brand/30 animate-pulse select-none">
                   as of t+{scrubTime.toFixed(1)}s
                 </span>
               )}
@@ -733,14 +733,14 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                     className={clsx(
                       "flex items-center gap-3 transition-all duration-150 select-text group",
                       isFirst
-                        ? "bg-bg-surface/80 border border-accent/45 rounded-[10px] p-3 shadow-md"
+                        ? "bg-bg-surface/80 border border-brand/45 rounded-[10px] p-3 shadow-md"
                         : "bg-bg-surface/30 border border-border/40 rounded-[10px] p-2.5"
                     )}
                   >
                     <span
                       className={clsx(
                         "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 border",
-                        isFirst ? "bg-accent border-accent text-[#0A0A0B]" : "bg-bg-surface border-border text-text-secondary"
+                        isFirst ? "bg-brand border-brand text-brand-on" : "bg-bg-surface border-border text-text-secondary"
                       )}
                     >
                       {rank}
@@ -751,7 +751,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                           {candidate.service}
                         </span>
                         {candidate.is_confirmed && (
-                          <span className="text-[10px] font-bold text-accent bg-accent/15 px-1 py-0.2 rounded uppercase leading-none font-sans shrink-0">
+                          <span className="text-[10px] font-bold text-brand bg-brand-dim px-1 py-0.2 rounded border border-brand/20 uppercase leading-none font-sans shrink-0">
                             Confirmed
                           </span>
                         )}
@@ -767,6 +767,7 @@ export function DrillDownSlideOver({ incidentId, onClose }: DrillDownSlideOverPr
                         showLabel={true}
                         greenThreshold={0.6}
                         amberThreshold={0.3}
+                        status={storeIncident.status}
                       />
                     </div>
                     {rank > 1 && (
