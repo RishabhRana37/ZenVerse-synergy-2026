@@ -17,9 +17,9 @@ interface Particle {
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#FF4D4F',
-  warning:  '#F5A623',
-  info:     '#4D9FFF',
+  critical: '#E5484D',
+  warning:  '#E8A33D',
+  info:     '#6A7178',
 }
 
 export function ConvergenceOverlay() {
@@ -75,7 +75,7 @@ export function ConvergenceOverlay() {
 
           const alert = alertsIndex.get(id)
           const sev = alert?.severity || 'info'
-          const color = SEVERITY_COLORS[sev] || '#2DD4A7'
+          const color = SEVERITY_COLORS[sev] || '#F5A524'
 
           newParticles.push({
             id: `${now}-${id}-${index}`,
@@ -136,9 +136,9 @@ export function ConvergenceOverlay() {
                 y: [p.startY, midY, p.endY],
                 scale: isThrottled ? [1, 0.8, 0.4] : [1, 0.7, 0.3],
                 opacity: [0.8, 0.7, 0],
-                backgroundColor: [p.color, p.color, '#2DD4A7'],
-                borderColor: [p.color, p.color, '#2DD4A7'],
-                boxShadow: [`0 0 6px ${p.color}`, `0 0 6px ${p.color}`, `0 0 6px #2DD4A7`],
+                backgroundColor: [p.color, p.color, '#F5A524'],
+                borderColor: [p.color, p.color, '#F5A524'],
+                boxShadow: [`0 0 6px ${p.color}`, `0 0 6px ${p.color}`, `0 0 6px #F5A524`],
               }}
               transition={{
                 duration: DUR_ENTER,
