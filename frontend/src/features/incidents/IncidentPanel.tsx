@@ -6,7 +6,7 @@ import { Odometer } from '@/components/ui/Odometer'
 import { Sparkline } from '@/components/ui/Sparkline'
 import type { Incident } from '@/lib/types'
 import { clsx } from 'clsx'
-import { acknowledgeIncident, resolveIncident } from '@/lib/actions'
+import { acknowledgeIncident, resolveIncident, resolveAllIncidents } from '@/lib/actions'
 import { TopologyHealthMap } from '@/features/incidents/TopologyHealthMap'
 import { CornerBrackets } from '@/components/ui/CornerBrackets'
 import { useFPSStore, SPRING, springPreset, DUR_MICRO, DUR_ENTER } from '@/lib/motion'
@@ -646,8 +646,18 @@ export function IncidentPanel({ onIncidentSelect }: IncidentPanelProps) {
         <span className="font-mono text-[11px] font-bold tracking-wider uppercase text-text-muted">
           <span className="text-brand mr-1">▎02</span> Incidents
         </span>
-        <div className="px-2 py-0.5 rounded bg-brand-dim border border-brand/20 text-stream text-brand font-mono font-bold select-none">
-          <Odometer value={activeCount} easing="spring" className="text-brand" /> active
+        <div className="flex items-center gap-2">
+          {activeIncidents.length > 0 && (
+            <button
+              onClick={() => resolveAllIncidents()}
+              className="px-2.5 py-0.5 rounded border border-border-strong text-[10px] font-mono text-text-secondary hover:text-brand hover:border-brand transition-all duration-150 cursor-pointer bg-bg-raised-2/40 hover:bg-brand-dim/5 select-none"
+            >
+              Resolve All
+            </button>
+          )}
+          <div className="px-2 py-0.5 rounded bg-brand-dim border border-brand/20 text-stream text-brand font-mono font-bold select-none">
+            <Odometer value={activeCount} easing="spring" className="text-brand" /> active
+          </div>
         </div>
       </div>
 

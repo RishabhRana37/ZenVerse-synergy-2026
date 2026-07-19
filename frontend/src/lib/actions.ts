@@ -90,6 +90,50 @@ export function resolveIncident(incidentId: string) {
 }
 
 /**
+ * Resolve all active incidents at once. Optimistically updates local state and
+ * persists via POST /incidents/{id}/resolve.
+ */
+export function resolveAllIncidents() {
+  const store = useStreamStore.getState()
+  const activeIncidents = [...store.incidents.values()].filter((i) => i.status === 'active')
+  if (activeIncidents.length === 0) return
+
+  const newIncidents = new Map(store.incidents)
+  const now = new Date().toISOString()
+
+  activeIncidents.forEach((inc) => {
+    newIncidents.set(inc.id, {
+      ...inc,
+      status: 'resolved' as const,
+      resolved_at: now,
+    })
+
+    store.addAuditLogEntry({
+      type: 'incident_resolved',
+      message: `Incident resolved: "${inc.title}" (${inc.alert_count} alerts)`,
+      incidentId: inc.id,
+    })
+
+    fetch(`${apiBase()}/incidents/${inc.id}/resolve`, { method: 'POST' }).catch((err) =>
+      console.error('[actions] resolveIncident failed to persist:', err)
+    )
+  })
+
+  const resolvedCount = activeIncidents.length
+  const newStats = store.stats
+    ? {
+        ...store.stats,
+        active_incidents: Math.max(0, store.stats.active_incidents - resolvedCount),
+      }
+    : null
+
+  useStreamStore.setState({
+    incidents: newIncidents,
+    stats: newStats,
+  })
+}
+
+/**
  * Confirm root-cause candidate. Client-side only — the backend has no
  * confirm-root-cause endpoint (this is operator feedback for the demo's
  * "the system learns" story, not yet persisted server-side).
