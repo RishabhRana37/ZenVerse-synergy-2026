@@ -265,6 +265,20 @@ async def eval_results():
         if not dataset:
             continue
         ablation = r.get("ablation") or "full"
+        ts = r.get("timestamp")
+
+        # Keep the newest file per (dataset, ablation) by timestamp, not by
+        # filename sort order — multiple runs of the same ablation (e.g. a
+        # re-tune after a bug fix) leave multiple files like
+        # aiops-scn1_full_2f65680.json and aiops-scn1_full_4f8eaed.json, and
+        # "4f..." sorts after "2f..." alphabetically even though it's the
+        # OLDER run. Without this check the dashboard silently displayed a
+        # stale Hit@1 (92.3%) instead of the current one (96.15%).
+        existing = by_dataset.get(dataset, {}).get(ablation)
+        if existing is not None and existing.get("_timestamp") and ts:
+            if ts <= existing["_timestamp"]:
+                continue
+
         lat = latency.get(dataset, {})
         row = {
             "backend": _ABLATION_LABEL.get(ablation, ablation),
@@ -277,9 +291,9 @@ async def eval_results():
             "latency_p95_ms": r.get("latency_p95_ms") or lat.get("latency_p95_ms", 0),
             "fragmentation": r.get("fragmentation", 0.0),
             "_ablation": ablation,
+            "_timestamp": ts,
         }
         by_dataset.setdefault(dataset, {})[ablation] = row
-        ts = r.get("timestamp")
         if ts and (newest_ts is None or ts > newest_ts):
             newest_ts = ts
 
@@ -289,6 +303,7 @@ async def eval_results():
         ordered += [v for k, v in rows.items() if k not in _ABLATION_ORDER]
         for row in ordered:
             row.pop("_ablation", None)
+            row.pop("_timestamp", None)
         scenarios.append({"name": dataset, "backends": ordered})
 
     # Hero + chart key off the real labeled dataset if present, else the first.
