@@ -16,6 +16,7 @@ All notable changes to the StormLens project will be documented in this file. Be
 *   Vite/React/TypeScript ESLint configuration file for frontend to run and pass CI lint checks.
 
 ### Fixed
+*   Eval dashboard displayed a stale Hit@1 (92.3% instead of 96.2%) because `/eval/results` overwrote per-ablation rows in filename-sort order instead of comparing timestamps, letting an older result file silently win.
 *   Backend API ingestion parsing of list/dict payloads using FastAPI `Body`.
 *   Conditional Hook calls and unused eslint-disable comments in frontend code.
 *   Windows console encoding crash in evaluation benchmark prints.
