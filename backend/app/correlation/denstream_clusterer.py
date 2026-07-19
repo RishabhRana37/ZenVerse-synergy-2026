@@ -66,6 +66,7 @@ class DenStreamClusterer:
             try:
                 label = self._model.predict_one(x)
             except Exception:
+                logger.debug("DenStream predict_one error", exc_info=True)
                 label = None
 
             if label is None or label == -1:
