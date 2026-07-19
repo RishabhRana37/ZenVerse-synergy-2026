@@ -20,6 +20,7 @@ async def broadcast(msg: dict) -> None:
         try:
             await ws.send_text(text)
         except Exception:
+            logger.exception("Failed to send broadcast message to WS client")
             dead.add(ws)
     state.active_ws -= dead
 

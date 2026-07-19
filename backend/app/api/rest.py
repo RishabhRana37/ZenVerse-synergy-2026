@@ -230,7 +230,7 @@ def _load_latency_by_dataset() -> dict[str, dict]:
             data = json.loads(f.read_text())
             out[data["dataset"]] = data
         except Exception:
-            pass
+            logger.exception("Failed to parse bench file %s", f)
     return out
 
 
@@ -259,6 +259,7 @@ async def eval_results():
         try:
             r = json.loads(f.read_text())
         except Exception:
+            logger.exception("Failed to parse eval result file %s", f)
             continue
         dataset = r.get("dataset")
         if not dataset:
