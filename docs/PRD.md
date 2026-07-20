@@ -42,7 +42,7 @@ The product succeeds if, on labeled ground-truth data (AIOps Challenge dataset �
 | **Compression ratio** | ≥ 95% (e.g. 2,000 alerts → ≤ 100 items, ideally ≤ 10 incidents) | **60.2% — miss, and correctly so** (see note) | The headline value: noise eliminated |
 | **Cluster accuracy (ARI / purity vs labels)** | ≥ 0.8 purity | **Purity 1.00, ARI 0.349** — purity hit, ARI reported (no target set) | Groups must be *correct*, not just fewer |
 | **Root-cause hit rate** | Hit@1 ≥ 60%, Hit@3 ≥ 85% | **Hit@1 92%, Hit@3 100%** — both hit | The root cause must be in the top suggestions |
-| **End-to-end latency** | Alert → incident card in < 5 s at 100 alerts/s replay | **db-cascade: 63 ms. aiops-scn1: p50 3.0 s (hit), p95 6.1 s at a 200× burst (miss)** | Must feel real-time in the demo |
+| **End-to-end latency** | Alert → incident card in < 5 s at 100 alerts/s replay | **db-cascade: p50/p95 1.7 s (hit, n=4 — small sample, cold-start-dominated). aiops-scn1: p50 157 ms, p95 578 ms (hit, n=305)** | Must feel real-time in the demo |
 | **Demo reliability** | Fully offline-capable (no live API dependency on stage) | Hit — replay/clustering fully local; only the LLM call is optional network, with a template fallback | Zero demo risk at the finale |
 
 These numbers go on a slide. Measured evaluation is a core deliverable, not an afterthought — it is the primary differentiator against teams that demo without evidence. Every number above is traceable to a committed `eval/results/*.json` (`python -m eval.harness` / `eval.bench` reproduce them).
