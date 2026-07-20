@@ -235,3 +235,7 @@ eval/results/
 
 # Vite build cache
 frontend/.vite/
+
+# AI agent tooling instructions — kept locally, not shipped on the judged repo
+/CLAUDE.md
+/.agents/
