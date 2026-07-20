@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 RESULTS_DIR = Path(__file__).parent / "results"
 
 
-async def run_bench(dataset: str, speed: float, duration: int) -> None:
+async def run_bench(dataset: str, speed: float, duration: int, scenario: str) -> None:
     from app.api.ws import broadcast
     from app.ingest.replay_engine import ReplayEngine
     from app.models.db import init_db
@@ -35,7 +35,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
     logging.basicConfig(level=logging.WARNING)  # suppress noise during bench
 
     init_db()
-    pipeline.configure_scenario("db-cascade")
+    pipeline.configure_scenario(scenario)
     pipeline.set_broadcast(broadcast)
 
     latencies: list[float] = []
@@ -75,7 +75,7 @@ async def run_bench(dataset: str, speed: float, duration: int) -> None:
     await replay.start(
         dataset=dataset,
         speed=speed,
-        scenario="db-cascade",
+        scenario=scenario,
         pipeline_ingest_fn=pipeline.ingest,
     )
 
@@ -137,5 +137,17 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default="aiops-scn1")
     parser.add_argument("--speed", type=float, default=100.0)
     parser.add_argument("--duration", type=int, default=60, help="Benchmark duration in seconds")
+    parser.add_argument(
+        "--scenario",
+        default=None,
+        help="topology scenario (data/scenarios/<name>.yaml). Defaults to the "
+        "dataset name, except aiops-scn1 -> aiops. Previously hardcoded to "
+        "db-cascade regardless of --dataset, so a bench run against any other "
+        "dataset silently measured the pipeline configured with db-cascade's "
+        "tiny 7-node topology and its looser eps=0.35 — not the dataset's own "
+        "topology/eps. That invalidated every non-db-cascade latency number "
+        "ever produced by this script.",
+    )
     args = parser.parse_args()
-    asyncio.run(run_bench(args.dataset, args.speed, args.duration))
+    scenario = args.scenario or ("aiops" if args.dataset == "aiops-scn1" else args.dataset)
+    asyncio.run(run_bench(args.dataset, args.speed, args.duration, scenario))

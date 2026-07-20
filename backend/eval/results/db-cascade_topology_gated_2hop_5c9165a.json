@@ -1,9 +1,9 @@
 {
   "dataset": "db-cascade",
-  "ablation": null,
-  "git_sha": "2f65680",
-  "timestamp": "2026-07-18T03:42:09.120872+00:00",
-  "compression_ratio": 0.9286,
+  "ablation": "topology_gated_2hop",
+  "git_sha": "5c9165a",
+  "timestamp": "2026-07-20T02:40:07.063660+00:00",
+  "compression_ratio": 0.8929,
   "cluster_purity": 1.0,
   "ari": 0.0,
   "fragmentation": 3.0,

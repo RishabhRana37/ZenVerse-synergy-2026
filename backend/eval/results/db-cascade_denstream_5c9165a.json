@@ -1,8 +1,8 @@
 {
   "dataset": "db-cascade",
   "ablation": "denstream",
-  "git_sha": "4f8eaed",
-  "timestamp": "2026-07-17T04:40:25.664355+00:00",
+  "git_sha": "5c9165a",
+  "timestamp": "2026-07-20T02:39:55.260020+00:00",
   "compression_ratio": 0.9821,
   "cluster_purity": 1.0,
   "ari": 1.0,

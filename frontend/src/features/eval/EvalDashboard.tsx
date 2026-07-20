@@ -28,8 +28,11 @@ interface BackendResult {
   hit_at_3: number
   latency_p50_ms: number
   latency_p95_ms: number
-  total_alerts: number
-  incidents_out: number
+  // The live /eval/results endpoint (rest.py) never populates these — the
+  // harness result files don't record per-alert counts. Optional so the
+  // fallback JSON (which mirrors the real endpoint's shape exactly) type-checks.
+  total_alerts?: number
+  incidents_out?: number
   [key: string]: any
 }
 
@@ -95,10 +98,15 @@ export function EvalDashboard() {
     fetchResults()
   }, [])
 
-  // Identify best backend on primary scenario (db-cascade)
-  const primaryScenario = data?.scenarios.find((s) => s.name === 'db-cascade')
+  // Hero stat: our actual production system (Full-system, not an ablation)
+  // on the real labeled dataset (aiops-scn1 — the credibility differentiator
+  // over db-cascade's synthetic data). Backend label strings come from
+  // rest.py's _ABLATION_LABEL map ("full" -> "Full-system"), not free text —
+  // this must match exactly or bestBackend silently becomes undefined and
+  // the hero counters never animate.
+  const primaryScenario = data?.scenarios.find((s) => s.name === 'aiops-scn1')
   const bestBackend = primaryScenario?.backends.find(
-    (b) => b.backend === 'DenStream (streaming)',
+    (b) => b.backend === 'Full-system',
   )
 
   const handleViewportEnter = () => {
