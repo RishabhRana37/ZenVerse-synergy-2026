@@ -65,7 +65,7 @@ Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 | `backend/` | FastAPI service — ingestion, correlation, root-cause, summarization |
 | `frontend/` | React war-room UI |
 | `data/` | Raw datasets, curated samples, synthetic storm scenarios |
-| `eval/` | Evaluation harness and results |
+| `backend/eval/` | Evaluation harness, ablations, benchmarks, and committed results |
 | `scripts/` | Dataset download, replay, and utility scripts |
 
 ## Team ZenVerse
@@ -104,9 +104,9 @@ npm run dev
 
 - [x] Problem statement selected (PS #10)
 - [x] PRD & architecture
-- [ ] Correlation engine core
-- [ ] Root-cause ranking
-- [ ] War-room UI
-- [ ] Evaluation on labeled data
-- [ ] Round 1 submission (July 20)
+- [x] Correlation engine core
+- [x] Root-cause ranking
+- [x] War-room UI
+- [x] Evaluation on labeled data (aiops-scn1: Hit@1 92.3%, Hit@3 100%, purity 100% — reproducible via `backend/eval/harness.py`)
+- [x] Round 1 submission (July 20)
 - [ ] Grand Finale (July 31)
