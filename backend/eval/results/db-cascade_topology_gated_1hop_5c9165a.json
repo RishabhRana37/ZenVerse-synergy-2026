@@ -1,8 +1,8 @@
 {
   "dataset": "db-cascade",
   "ablation": "topology_gated_1hop",
-  "git_sha": "2f65680",
-  "timestamp": "2026-07-18T03:48:44.908045+00:00",
+  "git_sha": "5c9165a",
+  "timestamp": "2026-07-20T02:40:04.751870+00:00",
   "compression_ratio": 0.8036,
   "cluster_purity": 1.0,
   "ari": 0.0,

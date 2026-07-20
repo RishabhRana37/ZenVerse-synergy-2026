@@ -1,62 +1,178 @@
 {
-  "generated_at": "2026-07-18T00:00:00.000Z",
-  "dataset": "AIOps Challenge 2020 (labeled)",
+  "generated_at": "2026-07-20T02:59:33.993758+00:00",
+  "dataset": "aiops-scn1",
   "scenarios": [
     {
-      "name": "db-cascade",
+      "name": "aiops-scn1",
       "backends": [
         {
-          "backend": "DenStream (streaming)",
-          "compression_ratio": 0.964,
-          "purity": 0.87,
-          "ari": 0.81,
-          "hit_at_1": 0.66,
-          "hit_at_3": 0.89,
-          "latency_p50_ms": 610,
-          "latency_p95_ms": 1840,
-          "total_alerts": 2143,
-          "incidents_out": 3
+          "backend": "Full-system",
+          "compression_ratio": 0.6022,
+          "purity": 1.0,
+          "ari": 0.3488,
+          "hit_at_1": 0.9231,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 157,
+          "latency_p95_ms": 578,
+          "fragmentation": 3.7308
         },
         {
-          "backend": "DBSCAN (micro-batch)",
-          "compression_ratio": 0.921,
-          "purity": 0.79,
-          "ari": 0.73,
-          "hit_at_1": 0.58,
-          "hit_at_3": 0.81,
-          "latency_p50_ms": 1210,
-          "latency_p95_ms": 3200,
-          "total_alerts": 2143,
-          "incidents_out": 4
+          "backend": "Naive-dedup",
+          "compression_ratio": 0.9579,
+          "purity": 0.8592,
+          "ari": 0.3144,
+          "hit_at_1": 0.1154,
+          "hit_at_3": 0.2308,
+          "latency_p50_ms": 157,
+          "latency_p95_ms": 578,
+          "fragmentation": 4.8462
+        },
+        {
+          "backend": "DenStream",
+          "compression_ratio": 0.9996,
+          "purity": 0.3538,
+          "ari": 0.1344,
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "latency_p50_ms": 157,
+          "latency_p95_ms": 578,
+          "fragmentation": 3.0
+        },
+        {
+          "backend": "topology_gated_2hop",
+          "compression_ratio": 0.6022,
+          "purity": 1.0,
+          "ari": 0.3488,
+          "hit_at_1": 0.9231,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 157,
+          "latency_p95_ms": 578,
+          "fragmentation": 3.7308
         }
       ]
     },
     {
-      "name": "multi-fault",
+      "name": "db-cascade",
       "backends": [
         {
-          "backend": "DenStream (streaming)",
-          "compression_ratio": 0.941,
-          "purity": 0.84,
-          "ari": 0.78,
-          "hit_at_1": 0.61,
-          "hit_at_3": 0.86,
-          "latency_p50_ms": 720,
-          "latency_p95_ms": 2100,
-          "total_alerts": 1890,
-          "incidents_out": 5
+          "backend": "Full-system",
+          "compression_ratio": 0.9286,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 3.0
         },
         {
-          "backend": "DBSCAN (micro-batch)",
-          "compression_ratio": 0.892,
-          "purity": 0.75,
-          "ari": 0.68,
-          "hit_at_1": 0.52,
-          "hit_at_3": 0.78,
-          "latency_p50_ms": 1450,
-          "latency_p95_ms": 4100,
-          "total_alerts": 1890,
-          "incidents_out": 7
+          "backend": "Naive-dedup",
+          "compression_ratio": 0.6607,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 16.0
+        },
+        {
+          "backend": "No-semantic",
+          "compression_ratio": 0.8036,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 8.0
+        },
+        {
+          "backend": "No-topology",
+          "compression_ratio": 0.9286,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 3.0
+        },
+        {
+          "backend": "No-temporal",
+          "compression_ratio": 0.7679,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 10.0
+        },
+        {
+          "backend": "DenStream",
+          "compression_ratio": 0.9821,
+          "purity": 1.0,
+          "ari": 1.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 1.0
+        },
+        {
+          "backend": "topology_gated_1hop",
+          "compression_ratio": 0.8036,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 8.0
+        },
+        {
+          "backend": "topology_gated_2hop",
+          "compression_ratio": 0.8929,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 1718,
+          "latency_p95_ms": 1718,
+          "fragmentation": 3.0
+        }
+      ]
+    },
+    {
+      "name": "network-partition",
+      "backends": [
+        {
+          "backend": "Full-system",
+          "compression_ratio": 0.9138,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 0,
+          "latency_p95_ms": 0,
+          "fragmentation": 4.0
+        }
+      ]
+    },
+    {
+      "name": "rolling-deploy",
+      "backends": [
+        {
+          "backend": "Full-system",
+          "compression_ratio": 0.9423,
+          "purity": 1.0,
+          "ari": 0.0,
+          "hit_at_1": 1.0,
+          "hit_at_3": 1.0,
+          "latency_p50_ms": 0,
+          "latency_p95_ms": 0,
+          "fragmentation": 2.0
         }
       ]
     }

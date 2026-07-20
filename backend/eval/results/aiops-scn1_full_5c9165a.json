@@ -1,8 +1,8 @@
 {
   "dataset": "aiops-scn1",
   "ablation": null,
-  "git_sha": "4f8eaed",
-  "timestamp": "2026-07-17T04:13:09.133045+00:00",
+  "git_sha": "5c9165a",
+  "timestamp": "2026-07-19T18:04:37.459657+00:00",
   "compression_ratio": 0.6022,
   "cluster_purity": 1.0,
   "ari": 0.3488,
