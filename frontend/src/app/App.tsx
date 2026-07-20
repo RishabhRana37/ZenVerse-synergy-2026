@@ -5,7 +5,6 @@ import { EvalDashboard } from '@/features/eval/EvalDashboard'
 import { TokensPage } from '@/app/TokensPage'
 import { DebugPage } from '@/app/DebugPage'
 import { HealthPage } from '@/app/HealthPage'
-import { LandingPage } from '@/features/landing/LandingPage'
 import { LandingPageNew } from '@/features/landing/LandingPageNew'
 import { useWsConnection } from '@/hooks/useWsConnection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -21,7 +20,9 @@ import { Button } from '@/components/ui/Button'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { Card } from '@/components/ui/Card'
 import { audioManager } from '@/lib/audio'
-import { useFPSStore } from '@/lib/motion'
+import { useFPSStore, DUR_ENTER, EASE } from '@/lib/motion'
+import { usePresentationMode } from '@/lib/presentationMode'
+import { motion, AnimatePresence } from 'framer-motion'
 import { clsx } from 'clsx'
 import { AlertTriangle, Check, Volume2, VolumeX, Menu, X } from 'lucide-react'
 
@@ -55,6 +56,7 @@ export function DashboardLayout() {
   // Wire global keyboard shortcuts
   const { showOverlay, setShowOverlay } = useKeyboardShortcuts()
   const shortcutsOverlayRef = useFocusTrap(showOverlay)
+  const { presentationMode, toggle: togglePresentation } = usePresentationMode()
   
   const connection = useStreamStore((s) => s.connection)
   const [lastConnection, setLastConnection] = useState(connection)
@@ -247,6 +249,22 @@ export function DashboardLayout() {
           )}
         </div>
 
+        {/* Presentation Mode Banner */}
+        <AnimatePresence>
+          {presentationMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 24 }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: DUR_ENTER, ease: EASE }}
+              onClick={togglePresentation}
+              className="w-full bg-accent/10 border-b border-accent/20 text-accent font-mono text-[10px] tracking-wider uppercase flex items-center justify-center cursor-pointer select-none overflow-hidden z-40 relative flex-shrink-0"
+            >
+              PRESENTATION MODE — font scale 110% · enhanced borders · projector optimised
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Global Page Header */}
         <header className="h-16 border-b border-border bg-bg-surface flex items-center px-6 w-full select-none flex-shrink-0 z-[50] relative">
           {/* Severity Heatmap Strip from Stripe */}
@@ -254,12 +272,12 @@ export function DashboardLayout() {
             className="absolute top-0 left-0 right-0 h-[3px] animate-mesh-gradient"
             style={{
               background: `linear-gradient(90deg, 
-                #3b82f6 0%, 
-                #3b82f6 ${infoPct}%, 
-                #f59e0b ${infoPct}%, 
-                #f59e0b ${infoPct + warnPct}%, 
-                #ff4d4f ${infoPct + warnPct}%, 
-                #ff4d4f 100%)`
+                var(--sev-info) 0%, 
+                var(--sev-info) ${infoPct}%, 
+                var(--sev-warn) ${infoPct}%, 
+                var(--sev-warn) ${infoPct + warnPct}%, 
+                var(--sev-crit) ${infoPct + warnPct}%, 
+                var(--sev-crit) 100%)`
             }}
           />
 
@@ -270,12 +288,18 @@ export function DashboardLayout() {
                 <ReticleLogo connection={connection} />
                 <span className="font-semibold text-text-primary text-[15px] tracking-tight font-sans">StormLens</span>
                 <div className="flex items-center gap-1.5 pl-2.5 border-l border-border">
-                  <span className="text-[11px] text-text-secondary font-mono capitalize">
+                  {connection === 'open' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse flex-shrink-0" />
+                  )}
+                  <span className={clsx(
+                    "text-[11px] font-mono capitalize tracking-wide font-bold",
+                    connection === 'open' ? "text-brand" : "text-text-secondary"
+                  )}>
                     {connection === 'open' ? 'live' : connection}
                   </span>
                 </div>
                 {replayRunning && (
-                  <div className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-mono text-[10px] font-semibold tracking-wider uppercase animate-pulse">
+                  <div className="px-1.5 py-0.5 rounded bg-brand-dim border border-brand/20 text-brand font-mono text-[10px] font-semibold tracking-wider uppercase animate-pulse">
                     Replay
                   </div>
                 )}
@@ -312,19 +336,19 @@ export function DashboardLayout() {
                 {view === 'stream' && (
                   <div className="flex items-center gap-4 bg-bg-base/40 px-3 py-1.5 rounded border border-border text-[11px] font-mono text-text-secondary select-none animate-fade-in">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-sev-info/80" />
                       <Odometer value={totalAlerts} format="integer" easing="linear" className="text-text-primary font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-mono">alerts</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent/80 animate-pulse" />
-                      <Odometer value={activeIncidents} format="integer" easing="spring" className="text-accent font-bold" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand/80 animate-pulse" />
+                      <Odometer value={activeIncidents} format="integer" easing="spring" className="text-brand font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-mono">incidents</span>
                     </div>
                     <span className="text-border/40 select-none">|</span>
                     <div className="flex items-center gap-1.5">
-                      <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-accent font-bold" />
+                      <Odometer value={compressionRatio} format="percent2" easing="spring" className="text-brand font-bold" />
                       <span className="text-[10px] text-text-muted uppercase font-sans">Noise Suppressed</span>
                     </div>
                   </div>
@@ -344,7 +368,7 @@ export function DashboardLayout() {
                         data={rateHistory.map(d => d.value)}
                         width={42}
                         height={14}
-                        color="#2DD4A7"
+                        color="var(--brand)"
                       />
                     )}
                   </div>
@@ -507,10 +531,10 @@ function AppInner() {
   useEffect(() => {
     const dotColor =
       connection === 'open'
-        ? '%232DD4A7'
+        ? '%232FB8A6'
         : connection === 'connecting'
-        ? '%23F5A623'
-        : '%23FF4D4F'
+        ? '%23E8A33D'
+        : '%23E5484D'
 
     const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="32" height="32"><circle cx="10" cy="10" r="7" fill="none" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="0" x2="10" y2="2" stroke="%23E6EDF3" stroke-width="1"/><line x1="10" y1="18" x2="10" y2="20" stroke="%23E6EDF3" stroke-width="1"/><line x1="0" y1="10" x2="2" y2="10" stroke="%23E6EDF3" stroke-width="1"/><line x1="18" y1="10" x2="20" y2="10" stroke="%23E6EDF3" stroke-width="1"/><circle cx="16.5" cy="4.5" r="2" fill="${dotColor}"/></svg>`
 
@@ -526,8 +550,7 @@ function AppInner() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/landing" element={<LandingPageNew />} />
+        <Route path="/" element={<LandingPageNew />} />
         <Route element={<DashboardLayout />}>
           <Route path="/war-room" element={<WarRoom />} />
           <Route path="/eval" element={<EvalDashboard />} />

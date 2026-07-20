@@ -13,36 +13,56 @@
 
 /* ── CSS custom properties (mirrors tailwind config for runtime access) ── */
 :root {
-  /* Backgrounds */
-  --bg-base:      #0A0E14;
-  --bg-surface:   #11161F;
-  --bg-elevated:  #161D29;
-  --bg-hover:     #1B2332;
+  /* Neutrals — warm graphite, NOT blue-slate */
+  --bg-base:      #0C0C0B;   /* page background (landing + app) */
+  --bg-raised:    #131312;   /* panels, cards, sidebar */
+  --bg-raised-2:  #1A1A18;   /* inputs, table header, hover rows */
+  --border-subtle:#262623;   /* default 1px borders */
+  --border-strong:#3A3A35;   /* hover/focus borders */
+  --text-hi:      #EDECE8;   /* primary text — warm white, not pure #fff */
+  --text-mid:     #9C9B94;   /* secondary text */
+  --text-low:     #6B6A63;   /* mono micro-labels, hints */
 
-  /* Borders */
-  --border:       rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.14);
-  --border-subtle:rgba(255, 255, 255, 0.03);
-  --border-strong:rgba(255, 255, 255, 0.12);
+  /* Brand / action — storm amber. This replaces mint green EVERYWHERE. */
+  --brand:        #F5A524;
+  --brand-hover:  #FFB84D;
+  --brand-dim:    rgba(245,165,36,0.12);  /* tinted fills behind amber text */
+  --on-brand:     #1A1205;   /* text on solid amber buttons */
 
-  /* Text */
-  --text-primary:   #E6EDF3;
-  --text-secondary: #8B98A9;
-  --text-muted:     #4D5866;
+  /* Resolution / success — teal, used ONLY for resolved/pass/calm states */
+  --ok:           #2FB8A6;
+  --ok-dim:       rgba(47,184,166,0.12);
 
-  /* Severity */
-  --severity-critical: #FF4D4F;
-  --severity-warning:  #F5A623;
-  --severity-info:     #4D9FFF;
+  /* Severity ramp — tuned, not Tailwind defaults */
+  --sev-crit:     #E5484D;
+  --sev-crit-dim: rgba(229,72,77,0.14);
+  --sev-warn:     #E8A33D;
+  --sev-warn-dim: rgba(232,163,61,0.13);
+  --sev-info:     #6A7178;   /* info is GRAY, not blue — info should be quiet */
+  --sev-info-dim: rgba(106,113,120,0.15);
 
-  /* Accent */
-  --accent:     #2DD4A7;
-  --accent-dim: rgba(45, 212, 167, 0.15);
+  /* Data-viz categorical (charts only) */
+  --viz-1: #F5A524;  /* amber */
+  --viz-2: #2FB8A6;  /* teal */
+  --viz-3: #8A8F98;  /* gray */
 
-  /* Confidence gradient */
-  --conf-high: #2DD4A7;
-  --conf-mid:  #F5A623;
-  --conf-low:  #FF4D4F;
+  /* Aliases for backward compatibility in components or styles */
+  --bg-surface:   var(--bg-raised);
+  --bg-elevated:  var(--bg-raised-2);
+  --bg-hover:     var(--bg-raised-2);
+  --border:       var(--border-subtle);
+  --border-hover: var(--border-strong);
+  --text-primary:   var(--text-hi);
+  --text-secondary: var(--text-mid);
+  --text-muted:     var(--text-low);
+  --severity-critical: var(--sev-crit);
+  --severity-warning:  var(--sev-warn);
+  --severity-info:     var(--sev-info);
+  --accent:     var(--brand);
+  --accent-dim: var(--brand-dim);
+  --conf-high:  var(--brand);
+  --conf-mid:   var(--sev-warn);
+  --conf-low:   var(--sev-crit);
 
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -68,19 +88,15 @@
 html.presentation-mode {
   font-size: 110%;
 
-  --border:        rgba(255,255,255,0.18);
-  --border-hover:  rgba(255,255,255,0.28);
-  --border-top:    rgba(255,255,255,0.24);
-  --border-subtle: rgba(255,255,255,0.10);
+  --border-subtle: rgba(255,255,255,0.18);
   --border-strong: rgba(255,255,255,0.28);
+  --border:        var(--border-subtle);
+  --border-hover:  var(--border-strong);
 
-  /* More saturated severity colors for projector wash */
-  --severity-critical: #FF2B2E;
-  --severity-warning:  #E8940D;
-  --severity-info:     #2E87FF;
-
-  /* Even lighter muted for high-ambient conditions */
-  --text-muted: #8E8E93;
+  /* Projector saturation ramp overrides */
+  --sev-crit:     #FF2B2E;
+  --sev-warn:     #E8940D;
+  --sev-info:     #8E8E93;
 
   /* Thicker timeline stroke */
   --timeline-stroke: 2.5;
@@ -128,7 +144,7 @@ html.presentation-mode {
     transform: translateX(-50%);
     width: 800px;
     height: 600px;
-    background: radial-gradient(circle, rgba(45, 212, 167, 0.09) 0%, rgba(45, 212, 167, 0.02) 40%, transparent 70%);
+    background: radial-gradient(circle, rgba(245, 165, 36, 0.07) 0%, rgba(245, 165, 36, 0.015) 40%, transparent 70%);
     z-index: -9;
     pointer-events: none;
     filter: blur(50px);
@@ -290,8 +306,8 @@ html.presentation-mode {
     border-color: rgba(255, 255, 255, 0.10);
   }
   40% {
-    border-color: rgba(45, 212, 167, 0.6);
-    box-shadow: 0 0 6px rgba(45, 212, 167, 0.25);
+    border-color: rgba(245, 165, 36, 0.6);
+    box-shadow: 0 0 6px rgba(245, 165, 36, 0.25);
   }
   100% {
     border-color: rgba(255, 255, 255, 0.10);
@@ -456,8 +472,8 @@ html.presentation-mode {
 
 /* ── Pulse Edge Accent Animation ── */
 @keyframes pulse-edge-accent {
-  0%, 100% { border-color: rgba(45, 212, 167, 0.4); box-shadow: 0 0 4px rgba(45, 212, 167, 0.1); }
-  50% { border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 12px rgba(45, 212, 167, 0.3); }
+  0%, 100% { border-color: rgba(245, 165, 36, 0.4); box-shadow: 0 0 4px rgba(245, 165, 36, 0.1); }
+  50% { border-color: rgba(245, 165, 36, 1); box-shadow: 0 0 12px rgba(245, 165, 36, 0.3); }
 }
 .animate-pulse-edge-accent {
   animation: pulse-edge-accent 2s infinite ease-in-out;
@@ -465,9 +481,9 @@ html.presentation-mode {
 
 /* ── Keycap Press Down Animation ── */
 @keyframes press-down {
-  0% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
-  20% { transform: translateY(1px) scale(0.96); border-color: rgba(45, 212, 167, 1); box-shadow: 0 0 8px rgba(45, 212, 167, 0.4); }
-  100% { transform: translateY(0) scale(1); border-color: rgba(45, 212, 167, 0.4); }
+  0% { transform: translateY(0) scale(1); border-color: rgba(245, 165, 36, 0.4); }
+  20% { transform: translateY(1px) scale(0.96); border-color: rgba(245, 165, 36, 1); box-shadow: 0 0 8px rgba(245, 165, 36, 0.4); }
+  100% { transform: translateY(0) scale(1); border-color: rgba(245, 165, 36, 0.4); }
 }
 .animate-press-down {
   animation: press-down 0.3s ease-out;

@@ -85,10 +85,10 @@ export function TokensPage() {
       {/* ── Backgrounds & surfaces ────────────────────────────────────── */}
       <Section title="Backgrounds & Surfaces">
         <div className="grid grid-cols-4 gap-3">
-          <Swatch label="Base"     hex="#0A0E14" className="border-2" />
-          <Swatch label="Surface"  hex="#11161F" />
-          <Swatch label="Elevated" hex="#161D29" />
-          <Swatch label="Hover"    hex="#1C2535" />
+          <Swatch label="Base"     hex="#0C0C0B" className="border-2" />
+          <Swatch label="Surface"  hex="#131312" />
+          <Swatch label="Elevated" hex="#1A1A18" />
+          <Swatch label="Hover"    hex="#1A1A18" />
         </div>
       </Section>
 
@@ -128,17 +128,17 @@ export function TokensPage() {
       {/* ── Severity ─────────────────────────────────────────────────── */}
       <Section title="Severity">
         <div className="grid grid-cols-3 gap-3">
-          <Swatch label="Critical" hex="#FF4D4F" />
-          <Swatch label="Warning"  hex="#F5A623" />
-          <Swatch label="Info"     hex="#4D9FFF" />
+          <Swatch label="Critical" hex="#E5484D" />
+          <Swatch label="Warning"  hex="#E8A33D" />
+          <Swatch label="Info"     hex="#6A7178" />
         </div>
       </Section>
 
       {/* ── Accent ───────────────────────────────────────────────────── */}
       <Section title="Accent / Correlated">
         <div className="grid grid-cols-2 gap-3">
-          <Swatch label="Accent"     hex="#2DD4A7" />
-          <Swatch label="Accent dim" hex="rgba(45,212,167,0.15)" className="border-[rgba(45,212,167,0.3)]" />
+          <Swatch label="Accent"     hex="#F5A524" />
+          <Swatch label="Accent dim" hex="rgba(245,165,36,0.12)" className="border-brand/30" />
         </div>
       </Section>
 
@@ -147,9 +147,9 @@ export function TokensPage() {
         <div className="space-y-2">
           <div className="h-4 rounded-full confidence-gradient" />
           <div className="flex justify-between text-[11px] font-mono text-text-muted">
-            <span>Low (red) #FF4D4F</span>
-            <span>Mid (amber) #F5A623</span>
-            <span>High (green) #2DD4A7</span>
+            <span>Low (red) #E5484D</span>
+            <span>Mid (amber) #E8A33D</span>
+            <span>High (amber) #F5A524</span>
           </div>
         </div>
       </Section>
@@ -191,17 +191,17 @@ export function TokensPage() {
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <div className="text-ui-sm font-medium text-text-primary mb-1">Surface (default)</div>
-            <div className="text-stream text-text-muted font-mono">bg: #11161F</div>
+            <div className="text-stream text-text-muted font-mono">bg: #131312</div>
           </Card>
 
           <Card variant="elevated">
             <div className="text-ui-sm font-medium text-text-primary mb-1">Elevated</div>
-            <div className="text-stream text-text-muted font-mono">bg: #161D29</div>
+            <div className="text-stream text-text-muted font-mono">bg: #1A1A18</div>
           </Card>
 
-          <Card interactive accent="#FF4D4F">
+          <Card interactive accent="#E5484D">
             <div className="text-ui-sm font-medium text-severity-critical mb-1">Interactive + accent</div>
-            <div className="text-stream text-text-muted font-mono">hover → #1C2535</div>
+            <div className="text-stream text-text-muted font-mono">hover → #1A1A18</div>
           </Card>
         </div>
       </Section>

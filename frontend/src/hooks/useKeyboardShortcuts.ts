@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { audioManager } from '@/lib/audio'
 import { startReplay, stopReplay, resetReplay } from '@/lib/actions'
+import { usePresentationMode } from '@/lib/presentationMode'
 
 
 export function useKeyboardShortcuts() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { toggle: togglePresentation } = usePresentationMode()
 
   const [showOverlay, setShowOverlay] = useState(false)
 
@@ -100,11 +102,18 @@ export function useKeyboardShortcuts() {
         window.dispatchEvent(new CustomEvent('stormlens-shortcut-close'))
         return
       }
+
+      // P — Toggle Presentation Mode
+      if (key === 'p') {
+        e.preventDefault()
+        togglePresentation()
+        return
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [location.pathname, navigate])
+  }, [location.pathname, navigate, togglePresentation])
 
   return { showOverlay, setShowOverlay }
 }

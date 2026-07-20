@@ -4,8 +4,9 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useInView } from 'framer-motion'
-import { LandingStormCanvas } from './LandingStormCanvas'
+import { motion, useInView, useScroll, useSpring, useTransform } from 'framer-motion'
+import Lenis from 'lenis'
+import { HeroConvergenceCanvas } from './HeroConvergenceCanvas'
 import { ConfidenceBar } from '@/components/ui/ConfidenceBar'
 import { Kbd } from '@/components/ui/Kbd'
 import { SPRING, EASE, DUR_ENTER, entranceVariants, staggerContainerVariants } from '@/lib/motion'
@@ -24,7 +25,7 @@ function LensMark({ size = 20 }: { size?: number }) {
       <line x1="10" y1="17.8" x2="10" y2="20" stroke="#E6EDF3" strokeWidth="1.3" />
       <line x1="0" y1="10" x2="2.2" y2="10" stroke="#E6EDF3" strokeWidth="1.3" />
       <line x1="17.8" y1="10" x2="20" y2="10" stroke="#E6EDF3" strokeWidth="1.3" />
-      <circle cx="16.5" cy="4.5" r="1.9" fill="#2DD4A7" />
+      <circle cx="16.5" cy="4.5" r="1.9" fill="#F5A524" />
     </svg>
   )
 }
@@ -103,19 +104,32 @@ function LandingNav() {
   }, [])
 
   return (
-    <nav
+    <motion.nav
+      animate={{ height: scrolled ? 52 : 64 }}
+      transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 120, damping: 20 }}
       className={clsx(
-        'fixed top-0 left-0 right-0 z-[var(--z-popover)] h-14 flex items-center px-6 border-b border-border/0 transition-all duration-300',
+        'fixed top-0 left-0 right-0 z-[var(--z-popover)] flex items-center px-6 transition-colors duration-300',
         scrolled
-          ? 'bg-bg-base/80 backdrop-blur-xl border-b border-border/60'
+          ? 'bg-bg-base/80 backdrop-blur-xl'
           : 'bg-transparent'
       )}
       aria-label="Site navigation"
     >
+      {/* Hairline bottom border with left->right accent gradient (Upgrade 9) */}
+      <div
+        className={clsx(
+          'absolute bottom-0 left-0 right-0 h-[1px] transition-opacity duration-300 pointer-events-none',
+          scrolled ? 'opacity-20' : 'opacity-0'
+        )}
+        style={{
+          background: 'linear-gradient(90deg, var(--brand) 0%, transparent 100%)'
+        }}
+      />
+
       {/* Wordmark */}
-      <Link to="/landing" className="flex items-center gap-2.5 mr-auto select-none group">
+      <Link to="/" className="flex items-center gap-2.5 mr-auto select-none group">
         <LensMark size={20} />
-        <span className="font-sans font-bold text-[14px] tracking-tight text-text-primary group-hover:text-accent transition-colors duration-150">
+        <span className="font-sans font-bold text-[14px] tracking-tight text-text-primary group-hover:text-brand transition-colors duration-150">
           StormLens
         </span>
       </Link>
@@ -147,22 +161,263 @@ function LandingNav() {
           <kbd className="text-[10px] font-mono font-bold bg-bg-base border border-border text-text-muted px-1.5 py-0.2 rounded">⌘K</kbd>
         </button>
         <Link
-          to="/"
-          className="px-3.5 py-1.5 rounded-md bg-accent text-[#0A0E14] text-[12px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150 whitespace-nowrap"
+          to="/war-room"
+          className="px-3.5 py-1.5 rounded-md text-[12px] font-bold font-sans hover:opacity-90 active:scale-95 transition-all duration-150 whitespace-nowrap"
+          style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
         >
           Enter War Room
         </Link>
       </div>
-    </nav>
+    </motion.nav>
   )
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
 // 1. HERO
 // ════════════════════════════════════════════════════════════════════════════════
-function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replaySignal: number | undefined }) {
+// ── Magnetic Button (Upgrade 5) ────────────────────────────────────────────────
+function MagneticButton({ children, to, className, style }: { children: React.ReactNode; to: string; className?: string; style?: React.CSSProperties }) {
+  const buttonRef = useRef<HTMLAnchorElement>(null)
+  const [{ x, y }, setCoords] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const button = buttonRef.current
+    if (!button) return
+
+    const isDesktop = window.matchMedia('(pointer: fine)').matches
+    if (!isDesktop) return
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = button.getBoundingClientRect()
+      const btnX = rect.left + rect.width / 2
+      const btnY = rect.top + rect.height / 2
+      const dx = e.clientX - btnX
+      const dy = e.clientY - btnY
+      const distance = Math.sqrt(dx * dx + dy * dy)
+
+      if (distance < 60) {
+        const pullX = (dx / 60) * 6
+        const pullY = (dy / 60) * 6
+        setCoords({ x: pullX, y: pullY })
+      } else {
+        setCoords({ x: 0, y: 0 })
+      }
+    }
+
+    const onMouseLeave = () => {
+      setCoords({ x: 0, y: 0 })
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    button.addEventListener('mouseleave', onMouseLeave)
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      button.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [])
+
   return (
-    <section className="relative min-h-screen pt-14 flex overflow-hidden bg-[#050810]">
+    <motion.div
+      animate={{ x, y }}
+      transition={{ type: 'spring', stiffness: 150, damping: 15 }}
+      className="inline-block"
+    >
+      <Link ref={buttonRef} to={to} className={className} style={style}>
+        {children}
+      </Link>
+    </motion.div>
+  )
+}
+
+// ── Text Reveal Headline (Upgrade 4) ───────────────────────────────────────────
+function TextRevealHeadline() {
+  if (prefersReduced) {
+    return (
+      <h1 className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight text-text-primary">
+        From 2,000 alerts to{' '}
+        <span className="inline-block text-brand">
+          3 answers.
+        </span>
+      </h1>
+    )
+  }
+
+  const words1 = ["From", "2,000", "alerts"]
+  const words2 = ["to", "3", "answers."]
+
+  return (
+    <h1 className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight text-text-primary flex flex-col gap-1 select-none">
+      <div>
+        {words1.map((w, idx) => (
+          <span key={idx} className="inline-block overflow-hidden mr-3">
+            <span
+              className="inline-block translate-y-[16px] opacity-0"
+              style={{
+                animation: `text-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                animationDelay: `${idx * 40}ms`
+              }}
+            >
+              {w}
+            </span>
+          </span>
+        ))}
+      </div>
+      <div>
+        {words2.map((w, idx) => {
+          const delay = (words1.length + idx) * 40
+          const isAccent = w === '3' || w === 'answers.'
+          return (
+            <span key={idx} className="inline-block overflow-hidden mr-3">
+              <span
+                className={clsx(
+                  "inline-block translate-y-[16px] opacity-0",
+                  isAccent && "text-brand"
+                )}
+                style={{
+                  animation: `text-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+                  animationDelay: `${delay}ms`
+                }}
+              >
+                {w}
+              </span>
+            </span>
+          )
+        })}
+      </div>
+    </h1>
+  )
+}
+
+function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replaySignal: number | undefined }) {
+  const heroRef = useRef<HTMLDivElement>(null)
+  const spotlightRef = useRef<HTMLDivElement>(null)
+
+  // Spotlight pointer tracking (Upgrade 3)
+  useEffect(() => {
+    const hero = heroRef.current
+    const spotlight = spotlightRef.current
+    if (!hero || !spotlight) return
+
+    const isDesktop = window.matchMedia('(pointer: fine)').matches
+    if (!isDesktop) return
+
+    let mouseX = -9999
+    let mouseY = -9999
+    let currentX = -9999
+    let currentY = -9999
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = hero.getBoundingClientRect()
+      mouseX = e.clientX - rect.left
+      mouseY = e.clientY - rect.top
+    }
+
+    const onMouseLeave = () => {
+      mouseX = -9999
+      mouseY = -9999
+    }
+
+    hero.addEventListener('mousemove', onMouseMove)
+    hero.addEventListener('mouseleave', onMouseLeave)
+
+    let rfId = 0
+    const loop = () => {
+      if (mouseX === -9999) {
+        spotlight.style.opacity = '0'
+      } else {
+        spotlight.style.opacity = '1'
+        if (currentX === -9999) {
+          currentX = mouseX
+          currentY = mouseY
+        } else {
+          currentX += (mouseX - currentX) * 0.1
+          currentY += (mouseY - currentY) * 0.1
+        }
+        spotlight.style.transform = `translate3d(${currentX - 300}px, ${currentY - 300}px, 0)`
+      }
+      rfId = requestAnimationFrame(loop)
+    }
+    rfId = requestAnimationFrame(loop)
+
+    return () => {
+      hero.removeEventListener('mousemove', onMouseMove)
+      hero.removeEventListener('mouseleave', onMouseLeave)
+      cancelAnimationFrame(rfId)
+    }
+  }, [])
+
+  // Parallax Scroll Layers (Upgrade 8)
+  const { scrollY } = useScroll()
+  const yRadial = useTransform(scrollY, [0, 800], [0, 160])
+  const yDust = useTransform(scrollY, [0, 800], [0, 320])
+  const yRadialVal = prefersReduced ? 0 : yRadial
+  const yDustVal = prefersReduced ? 0 : yDust
+
+  return (
+    <section ref={heroRef} className="relative min-h-screen pt-14 flex overflow-hidden bg-bg-base">
+      {/* 1px conic gradient sweep and text rise styling */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes text-rise {
+          from { transform: translateY(16px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes gradient-sweep {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 200% 50%; }
+        }
+        @keyframes border-sweep {
+          100% { transform: rotate(360deg); }
+        }
+      ` }} />
+
+      {/* Spotlight cursor glow (Upgrade 3) */}
+      <div
+        ref={spotlightRef}
+        className="absolute w-[600px] h-[600px] pointer-events-none rounded-full bg-accent/4 filter blur-[80px] z-0 transition-opacity duration-300 opacity-0"
+        style={{ mixBlendMode: 'screen' }}
+      />
+
+      {/* Grain Overlay (Upgrade 8) */}
+      <div className="absolute inset-0 pointer-events-none z-[5] opacity-[0.03] overflow-hidden">
+        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <filter id="hero-noise-filter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+            <feColorMatrix type="matrix" values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.08 0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#hero-noise-filter)" />
+        </svg>
+      </div>
+
+      {/* Parallax Radial Grid (Upgrade 8) */}
+      <motion.div
+        style={{ y: yRadialVal }}
+        className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center opacity-[0.05]"
+      >
+        <svg width="800" height="800" viewBox="0 0 800 800" fill="none">
+          <circle cx="400" cy="400" r="300" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="200" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <circle cx="400" cy="400" r="100" stroke="#1E1E1B" strokeWidth="1" strokeDasharray="4 8" />
+          <line x1="400" y1="0" x2="400" y2="800" stroke="#1E1E1B" strokeWidth="0.5" strokeDasharray="2 4" />
+          <line x1="0" y1="400" x2="800" y2="400" stroke="#1E1E1B" strokeWidth="0.5" strokeDasharray="2 4" />
+        </svg>
+      </motion.div>
+
+      {/* Parallax Blurred Accent Dust Dots (Upgrade 8) */}
+      <motion.div
+        style={{ y: yDustVal }}
+        className="absolute inset-0 pointer-events-none z-0"
+      >
+        <div className="absolute top-[20%] left-[10%] w-2 h-2 rounded-full bg-brand/20 filter blur-[4px]" />
+        <div className="absolute top-[45%] left-[80%] w-3.5 h-3.5 rounded-full bg-brand/15 filter blur-[6px]" />
+        <div className="absolute top-[75%] left-[30%] w-2 h-2 rounded-full bg-brand/25 filter blur-[4px]" />
+        <div className="absolute top-[15%] left-[70%] w-3 h-3 rounded-full bg-brand/15 filter blur-[5px]" />
+        <div className="absolute top-[60%] left-[15%] w-2.5 h-2.5 rounded-full bg-brand/20 filter blur-[4px]" />
+        <div className="absolute top-[85%] left-[85%] w-3 w-3 rounded-full bg-brand/20 filter blur-[5px]" />
+        <div className="absolute top-[30%] left-[55%] w-1.5 h-1.5 rounded-full bg-brand/30 filter blur-[3px]" />
+        <div className="absolute top-[50%] left-[40%] w-2 w-2 rounded-full bg-brand/15 filter blur-[4px]" />
+      </motion.div>
+
       {/* Subtle grid */}
       <div
         className="absolute inset-0 opacity-[0.035]"
@@ -173,7 +428,7 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
         }}
       />
       {/* Subtle radial fade on left */}
-      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#050810] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#0C0C0B] to-transparent pointer-events-none z-10" />
 
       {/* Left — text content */}
       <div className="relative z-10 flex flex-col justify-center items-start w-[45%] pl-12 pr-4 gap-6">
@@ -182,34 +437,14 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
           initial={prefersReduced ? {} : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR_ENTER, ease: EASE }}
-          className="flex items-center gap-2.5 text-[10px] font-mono text-text-muted uppercase tracking-[0.2em] select-none"
+          className="flex items-center gap-2.5 text-[10px] font-mono text-text-low uppercase tracking-[0.2em] select-none"
         >
-          <span className="w-4 h-px bg-accent/60" />
+          <span className="w-4 h-px bg-brand" />
           SYNERGY 2026 · HPE PS #10
         </motion.div>
 
-        {/* Headline */}
-        <motion.div
-          initial={prefersReduced ? {} : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: DUR_ENTER, ease: EASE, delay: 0.08 }}
-          className="flex flex-col gap-1 select-none"
-        >
-          <h1 className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight text-text-primary">
-            From 2,000 alerts
-          </h1>
-          <span
-            className="text-[52px] font-bold font-sans leading-[1.05] tracking-tight"
-            style={{
-              background: 'linear-gradient(120deg, #2DD4A7 0%, #4D9FFF 60%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            to 3 answers.
-          </span>
-        </motion.div>
+        {/* Headline (Upgrade 4) */}
+        <TextRevealHeadline />
 
         {/* Subhead */}
         <motion.p
@@ -222,31 +457,45 @@ function HeroSection({ onReplay, replaySignal }: { onReplay: () => void; replayS
           in under two seconds.
         </motion.p>
 
-        {/* CTAs */}
+        {/* CTAs (Upgrade 5) */}
         <motion.div
           initial={prefersReduced ? {} : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR_ENTER, ease: EASE, delay: 0.22 }}
-          className="flex items-center gap-3 flex-wrap"
+          className="flex items-center gap-4 flex-wrap"
         >
-          <Link
-            to="/"
-            className="px-5 py-2.5 rounded-md bg-accent text-[#0A0E14] text-[13px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150 whitespace-nowrap"
+          <MagneticButton
+            to="/war-room"
+            className="px-5 py-2.5 rounded-md text-[13px] font-bold font-sans hover:opacity-90 transition-all duration-150 whitespace-nowrap block"
+            style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
           >
             Enter the War Room
-          </Link>
+          </MagneticButton>
+
           <button
             onClick={onReplay}
-            className="px-5 py-2.5 rounded-md border border-border text-[13px] font-sans text-text-secondary hover:text-text-primary hover:border-border-hover bg-transparent hover:bg-bg-surface/40 active:scale-95 transition-all duration-150 whitespace-nowrap"
+            className="relative group overflow-hidden px-5 py-2.5 rounded-md bg-transparent text-[13px] font-sans text-text-secondary hover:text-text-primary transition-all duration-150 whitespace-nowrap"
           >
-            Replay the storm
+            {/* Conic Gradient Sweep border on hover */}
+            <div className="absolute inset-0 p-[1px] rounded-md bg-white/10 group-hover:bg-transparent transition-colors duration-200">
+              <div
+                className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background: 'conic-gradient(from 0deg, transparent 40%, #F5A524 80%, transparent 100%)',
+                  animation: 'border-sweep 4s linear infinite',
+                  margin: '-1px'
+                }}
+              />
+              <div className="absolute inset-[1px] rounded-[5px] bg-bg-base group-hover:bg-bg-raised/90 transition-colors" />
+            </div>
+            <span className="relative z-10">Watch the storm</span>
           </button>
         </motion.div>
       </div>
 
       {/* Right — canvas */}
       <div className="flex-1 relative min-h-[calc(100vh-56px)]">
-        <LandingStormCanvas replaySignal={replaySignal} />
+        <HeroConvergenceCanvas key={replaySignal ?? 0} />
       </div>
     </section>
   )
@@ -273,9 +522,15 @@ function StatsRow() {
       <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
         {stats.map((s, i) => (
           <div key={i} ref={s.ref} className="flex flex-col items-center justify-center py-10 px-4 gap-2 text-center">
-            <span className="text-[36px] font-mono font-bold text-text-primary tabular-nums leading-none tracking-tighter">
+            <motion.span
+              initial={prefersReduced ? {} : { filter: 'blur(6px)', opacity: 0 }}
+              whileInView={{ filter: 'blur(0px)', opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: EASE, delay: i * 0.08 }}
+              className="text-[36px] font-mono font-bold text-text-primary tabular-nums leading-none tracking-tighter"
+            >
               {s.value}
-            </span>
+            </motion.span>
             <span className="text-[11px] font-sans text-text-muted uppercase tracking-wider">
               {s.label}
             </span>
@@ -348,27 +603,27 @@ function HowItWorks() {
               </g>
             ))}
             {/* Incident node */}
-            <circle cx={230} cy={80} r="14" fill="rgba(45,212,167,0.08)" stroke="#2DD4A7" strokeWidth="1.5" />
-            <circle cx={230} cy={80} r="5" fill="#2DD4A7" />
-            <text x={248} y={76} fill="#2DD4A7" fontSize="10" fontFamily="JetBrains Mono,monospace">INC-01</text>
+            <circle cx={230} cy={80} r="14" fill="rgba(245,165,36,0.08)" stroke="#F5A524" strokeWidth="1.5" />
+            <circle cx={230} cy={80} r="5" fill="#F5A524" />
+            <text x={248} y={76} fill="#F5A524" fontSize="10" fontFamily="JetBrains Mono,monospace">INC-01</text>
             <text x={248} y={86} fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">97% conf</text>
             {/* Bezier edges */}
             <path ref={beamRef}
               d="M28,30 C100,30 130,80 216,80 M28,80 C100,80 130,80 216,80 M28,130 C100,130 130,80 216,80"
-              fill="none" stroke="#2DD4A7" strokeWidth="1" strokeOpacity="0.5"
+              fill="none" stroke="#F5A524" strokeWidth="1" strokeOpacity="0.5"
             />
           </svg>
         </div>
       ),
     },
     {
-      num: '03', title: 'EXPLAIN', color: '#2DD4A7',
+      num: '03', title: 'EXPLAIN', color: '#F5A524',
       visual: (
         <div className="w-full max-w-xs border border-border/60 bg-bg-surface/80 rounded-lg p-3 flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#FF4D4F]" />
             <span className="font-mono text-[10px] text-text-primary font-bold">INC-001 · DB Cascade</span>
-            <span className="ml-auto font-mono text-[10px] text-accent font-bold">ACTIVE</span>
+            <span className="ml-auto font-mono text-[10px] text-brand font-bold">ACTIVE</span>
           </div>
           <ConfidenceBar confidence={0.97} height="xs" showLabel />
           <TypewriterText
@@ -408,7 +663,16 @@ function HowItWorks() {
               {/* Number + text */}
               <div className="flex flex-col gap-3 flex-1 min-w-0">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[28px] font-bold" style={{ color: row.color }}>{row.num}</span>
+                  <motion.span
+                    initial={prefersReduced ? {} : { x: -30, opacity: 0 }}
+                    whileInView={{ x: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 15, delay: 0.1 }}
+                    className="font-mono text-[28px] font-bold"
+                    style={{ color: row.color }}
+                  >
+                    {row.num}
+                  </motion.span>
                   <div className="h-px flex-1 opacity-10" style={{ background: row.color }} />
                 </div>
                 <h3 className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: row.color }}>
@@ -436,16 +700,66 @@ function HowItWorks() {
 // 4. FEATURE BENTO
 // ════════════════════════════════════════════════════════════════════════════════
 function BentoCell({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const cellRef = useRef<HTMLDivElement>(null)
+  const [{ rx, ry, shadow }, setTilt] = useState({ rx: 0, ry: 0, shadow: '0px 1px 2px rgba(0,0,0,0.1)' })
+
+  useEffect(() => {
+    const cell = cellRef.current
+    if (!cell) return
+
+    const isDesktop = window.matchMedia('(pointer: fine)').matches
+    if (!isDesktop) return
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = cell.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const dx = e.clientX - cx
+      const dy = e.clientY - cy
+
+      const nx = dx / (rect.width / 2)
+      const ny = dy / (rect.height / 2)
+
+      // Rotate max 2 degrees (Upgrade 6)
+      const ryVal = nx * 2
+      const rxVal = -ny * 2
+      setTilt({
+        rx: rxVal,
+        ry: ryVal,
+        shadow: `0px ${10 + ny * 6}px 24px rgba(45, 212, 167, 0.04), 0px 2px 8px rgba(0, 0, 0, 0.3)`
+      })
+    }
+
+    const onMouseLeave = () => {
+      setTilt({ rx: 0, ry: 0, shadow: '0px 1px 2px rgba(0,0,0,0.1)' })
+    }
+
+    cell.addEventListener('mousemove', onMouseMove)
+    cell.addEventListener('mouseleave', onMouseLeave)
+
+    return () => {
+      cell.removeEventListener('mousemove', onMouseMove)
+      cell.removeEventListener('mouseleave', onMouseLeave)
+    }
+  }, [])
+
   return (
     <motion.div
+      ref={cellRef}
       initial={prefersReduced ? {} : { opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: DUR_ENTER, ease: EASE, delay }}
-      whileHover={prefersReduced ? {} : { y: -1, transition: { duration: 0.15 } }}
+      style={{
+        transformStyle: 'preserve-3d',
+        perspective: 800,
+        rotateX: rx,
+        rotateY: ry,
+        boxShadow: shadow,
+      }}
       className={clsx(
         'relative rounded-lg border border-border bg-bg-surface p-5 overflow-hidden',
-        'hover:border-border-hover transition-colors duration-150',
+        'hover:border-border-hover transition-colors duration-150 transition-shadow duration-300',
         className
       )}
     >
@@ -501,9 +815,9 @@ function FeatureBento() {
                 {/* Leaf nodes */}
                 {[[20,30],[110,30],[20,150],[110,150]].map(([x,y],i)=>(
                   <g key={i}>
-                    <line x1={x} y1={y} x2="65" y2="90" stroke="#2DD4A7" strokeWidth="0.8" strokeOpacity="0.35" />
-                    <circle cx={x} cy={y} r="7" fill="rgba(45,212,167,0.08)" stroke="#2DD4A7" strokeWidth="1" />
-                    <circle cx={x} cy={y} r="2.5" fill="#2DD4A7" />
+                    <line x1={x} y1={y} x2="65" y2="90" stroke="#F5A524" strokeWidth="0.8" strokeOpacity="0.35" />
+                    <circle cx={x} cy={y} r="7" fill="rgba(245,165,36,0.08)" stroke="#F5A524" strokeWidth="1" />
+                    <circle cx={x} cy={y} r="2.5" fill="#F5A524" />
                   </g>
                 ))}
                 <text x="20" y="20" textAnchor="middle" fill="#8B98A9" fontSize="10" fontFamily="JetBrains Mono,monospace">api-gw</text>
@@ -562,7 +876,7 @@ function FeatureBento() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8, delay: i * 0.1, ease: EASE }}
                         className="h-full rounded-full"
-                        style={{ background: i === 3 ? '#2DD4A7' : `rgba(45,212,167,${0.3+i*0.2})` }}
+                        style={{ background: i === 3 ? '#F5A524' : `rgba(245,165,36,${0.3+i*0.2})` }}
                       />
                     </div>
                   </div>
@@ -686,51 +1000,105 @@ function EvalProofStrip() {
 // ════════════════════════════════════════════════════════════════════════════════
 // 6. FINAL CTA + FOOTER
 // ════════════════════════════════════════════════════════════════════════════════
-function FinalCTA() {
+// ── Text Reveal CTA (Upgrade 7) ────────────────────────────────────────────────
+function TextRevealCTA() {
+  if (prefersReduced) {
+    return (
+      <h2 className="text-[40px] font-bold font-sans text-text-primary tracking-tight max-w-[480px] leading-tight">
+        Step into the War Room.
+      </h2>
+    )
+  }
+
+  const words = ["Step", "into", "the", "War", "Room."]
+
   return (
-    <section className="relative py-32 bg-bg-base overflow-hidden flex flex-col items-center text-center">
+    <h2 className="text-[40px] font-bold font-sans text-text-primary tracking-tight max-w-[480px] leading-tight select-none">
+      {words.map((w, idx) => (
+        <span key={idx} className="inline-block overflow-hidden mr-2">
+          <span
+            className="inline-block translate-y-[12px] opacity-0 animate-[text-rise_0.5s_cubic-bezier(0.2,0.8,0.2,1)_forwards]"
+            style={{
+              animationDelay: `${idx * 40}ms`
+            }}
+          >
+            {w}
+          </span>
+        </span>
+      ))}
+    </h2>
+  )
+}
+
+function FinalCTA() {
+  const [time, setTime] = useState('')
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      const istTime = now.toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+      setTime(istTime + ' IST')
+    }
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <section className="relative pt-32 bg-bg-base overflow-hidden flex flex-col items-center text-center">
       {/* ONE soft accent radial glow — the only glow on the page */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(45,212,167,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 60%, rgba(245,165,36,0.07) 0%, transparent 70%)',
         }}
       />
 
       <motion.div
         variants={entranceVariants} initial="hidden" whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
-        className="relative z-10 flex flex-col items-center gap-7 px-6"
+        className="relative z-10 flex flex-col items-center gap-7 px-6 mb-24"
       >
         <LensMark size={32} />
-        <h2 className="text-[40px] font-bold font-sans text-text-primary tracking-tight max-w-[480px] leading-tight">
-          Step into the War Room.
-        </h2>
+        <TextRevealCTA />
         <p className="text-[14px] font-sans text-text-muted max-w-[360px] leading-relaxed">
           One command. Live storm. Real-time answers. No setup needed.
         </p>
         <Link
-          to="/"
-          className="px-8 py-3 rounded-md bg-accent text-[#0A0E14] text-[14px] font-bold font-sans hover:bg-accent/90 active:scale-95 transition-all duration-150"
+          to="/war-room"
+          className="px-8 py-3 rounded-md text-[14px] font-bold font-sans hover:opacity-90 active:scale-95 transition-all duration-150"
+          style={{ backgroundColor: 'var(--brand)', color: 'var(--on-brand)' }}
         >
           Enter the War Room →
         </Link>
       </motion.div>
 
-      {/* Footer */}
-      <div className="relative z-10 mt-20 pt-8 border-t border-border/30 w-full max-w-3xl mx-auto px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <LensMark size={14} />
-          <span className="text-[11px] font-sans text-text-muted">StormLens</span>
+      {/* Upgrade Footer (Upgrade 10) */}
+      <footer className="w-full border-t border-border/40 bg-bg-surface py-12 relative z-10">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5 select-none">
+            <LensMark size={20} />
+            <span className="font-sans font-bold text-[14px] tracking-tight text-text-primary">StormLens</span>
+          </div>
+          <div className="text-[11px] font-mono text-text-muted/80 tracking-wide text-center">
+            Team ZenVerse · Synergy 2026 · MUJ
+          </div>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex items-center gap-4 text-[12px] font-sans">
+              <Link to="/eval" className="text-text-secondary hover:text-text-primary transition-colors duration-150">Eval</Link>
+              <Link to="/war-room" className="text-text-secondary hover:text-text-primary transition-colors duration-150">War Room</Link>
+            </div>
+            <div className="text-[11px] font-mono text-brand select-none bg-brand-dim px-2.5 py-1 rounded border border-brand/20 tabular-nums">
+              {time}
+            </div>
+          </div>
         </div>
-        <span className="text-[10px] font-mono text-text-muted/60 tracking-wider">
-          Team ZenVerse · Synergy 2026 · MUJ
-        </span>
-        <div className="flex items-center gap-3">
-          <Link to="/eval" className="text-[11px] text-text-muted/60 hover:text-text-secondary transition-colors">Eval</Link>
-          <Link to="/"    className="text-[11px] text-text-muted/60 hover:text-text-secondary transition-colors">War Room</Link>
-        </div>
-      </div>
+      </footer>
     </section>
   )
 }
@@ -745,13 +1113,48 @@ export function LandingPageNew() {
     setReplaySignal(prev => (prev ?? 0) + 1)
   }, [])
 
+  // Scroll Progress Bar (Upgrade 2)
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  })
+
   useEffect(() => {
     document.title = 'StormLens — Synergy 2026'
     return () => { document.title = 'StormLens — War Room' }
   }, [])
 
+  // Lenis Smooth Scroll (Upgrade 1)
+  useEffect(() => {
+    if (prefersReduced) return
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      gestureOrientation: 'vertical',
+    })
+
+    let rafId = 0
+    const raf = (time: number) => {
+      lenis.raf(time)
+      rafId = requestAnimationFrame(raf)
+    }
+    rafId = requestAnimationFrame(raf)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      lenis.destroy()
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-bg-base text-text-primary font-sans overflow-x-hidden">
+      {/* Scroll Progress Bar (Upgrade 2) */}
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-[2px] bg-brand z-[9999] origin-left"
+      />
       <LandingNav />
       <HeroSection onReplay={handleReplay} replaySignal={replaySignal} />
       <StatsRow />

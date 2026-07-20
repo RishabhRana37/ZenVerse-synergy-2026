@@ -78,6 +78,7 @@ export interface StreamState {
   scrubTime: number // relative seconds
   scrubState: ReconstructedState | null
   newIncidentsCount: number
+  scrubPosition: number | null
 
   // ── Actions ──────────────────────────────────────────────────────────────
   applySnapshot:       (msg: WsSnapshot)        => void
@@ -96,6 +97,7 @@ export interface StreamState {
   startScrubbing:      (t: number)              => void
   updateScrubbing:     (t: number)              => void
   stopScrubbing:       () => void
+  setScrubPosition:    (pos: number | null)     => void
 
   // ── Global UI Settings ───────────────────────────────────────────────────
   view: 'stream' | 'lens'
@@ -304,6 +306,7 @@ export const useStreamStore = create<StreamState>((set) => ({
   scrubTime: 0,
   scrubState: null,
   newIncidentsCount: 0,
+  scrubPosition: null,
 
   // Global UI settings initial state
   view: 'stream',
@@ -629,7 +632,12 @@ export const useStreamStore = create<StreamState>((set) => ({
       scrubTime: 0,
       scrubState: null,
       newIncidentsCount: 0,
+      scrubPosition: null,
     })
+  },
+
+  setScrubPosition: (pos) => {
+    set({ scrubPosition: pos })
   },
 
   setView: (v) => set({ view: v }),

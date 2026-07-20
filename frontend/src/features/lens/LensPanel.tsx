@@ -987,9 +987,9 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         // Target acquired if hovering a particle or a well
         const isTargetAcquired = closestIdx !== -1 || hoveredWellIdx.current !== -1
 
-        ctx.strokeStyle = '#2DD4A7'
+        ctx.strokeStyle = '#F5A524'
         ctx.lineWidth = 1.2
-        ctx.shadowColor = '#2DD4A7'
+        ctx.shadowColor = '#F5A524'
         ctx.shadowBlur = isTargetAcquired ? 3 : 0
 
         const angle = isTargetAcquired ? Math.PI / 4 : 0
@@ -1071,7 +1071,7 @@ export function LensPanel({ onIncidentSelect }: LensPanelProps) {
         
         <div className={clsx(
           "flex items-center gap-1.5 px-2 py-0.5 rounded transition-all duration-300 ease-out",
-          incidentFlash ? "bg-accent/20 text-[#2DD4A7] font-bold shadow-[0_0_8px_rgba(45,212,167,0.4)]" : "text-accent font-semibold"
+          incidentFlash ? "bg-brand/20 text-brand font-bold shadow-[0_0_8px_rgba(245,165,36,0.4)]" : "text-brand font-semibold"
         )}>
           <Odometer value={activeIncidents} format="integer" easing="spring" />
           <span>incidents</span>

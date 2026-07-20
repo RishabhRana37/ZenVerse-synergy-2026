@@ -83,7 +83,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
         maskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`,
         WebkitMaskImage: `radial-gradient(circle at center, transparent ${maskRadius}px, black ${maskRadius}px)`
       }}
-      className="fixed inset-0 bg-[#0B0F19] z-[var(--z-intro)] flex flex-col items-center justify-center font-sans overflow-hidden select-none"
+      className="fixed inset-0 bg-[#0C0C0B] z-[var(--z-intro)] flex flex-col items-center justify-center font-sans overflow-hidden select-none"
     >
       {/* ── Reticle HUD Grid lines (Lens/Optical look) ───────────────────── */}
       <div className="absolute inset-0 pointer-events-none border border-border/10 m-10" aria-hidden="true" />
@@ -92,7 +92,7 @@ export function ColdOpen({ onComplete }: ColdOpenProps) {
 
       {/* Top Left Status Branding */}
       <div className="absolute top-8 left-8 flex items-center gap-2 font-mono text-[10px] text-text-secondary uppercase tracking-widest">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" aria-hidden="true" />
+        <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse-dot" aria-hidden="true" />
         <span>StormLens Launch System v1.2</span>
       </div>
 
