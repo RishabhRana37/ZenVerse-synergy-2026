@@ -121,6 +121,23 @@ export function EvalDashboard() {
     }
   }
 
+  // Also seed odoValues as soon as data loads, independent of the
+  // whileInView/onViewportEnter trigger above. The hero grid sits in the
+  // initial viewport on every real load, so gating a headline number purely
+  // on IntersectionObserver firing is fragile — e.g. a backgrounded/inactive
+  // tab at demo time can suppress it, silently leaving the hero at 0%.
+  useEffect(() => {
+    if (bestBackend) {
+      setOdoValues({
+        compression: bestBackend.compression_ratio,
+        purity: bestBackend.purity,
+        ari: bestBackend.ari,
+        hit1: bestBackend.hit_at_1,
+        hit3: bestBackend.hit_at_3,
+      })
+    }
+  }, [data])
+
   // Custom cell highlight utility
   const isBestInScenario = (
     scenarioName: string,
