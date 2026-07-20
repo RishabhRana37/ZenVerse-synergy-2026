@@ -6,6 +6,9 @@ All notable changes to the StormLens project will be documented in this file. Be
 
 ## [Unreleased]
 
+### Removed
+*   Trimmed `main` to what's relevant for judges: `docs/DEMO_SCRIPT.md` (rehearsed stage-direction pitch script), `docs/EXECUTION_PLAN.md` (internal team timeline), `pr_body.txt` (stray committed scratch file), `docs/AIOPS_EXTRACTION_GUIDE.md` and `docs/frontend/{README,features,state_management}.md` (internal dev-only notes), and the empty root `eval/` stub (`.gitkeep` + `README.md` — the real harness is `backend/eval/`, this stub only caused confusion, see earlier session note). `CLAUDE.md` and `.agents/AGENTS.md` (AI-agent tooling instructions) are untracked from `main` and gitignored — kept locally, not shipped in the judged repo.
+
 ### Fixed
 *   `docs/PRD.md` latency row still cited the pre-`bench.py`-fix numbers (db-cascade 63ms, aiops-scn1 p50 3.0s/p95 6.1s) that were invalidated by the hardcoded-scenario bug fixed earlier this session. Updated to the corrected, reproducible figures (db-cascade p50/p95 1.7s n=4; aiops-scn1 p50 157ms/p95 578ms n=305).
 *   `README.md` Status checklist still showed the correlation engine, root-cause ranking, war-room UI, and evaluation as not-done — all are built and measured. Repository Map pointed at the empty root `eval/` stub instead of the real `backend/eval/`.
